@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>千里同風株式会社 — オンラインデモ</title>
+  <meta name="description" content="千里同風株式会社の開発中のAI機能をブラウザ上で体験できます。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Noto+Serif+JP:wght@300;400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <base href="../">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    /* Demo-specific styles */
+    .demo-live {
+      border: 1px solid var(--c-border);
+      padding: 64px 48px;
+      margin-top: 72px;
+      background: var(--c-surface);
+    }
+    .demo-live__header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .demo-live__dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--c-accent-mid);
+    }
+    .demo-live__label {
+      font-family: var(--f-mono);
+      font-size: 0.625rem;
+      letter-spacing: 0.28em;
+      color: var(--c-text-3);
+      text-transform: uppercase;
+    }
+    .demo-live__title {
+      font-family: var(--f-serif);
+      font-size: 1.375rem;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      color: var(--c-text);
+      margin-bottom: 16px;
+    }
+    .demo-live__desc {
+      font-family: var(--f-sans);
+      font-size: 0.9375rem;
+      font-weight: 300;
+      line-height: 2;
+      color: var(--c-text-2);
+      max-width: 560px;
+      margin-bottom: 40px;
+    }
+    /* Chat UI placeholder */
+    .demo-chat {
+      border: 1px solid var(--c-border);
+      background: var(--c-bg);
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+    }
+    .demo-chat__messages {
+      flex: 1;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .demo-chat__bubble {
+      max-width: 420px;
+      padding: 16px 20px;
+      font-family: var(--f-sans);
+      font-size: 0.9375rem;
+      font-weight: 300;
+      line-height: 1.8;
+      letter-spacing: 0.02em;
+    }
+    .demo-chat__bubble--ai {
+      background: var(--c-bg-alt);
+      border: 1px solid var(--c-border);
+      color: var(--c-text-2);
+      align-self: flex-start;
+    }
+    .demo-chat__bubble--user {
+      background: var(--c-accent);
+      color: rgba(255,255,255,0.9);
+      align-self: flex-end;
+    }
+    .demo-chat__input-row {
+      border-top: 1px solid var(--c-border);
+      padding: 16px 24px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .demo-chat__input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      font-family: var(--f-sans);
+      font-size: 0.9375rem;
+      font-weight: 300;
+      letter-spacing: 0.02em;
+      color: var(--c-text);
+    }
+    .demo-chat__input::placeholder { color: var(--c-text-3); }
+    .demo-chat__send {
+      font-family: var(--f-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.2em;
+      color: var(--c-accent);
+      cursor: not-allowed;
+      opacity: 0.5;
+      text-transform: uppercase;
+    }
+    .demo-coming-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--f-mono);
+      font-size: 0.5625rem;
+      letter-spacing: 0.28em;
+      color: var(--c-text-3);
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border: 1px solid var(--c-border);
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body data-page-title="demo_page_title">
+
+  <div id="nav-placeholder"></div>
+
+  <main>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header__container">
+        <div data-animate>
+          <span class="section__eyebrow" data-i18n="demo_eyebrow">オンラインデモ</span>
+          <h1 class="section__title" data-i18n="demo_title">機能を体験する</h1>
+          <p class="section__lead" data-i18n="demo_intro">
+            開発中の機能をブラウザ上でご体験いただけます。各デモは随時アップデートされます。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <section class="section">
+
+      <!-- Live Demo: Translation Tool -->
+      <div class="demo-live" data-animate>
+        <div class="demo-live__header">
+          <div class="demo-live__dot"></div>
+          <span class="demo-live__label">Live · Qwen-Plus</span>
+        </div>
+        <h2 class="demo-live__title" data-i18n="tl_title">中日翻訳 + 回訳検証</h2>
+        <p class="demo-live__desc" data-i18n="tl_lead">中国語・日本語を相互翻訳し、回訳で精度を確認。会議の議事録作成にも対応。</p>
+        <a href="solutions/demo/translation.html" class="cta-link" style="margin-top: 8px;">
+          <span>翻訳ツールを開く / 打开翻译工具</span>
+          <span class="cta-link__arrow">→</span>
+        </a>
+      </div>
+
+      <!-- Demo Cards (other features) -->
+      <div class="demo-grid" style="margin-top: 32px;">
+
+        <div class="demo-card" data-animate data-animate-delay="1">
+          <div class="demo-card__icon">⬡</div>
+          <h3 class="demo-card__title" data-i18n="demo1_title">画像認識デモ</h3>
+          <p class="demo-card__desc" data-i18n="demo1_desc">
+            カメラで撮影した画像、または画像ファイルをAIがリアルタイムで分析・識別します。
+          </p>
+          <span class="demo-card__status" data-i18n="demo_coming">近日公開</span>
+        </div>
+
+        <div class="demo-card" data-animate data-animate-delay="2">
+          <div class="demo-card__icon">◎</div>
+          <h3 class="demo-card__title" data-i18n="demo3_title">音声インターフェース デモ</h3>
+          <p class="demo-card__desc" data-i18n="demo3_desc">
+            音声コマンドでデバイスを操作するインターフェースのデモです。
+          </p>
+          <span class="demo-card__status" data-i18n="demo_coming">近日公開</span>
+        </div>
+
+        <div class="demo-card" data-animate data-animate-delay="3">
+          <div class="demo-card__icon">○</div>
+          <h3 class="demo-card__title" data-i18n="demo4_title">感情認識 デモ</h3>
+          <p class="demo-card__desc" data-i18n="demo4_desc">
+            表情や音声から感情を認識するAIモデルのデモです。
+          </p>
+          <span class="demo-card__status" data-i18n="demo_coming">近日公開</span>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
