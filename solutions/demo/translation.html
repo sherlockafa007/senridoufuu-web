@@ -616,6 +616,7 @@
         const target = tab.dataset.tab; // 'Voice' or 'Text'
         document.getElementById('tabVoice').style.display = target === 'Voice' ? '' : 'none';
         document.getElementById('tabText').style.display  = target === 'Text'  ? '' : 'none';
+        if (target === 'Voice') prewarmToken();
       });
     });
 
@@ -635,15 +636,27 @@
     const elVoiceStatusDot  = document.getElementById('voiceStatusDot');
     const elVoiceStatusText = document.getElementById('voiceStatusText');
 
-    let currentDir       = 'ja-zh';
-    let isRecording      = false;
-    let dgSocket         = null;
-    let mediaRecorder    = null;
-    let audioStream      = null;
-    let pendingBuffer    = '';
+    let currentDir        = 'ja-zh';
+    let isRecording       = false;
+    let isStopping        = false;
+    let dgSocket          = null;
+    let mediaRecorder     = null;
+    let audioStream       = null;
+    let pendingBuffer     = '';
     let tokenRefreshTimer = null;
-    let voiceHistory     = [];
-    let voiceItemCounter = 0;
+    let stopCleanupTimer  = null;
+    let cachedToken       = null;
+    let voiceHistory      = [];
+    let voiceItemCounter  = 0;
+
+    function prewarmToken() {
+      if (isLocal || cachedToken) return;
+      fetch('/.netlify/functions/deepgram-token')
+        .then(r => r.json())
+        .then(d => { if (d.key) cachedToken = d.key; })
+        .catch(() => {});
+    }
+    prewarmToken();
 
     const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
     if (!hasGetUserMedia) {
@@ -672,19 +685,27 @@
 
     async function startRecording() {
       setMicState(true);
+      isStopping = false;
       elInterim.textContent = '接続中… / 连接中…';
       try {
-        const tokenRes = await fetch('/.netlify/functions/deepgram-token');
-        const tokenData = await tokenRes.json();
-        if (!tokenRes.ok) throw new Error(tokenData.error || 'Token error');
+        // Use cached token if available, otherwise fetch; get mic in parallel
+        const tokenPromise = cachedToken
+          ? Promise.resolve({ key: cachedToken })
+          : fetch('/.netlify/functions/deepgram-token').then(r => r.json());
+        cachedToken = null;
 
-        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const [tokenData, stream] = await Promise.all([
+          tokenPromise,
+          navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        ]);
+        if (tokenData.error) throw new Error(tokenData.error);
+        audioStream = stream;
 
         const lang = currentDir === 'ja-zh' ? 'ja' : 'zh-CN';
         const params = new URLSearchParams({
           language: lang, model: 'nova-2',
           punctuate: 'true', smart_format: 'true',
-          interim_results: 'true', endpointing: '800'
+          interim_results: 'true', endpointing: '500'
         });
         dgSocket = new WebSocket(
           `wss://api.deepgram.com/v1/listen?${params}`,
@@ -702,6 +723,8 @@
             }
           };
           mediaRecorder.start(250);
+          // Pre-warm next token in background
+          setTimeout(prewarmToken, 500);
         };
 
         dgSocket.onmessage = (event) => {
@@ -716,8 +739,9 @@
             if (data.speech_final) {
               const text = pendingBuffer.trim();
               pendingBuffer = '';
-              elInterim.textContent = '聴いています… / 正在听…';
+              elInterim.textContent = isStopping ? '' : '聴いています… / 正在听…';
               if (text) sendToTranslate(text);
+              if (isStopping) finishStop();
             }
           } else {
             elInterim.textContent = (pendingBuffer + transcript).trim();
@@ -729,11 +753,20 @@
         };
 
         dgSocket.onclose = () => {
-          if (isRecording) setTimeout(() => { if (isRecording) startRecording(); }, 1000);
+          if (isStopping) {
+            finishStop();
+          } else if (isRecording) {
+            setTimeout(() => { if (isRecording) startRecording(); }, 1000);
+          }
         };
 
         tokenRefreshTimer = setTimeout(() => {
-          if (isRecording) { stopDeepgram(); startRecording(); }
+          if (isRecording) {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            if (dgSocket) { dgSocket.onclose = null; dgSocket.close(); dgSocket = null; }
+            if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+            startRecording();
+          }
         }, 250000);
 
       } catch (err) {
@@ -742,19 +775,34 @@
       }
     }
 
-    function stopDeepgram() {
+    function stopRecording() {
+      if (isStopping) return;
+      isStopping = true;
       clearTimeout(tokenRefreshTimer);
+      setMicState(false);
+
+      // Stop sending audio to Deepgram
       if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-      if (dgSocket) { dgSocket.close(); dgSocket = null; }
-      if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+
+      if (dgSocket && dgSocket.readyState === WebSocket.OPEN) {
+        // Signal end of stream — Deepgram will process remaining audio and send final results
+        dgSocket.send(JSON.stringify({ type: 'CloseStream' }));
+        // Safety timeout: if no response in 1.5s, force finish
+        stopCleanupTimer = setTimeout(finishStop, 1500);
+      } else {
+        finishStop();
+      }
     }
 
-    function stopRecording() {
+    function finishStop() {
+      clearTimeout(stopCleanupTimer);
+      if (dgSocket) { dgSocket.onclose = null; dgSocket.close(); dgSocket = null; }
+      if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
       const remaining = pendingBuffer.trim();
       pendingBuffer = '';
-      stopDeepgram();
-      setMicState(false);
+      isStopping = false;
       if (remaining) sendToTranslate(remaining);
+      prewarmToken();
     }
 
     function setMicState(recording) {
