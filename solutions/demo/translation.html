@@ -624,10 +624,8 @@
     }
 
     /* ════════════════════════════════════════════════════════
-       VOICE MODE
+       VOICE MODE — Deepgram
     ════════════════════════════════════════════════════════ */
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-
     const elMicBtn          = document.getElementById('micBtn');
     const elInterim         = document.getElementById('voiceInterim');
     const elVoiceStream     = document.getElementById('voiceStream');
@@ -637,51 +635,20 @@
     const elVoiceStatusDot  = document.getElementById('voiceStatusDot');
     const elVoiceStatusText = document.getElementById('voiceStatusText');
 
-    let currentDir      = 'ja-zh';
-    let isRecording     = false;
-    let recognition     = null;
-    let pendingText     = '';
-    let pauseTimer      = null;
-    const PAUSE_MS      = 1200;
-    let voiceHistory    = [];
+    let currentDir       = 'ja-zh';
+    let isRecording      = false;
+    let dgSocket         = null;
+    let mediaRecorder    = null;
+    let audioStream      = null;
+    let pendingBuffer    = '';
+    let tokenRefreshTimer = null;
+    let voiceHistory     = [];
     let voiceItemCounter = 0;
 
-    if (!SR) {
+    const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    if (!hasGetUserMedia) {
       document.getElementById('voiceBrowserWarn').style.display = '';
       elMicBtn.disabled = true;
-    } else {
-      recognition = new SR();
-      recognition.continuous     = true;
-      recognition.interimResults = true;
-      recognition.lang           = 'ja-JP';
-
-      recognition.onresult = (event) => {
-        let interim = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal) {
-            pendingText += event.results[i][0].transcript;
-            clearTimeout(pauseTimer);
-            pauseTimer = setTimeout(flushAndTranslate, PAUSE_MS);
-          } else {
-            interim += event.results[i][0].transcript;
-          }
-        }
-        elInterim.textContent = pendingText + interim;
-      };
-
-      recognition.onend = () => {
-        if (isRecording) {
-          try { recognition.start(); } catch (e) { /* ignore */ }
-        }
-      };
-
-      recognition.onerror = (e) => {
-        if (e.error === 'aborted') return;
-        setMicState(false);
-        elInterim.textContent = e.error === 'not-allowed'
-          ? 'マイクへのアクセスが許可されていません / 麦克风权限被拒绝'
-          : `音声認識エラー: ${e.error}`;
-      };
     }
 
     document.getElementById('dirJaZh').addEventListener('click', () => setDir('ja-zh'));
@@ -691,11 +658,11 @@
       currentDir = dir;
       document.getElementById('dirJaZh').classList.toggle('is-active', dir === 'ja-zh');
       document.getElementById('dirZhJa').classList.toggle('is-active', dir === 'zh-ja');
-      if (recognition) recognition.lang = dir === 'ja-zh' ? 'ja-JP' : 'zh-CN';
+      if (isRecording) { stopRecording(); startRecording(); }
     }
 
     elMicBtn.addEventListener('click', () => {
-      if (!SR) return;
+      if (!hasGetUserMedia) return;
       if (isLocal) {
         elInterim.textContent = 'ローカル環境では音声機能を使用できません / 本地环境不支持语音功能';
         return;
@@ -703,20 +670,91 @@
       isRecording ? stopRecording() : startRecording();
     });
 
-    function startRecording() {
-      isRecording = true;
-      pendingText = '';
-      recognition.lang = currentDir === 'ja-zh' ? 'ja-JP' : 'zh-CN';
-      recognition.start();
+    async function startRecording() {
       setMicState(true);
+      elInterim.textContent = '接続中… / 连接中…';
+      try {
+        const tokenRes = await fetch('/.netlify/functions/deepgram-token');
+        const tokenData = await tokenRes.json();
+        if (!tokenRes.ok) throw new Error(tokenData.error || 'Token error');
+
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+        const lang = currentDir === 'ja-zh' ? 'ja' : 'zh-CN';
+        const params = new URLSearchParams({
+          language: lang, model: 'nova-2',
+          punctuate: 'true', smart_format: 'true',
+          interim_results: 'true', endpointing: '800'
+        });
+        dgSocket = new WebSocket(
+          `wss://api.deepgram.com/v1/listen?${params}`,
+          ['token', tokenData.key]
+        );
+
+        dgSocket.onopen = () => {
+          elInterim.textContent = '聴いています… / 正在听…';
+          const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus' : 'audio/webm';
+          mediaRecorder = new MediaRecorder(audioStream, { mimeType: mime });
+          mediaRecorder.ondataavailable = (e) => {
+            if (dgSocket && dgSocket.readyState === WebSocket.OPEN && e.data.size > 0) {
+              dgSocket.send(e.data);
+            }
+          };
+          mediaRecorder.start(250);
+        };
+
+        dgSocket.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.type !== 'Results') return;
+          const transcript = data.channel?.alternatives?.[0]?.transcript;
+          if (!transcript) return;
+
+          if (data.is_final) {
+            pendingBuffer += transcript + ' ';
+            elInterim.textContent = pendingBuffer.trim();
+            if (data.speech_final) {
+              const text = pendingBuffer.trim();
+              pendingBuffer = '';
+              elInterim.textContent = '聴いています… / 正在听…';
+              if (text) sendToTranslate(text);
+            }
+          } else {
+            elInterim.textContent = (pendingBuffer + transcript).trim();
+          }
+        };
+
+        dgSocket.onerror = () => {
+          elInterim.textContent = 'WebSocket エラー / WebSocket错误';
+        };
+
+        dgSocket.onclose = () => {
+          if (isRecording) setTimeout(() => { if (isRecording) startRecording(); }, 1000);
+        };
+
+        tokenRefreshTimer = setTimeout(() => {
+          if (isRecording) { stopDeepgram(); startRecording(); }
+        }, 250000);
+
+      } catch (err) {
+        setMicState(false);
+        elInterim.textContent = `エラー: ${err.message}`;
+      }
+    }
+
+    function stopDeepgram() {
+      clearTimeout(tokenRefreshTimer);
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      if (dgSocket) { dgSocket.close(); dgSocket = null; }
+      if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
     }
 
     function stopRecording() {
-      isRecording = false;
-      recognition.stop();
-      clearTimeout(pauseTimer);
-      if (pendingText.trim()) flushAndTranslate();
+      const remaining = pendingBuffer.trim();
+      pendingBuffer = '';
+      stopDeepgram();
       setMicState(false);
+      if (remaining) sendToTranslate(remaining);
     }
 
     function setMicState(recording) {
@@ -733,15 +771,9 @@
       }
     }
 
-    async function flushAndTranslate() {
-      const text = pendingText.trim();
-      pendingText = '';
-      elInterim.textContent = '';
-      if (!text) return;
-
+    async function sendToTranslate(text) {
       const item = appendStreamItem(text);
       setVoiceStatusBusy(true);
-
       try {
         const res = await fetch(API_ENDPOINT, {
           method: 'POST',
@@ -754,12 +786,10 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'API error');
-
         resolveStreamItem(item, data.content);
         voiceHistory.push({ src: text, tl: data.content, dir: currentDir });
         elVoiceCount.textContent = `${voiceHistory.length} 件`;
         elVoiceSummary.disabled = false;
-
       } catch (err) {
         errorStreamItem(item, err.message);
       } finally {
@@ -769,7 +799,7 @@
 
     function setVoiceStatusBusy(busy) {
       elVoiceStatusDot.classList.toggle('tl-status__dot--offline', busy);
-      elVoiceStatusText.textContent = busy ? '翻訳中 / 翻译中…' : 'Qwen-Plus · 準備完了';
+      elVoiceStatusText.textContent = busy ? '翻訳中 / 翻译中…' : 'Deepgram · Qwen-Plus · 準備完了';
     }
 
     function appendStreamItem(src) {
@@ -807,14 +837,11 @@
       if (voiceHistory.length === 0) return;
       elVoiceSummary.disabled = true;
       setVoiceStatusBusy(true);
-
       const transcript = voiceHistory.map(h => {
         const d = h.dir === 'ja-zh' ? '日→中' : '中→日';
         return `[${d}] ${h.src} → ${h.tl}`;
       }).join('\n');
-
       const prompt = `以下の音声通訳記録の会議まとめを生成してください / 请为以下口译记录生成会议摘要：\n\n${transcript}`;
-
       try {
         const res = await fetch(API_ENDPOINT, {
           method: 'POST',
@@ -823,7 +850,6 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'API error');
-
         const el = document.createElement('div');
         el.className = 'cue-entry cue-entry--summary';
         el.innerHTML = `
@@ -834,7 +860,6 @@
           </div>`;
         elVoiceStream.appendChild(el);
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
       } catch (err) {
         alert(`まとめの生成に失敗しました / 生成摘要失败: ${err.message}`);
       } finally {
@@ -848,8 +873,7 @@
       if (isRecording) stopRecording();
       voiceHistory = [];
       voiceItemCounter = 0;
-      pendingText = '';
-      clearTimeout(pauseTimer);
+      pendingBuffer = '';
       elVoiceStream.innerHTML = '';
       elInterim.textContent = '';
       elVoiceCount.textContent = '0 件';
