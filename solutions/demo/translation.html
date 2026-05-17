@@ -695,14 +695,12 @@
         if (tokenData.error) throw new Error(tokenData.error);
         audioStream = stream;
 
-        // detect_language: Deepgram picks between ja and zh-CN automatically
+        // nova-2 multilingual mode handles Japanese + Chinese in one stream
         const params = new URLSearchParams({
-          model: 'nova-2', detect_language: 'true',
+          model: 'nova-2', language: 'multi',
           punctuate: 'true', smart_format: 'true',
           interim_results: 'true', endpointing: '700'
         });
-        params.append('language', 'ja');
-        params.append('language', 'zh-CN');
 
         dgSocket = new WebSocket(
           `wss://api.deepgram.com/v1/listen?${params}`,
