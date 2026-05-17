@@ -172,158 +172,95 @@
       user-select: none;
     }
 
-    /* Mic button */
-    .voice-mic-area {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      padding: 40px 0 36px;
-    }
-    .voice-mic-btn {
-      width: 96px; height: 96px;
-      border-radius: 50%;
-      border: 1.5px solid var(--c-accent);
-      background: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      transition: background 0.2s;
-      color: var(--c-accent);
-    }
-    .voice-mic-btn:hover:not(:disabled) { background: var(--c-accent-light); }
-    .voice-mic-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    .voice-mic-btn.is-recording {
-      background: var(--c-accent);
-      color: white;
-    }
-    .voice-mic-btn.is-recording::after {
-      content: '';
-      position: absolute;
-      inset: -12px;
-      border-radius: 50%;
-      border: 1px solid var(--c-accent);
-      animation: voice-ripple 1.6s ease-out infinite;
-    }
-    @keyframes voice-ripple {
-      0%   { opacity: 0.5; transform: scale(0.88); }
-      100% { opacity: 0;   transform: scale(1.22); }
-    }
-    .voice-mic-status {
-      font-family: var(--f-mono);
-      font-size: 0.5625rem;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: var(--c-text-3);
-      text-align: center;
-      line-height: 2;
-    }
+    /* Feed */
+    .voice-feed { min-height: 200px; margin-bottom: 8px; }
 
-    /* Interim */
-    .voice-interim-wrap { margin-bottom: 28px; }
-    .voice-interim-label {
-      font-family: var(--f-mono);
-      font-size: 0.5rem;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-      color: var(--c-text-3);
-      margin-bottom: 8px;
-    }
-    .voice-interim {
-      border: 1px dashed var(--c-border);
-      min-height: 52px;
-      padding: 14px 18px;
-      font-family: var(--f-sans);
-      font-size: 0.9375rem;
-      font-weight: 300;
-      line-height: 1.9;
-      letter-spacing: 0.03em;
-      color: var(--c-text-3);
-      font-style: italic;
-    }
-
-    /* Stream */
-    .voice-stream { min-height: 40px; }
-    .voice-item {
-      padding: 28px 0;
+    /* Entry (Cuckoo-style) */
+    .cue-entry {
+      display: flex;
+      gap: 16px;
+      padding: 20px 0;
       border-bottom: 1px solid var(--c-border-light);
     }
-    .voice-item--summary {
+    .cue-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--c-accent-light);
+      border: 1px solid var(--c-accent-mid);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--f-mono);
+      font-size: 0.625rem;
+      color: var(--c-accent);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .cue-avatar--zh {
+      background: #eef2fb;
+      border-color: #8aa0c8;
+      color: #4a6a9a;
+    }
+    .cue-body { flex: 1; min-width: 0; }
+    .cue-name {
+      font-family: var(--f-mono);
+      font-size: 0.5rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--c-text-3);
+      margin-bottom: 6px;
+    }
+    .cue-src {
+      font-family: var(--f-sans);
+      font-size: 0.875rem;
+      font-weight: 300;
+      color: var(--c-text-3);
+      line-height: 1.8;
+      letter-spacing: 0.03em;
+      margin-bottom: 10px;
+    }
+    .cue-tl {
+      font-family: var(--f-sans);
+      font-size: 1.0625rem;
+      font-weight: 400;
+      color: var(--c-text);
+      line-height: 1.8;
+      letter-spacing: 0.03em;
+      white-space: pre-wrap;
+    }
+    .cue-tl--pending {
+      display: flex; align-items: center; gap: 10px;
+      color: var(--c-text-3);
+      font-size: 0.875rem;
+      font-weight: 300;
+    }
+    .cue-error { color: #b04040; font-size: 0.875rem; }
+    .cue-entry--summary {
       background: var(--c-accent-light);
       padding: 20px 24px;
       border: 1px solid var(--c-border);
       margin-top: 16px;
     }
-    .voice-item__meta {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
+
+    /* Bottom session bar */
+    .voice-session-bar {
+      position: sticky;
+      bottom: 0;
+      background: var(--c-surface, #faf9f6);
+      border-top: 1px solid var(--c-border-light);
+      padding: 14px 0 24px;
     }
-    .voice-item__seq {
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      background: var(--c-accent-light);
-      border: 1px solid var(--c-accent-mid);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--f-mono);
-      font-size: 0.5rem;
-      color: var(--c-accent-mid);
-      flex-shrink: 0;
-    }
-    .voice-item__dir {
-      font-family: var(--f-mono);
-      font-size: 0.5625rem;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: var(--c-accent);
-    }
-    .voice-item__time {
-      font-family: var(--f-mono);
-      font-size: 0.5rem;
-      letter-spacing: 0.18em;
-      color: var(--c-text-3);
-      margin-left: auto;
-    }
-    .voice-item__src {
+    .voice-interim-line {
       font-family: var(--f-sans);
-      font-size: 0.9375rem;
-      font-weight: 300;
-      color: var(--c-text);
-      line-height: 1.9;
-      letter-spacing: 0.03em;
-      margin-bottom: 14px;
-    }
-    .voice-item__tl-wrap {
-      border-left: 2px solid var(--c-accent-mid);
-      padding-left: 16px;
-    }
-    .voice-item__tl {
-      font-family: var(--f-sans);
-      font-size: 0.9375rem;
-      font-weight: 300;
-      color: var(--c-text-2);
-      line-height: 1.9;
-      letter-spacing: 0.03em;
-      white-space: pre-wrap;
-    }
-    .voice-item__tl--pending {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--c-text-3);
-      font-size: 0.875rem;
-      font-style: normal;
-    }
-    .voice-item__error {
-      color: #b04040;
       font-size: 0.875rem;
       font-weight: 300;
+      color: var(--c-text-3);
+      min-height: 22px;
+      margin-bottom: 14px;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+    .voice-btn-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 
     /* ════════════════════════════════════════
        TEXT TAB STYLES
@@ -584,35 +521,17 @@
             <button class="voice-lang-btn" id="dirZhJa">中文 → 日本語</button>
           </div>
 
-          <!-- Mic -->
-          <div class="voice-mic-area">
-            <button class="voice-mic-btn" id="micBtn" aria-label="音声入力の開始・停止">
-              <svg id="micIcon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="2" width="6" height="12" rx="3"/>
-                <path d="M5 10a7 7 0 0 0 14 0"/>
-                <line x1="12" y1="19" x2="12" y2="22"/>
-                <line x1="8" y1="22" x2="16" y2="22"/>
-              </svg>
-            </button>
-            <div class="voice-mic-status" id="voiceMicStatus">ボタンを押して音声入力を開始 / 按下按钮开始语音输入</div>
-          </div>
+          <!-- Transcript feed -->
+          <div class="voice-feed" id="voiceStream"></div>
 
-          <!-- Interim transcript -->
-          <div class="voice-interim-wrap" id="voiceInterimWrap" style="display:none">
-            <div class="voice-interim-label">認識中… / 识别中…</div>
-            <div class="voice-interim" id="voiceInterim"></div>
-          </div>
-
-          <!-- Translation stream -->
-          <div class="voice-stream" id="voiceStream"></div>
-
-          <div class="tl-actions">
-            <button class="tl-action-btn tl-action-btn--primary" id="voiceSummary" disabled>
-              まとめを生成 / 生成摘要
-            </button>
-            <button class="tl-action-btn tl-action-btn--ghost" id="voiceClear">
-              クリア / 清空
-            </button>
+          <!-- Sticky bottom bar -->
+          <div class="voice-session-bar">
+            <div class="voice-interim-line" id="voiceInterim"></div>
+            <div class="voice-btn-row">
+              <button class="tl-action-btn tl-action-btn--primary" id="micBtn">開始 / 开始</button>
+              <button class="tl-action-btn tl-action-btn--primary" id="voiceSummary" disabled>まとめ / 摘要</button>
+              <button class="tl-action-btn tl-action-btn--ghost" id="voiceClear">クリア / 清空</button>
+            </div>
           </div>
 
         </div><!-- /tabVoice -->
@@ -710,9 +629,6 @@
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     const elMicBtn          = document.getElementById('micBtn');
-    const elMicIcon         = document.getElementById('micIcon');
-    const elMicStatus       = document.getElementById('voiceMicStatus');
-    const elInterimWrap     = document.getElementById('voiceInterimWrap');
     const elInterim         = document.getElementById('voiceInterim');
     const elVoiceStream     = document.getElementById('voiceStream');
     const elVoiceSummary    = document.getElementById('voiceSummary');
@@ -751,7 +667,6 @@
           }
         }
         elInterim.textContent = pendingText + interim;
-        if (pendingText || interim) elInterimWrap.style.display = '';
       };
 
       recognition.onend = () => {
@@ -763,11 +678,9 @@
       recognition.onerror = (e) => {
         if (e.error === 'aborted') return;
         setMicState(false);
-        if (e.error === 'not-allowed') {
-          elMicStatus.textContent = 'マイクへのアクセスが許可されていません / 麦克风权限被拒绝';
-        } else {
-          elMicStatus.textContent = `音声認識エラー: ${e.error}`;
-        }
+        elInterim.textContent = e.error === 'not-allowed'
+          ? 'マイクへのアクセスが許可されていません / 麦克风权限被拒绝'
+          : `音声認識エラー: ${e.error}`;
       };
     }
 
@@ -784,7 +697,7 @@
     elMicBtn.addEventListener('click', () => {
       if (!SR) return;
       if (isLocal) {
-        elMicStatus.textContent = 'ローカル環境では音声機能を使用できません / 本地环境不支持语音功能';
+        elInterim.textContent = 'ローカル環境では音声機能を使用できません / 本地环境不支持语音功能';
         return;
       }
       isRecording ? stopRecording() : startRecording();
@@ -808,18 +721,15 @@
 
     function setMicState(recording) {
       isRecording = recording;
-      elMicBtn.classList.toggle('is-recording', recording);
-      elMicStatus.textContent = recording
-        ? '録音中… 再度押すと停止 / 录音中… 再次按下停止'
-        : 'ボタンを押して音声入力を開始 / 按下按钮开始语音输入';
       if (recording) {
-        elMicIcon.innerHTML = `<rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor" stroke="none"/>`;
+        elMicBtn.textContent = '● 停止 / 停止';
+        elMicBtn.classList.remove('tl-action-btn--primary');
+        elMicBtn.classList.add('tl-action-btn--ghost');
       } else {
-        elMicIcon.innerHTML = `
-          <rect x="9" y="2" width="6" height="12" rx="3"/>
-          <path d="M5 10a7 7 0 0 0 14 0"/>
-          <line x1="12" y1="19" x2="12" y2="22"/>
-          <line x1="8" y1="22" x2="16" y2="22"/>`;
+        elMicBtn.textContent = '開始 / 开始';
+        elMicBtn.classList.add('tl-action-btn--primary');
+        elMicBtn.classList.remove('tl-action-btn--ghost');
+        elInterim.textContent = '';
       }
     }
 
@@ -863,20 +773,15 @@
     }
 
     function appendStreamItem(src) {
-      voiceItemCounter++;
-      const dirLabel = currentDir === 'ja-zh' ? '日→中' : '中→日';
-      const time = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const isJaZh = currentDir === 'ja-zh';
       const el = document.createElement('div');
-      el.className = 'voice-item';
+      el.className = 'cue-entry';
       el.innerHTML = `
-        <div class="voice-item__meta">
-          <span class="voice-item__seq">${voiceItemCounter}</span>
-          <span class="voice-item__dir">${dirLabel}</span>
-          <span class="voice-item__time">${time}</span>
-        </div>
-        <div class="voice-item__src">${escapeHtml(src)}</div>
-        <div class="voice-item__tl-wrap">
-          <div class="voice-item__tl voice-item__tl--pending">
+        <div class="cue-avatar${isJaZh ? '' : ' cue-avatar--zh'}">${isJaZh ? '日' : '中'}</div>
+        <div class="cue-body">
+          <div class="cue-name">${isJaZh ? '日本語' : '中文'}</div>
+          <div class="cue-src">${escapeHtml(src)}</div>
+          <div class="cue-tl cue-tl--pending">
             <div class="tl-spinner"></div>
             <span>翻訳中…</span>
           </div>
@@ -887,15 +792,15 @@
     }
 
     function resolveStreamItem(el, translation) {
-      const tl = el.querySelector('.voice-item__tl');
-      tl.classList.remove('voice-item__tl--pending');
+      const tl = el.querySelector('.cue-tl');
+      tl.classList.remove('cue-tl--pending');
       tl.textContent = translation;
     }
 
     function errorStreamItem(el, msg) {
-      const tl = el.querySelector('.voice-item__tl');
-      tl.classList.remove('voice-item__tl--pending');
-      tl.innerHTML = `<span class="voice-item__error">エラー: ${escapeHtml(msg)}</span>`;
+      const tl = el.querySelector('.cue-tl');
+      tl.classList.remove('cue-tl--pending');
+      tl.innerHTML = `<span class="cue-error">エラー: ${escapeHtml(msg)}</span>`;
     }
 
     elVoiceSummary.addEventListener('click', async () => {
@@ -920,12 +825,13 @@
         if (!res.ok) throw new Error(data.error || 'API error');
 
         const el = document.createElement('div');
-        el.className = 'voice-item voice-item--summary';
+        el.className = 'cue-entry cue-entry--summary';
         el.innerHTML = `
-          <div class="voice-item__meta">
-            <span class="voice-item__dir">まとめ / 摘要</span>
-          </div>
-          <div class="voice-item__tl">${escapeHtml(data.content)}</div>`;
+          <div class="cue-avatar">∑</div>
+          <div class="cue-body">
+            <div class="cue-name">まとめ / 摘要</div>
+            <div class="cue-tl">${escapeHtml(data.content)}</div>
+          </div>`;
         elVoiceStream.appendChild(el);
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
@@ -946,7 +852,6 @@
       clearTimeout(pauseTimer);
       elVoiceStream.innerHTML = '';
       elInterim.textContent = '';
-      elInterimWrap.style.display = 'none';
       elVoiceCount.textContent = '0 件';
       elVoiceSummary.disabled = true;
     });
