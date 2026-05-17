@@ -138,29 +138,39 @@
       margin-bottom: 32px;
     }
 
-    /* Language auto-detect indicator */
+    /* Language direction */
     .voice-lang-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
       margin-bottom: 48px;
     }
-    .voice-lang-auto-label {
+    .voice-lang-btn {
+      flex: 1;
+      padding: 14px 16px;
+      border: 1px solid var(--c-border);
+      background: none;
       font-family: var(--f-mono);
-      font-size: 0.5rem;
+      font-size: 0.5625rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--c-text-3);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
     }
-    .voice-lang-detected {
-      font-family: var(--f-mono);
-      font-size: 0.5625rem;
-      letter-spacing: 0.1em;
+    .voice-lang-btn:hover { border-color: var(--c-text-2); color: var(--c-text-2); }
+    .voice-lang-btn.is-active {
+      border-color: var(--c-accent);
       color: var(--c-accent);
-      padding: 4px 10px;
-      border: 1px solid var(--c-accent-light);
       background: var(--c-accent-light);
-      transition: all 0.3s;
+    }
+    .voice-lang-sep {
+      font-size: 1.25rem;
+      color: var(--c-border);
+      flex-shrink: 0;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     /* Feed */
@@ -505,10 +515,11 @@
             <strong>您的浏览器不支持语音输入，请使用 Chrome 或 Edge。</strong>
           </div>
 
-          <!-- Auto-detect indicator -->
+          <!-- Language direction -->
           <div class="voice-lang-row">
-            <span class="voice-lang-auto-label">自動検出 / 自动识别</span>
-            <span class="voice-lang-detected" id="detectedLangBadge">— / —</span>
+            <button class="voice-lang-btn is-active" id="dirJaZh">日本語 → 中文</button>
+            <span class="voice-lang-sep">⇄</span>
+            <button class="voice-lang-btn" id="dirZhJa">中文 → 日本語</button>
           </div>
 
           <!-- Transcript feed -->
@@ -626,7 +637,7 @@
     const elVoiceStatusDot  = document.getElementById('voiceStatusDot');
     const elVoiceStatusText = document.getElementById('voiceStatusText');
 
-    let currentDir        = 'ja-zh'; // updated automatically by detectDirFromText
+    let currentDir        = 'ja-zh';
     let isRecording       = false;
     let isStopping        = false;
     let dgSocket          = null;
@@ -639,8 +650,6 @@
     let voiceHistory      = [];
     let voiceItemCounter  = 0;
 
-    const elDetectedBadge = document.getElementById('detectedLangBadge');
-
     function prewarmToken() {
       if (isLocal || cachedToken) return;
       fetch('/.netlify/functions/deepgram-token')
@@ -650,22 +659,20 @@
     }
     prewarmToken();
 
-    // Detect language from transcript: Japanese has unique hiragana/katakana chars
-    function detectDirFromText(text) {
-      if (/[぀-ヿ･-ﾟ]/.test(text)) return 'ja-zh'; // Japanese → Chinese
-      if (/[一-鿿㐀-䶿]/.test(text)) return 'zh-ja'; // Chinese → Japanese
-      return currentDir;
-    }
-
-    function updateDetectedBadge(dir) {
-      currentDir = dir;
-      elDetectedBadge.textContent = dir === 'ja-zh' ? '日本語 → 中文' : '中文 → 日本語';
-    }
-
     const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
     if (!hasGetUserMedia) {
       document.getElementById('voiceBrowserWarn').style.display = '';
       elMicBtn.disabled = true;
+    }
+
+    document.getElementById('dirJaZh').addEventListener('click', () => setDir('ja-zh'));
+    document.getElementById('dirZhJa').addEventListener('click', () => setDir('zh-ja'));
+
+    function setDir(dir) {
+      currentDir = dir;
+      document.getElementById('dirJaZh').classList.toggle('is-active', dir === 'ja-zh');
+      document.getElementById('dirZhJa').classList.toggle('is-active', dir === 'zh-ja');
+      if (isRecording) { stopRecording(); startRecording(); }
     }
 
     elMicBtn.addEventListener('click', () => {
@@ -695,10 +702,12 @@
         if (tokenData.error) throw new Error(tokenData.error);
         audioStream = stream;
 
+        const lang = currentDir === 'ja-zh' ? 'ja' : 'zh-CN';
+        const endpointing = lang === 'ja' ? '600' : '800';
         const params = new URLSearchParams({
-          model: 'nova-2', detect_language: 'true',
+          model: 'nova-2', language: lang,
           punctuate: 'true', smart_format: 'true',
-          interim_results: 'true', endpointing: '700'
+          interim_results: 'true', endpointing
         });
 
         dgSocket = new WebSocket(
@@ -733,10 +742,7 @@
               const text = pendingBuffer.trim();
               pendingBuffer = '';
               elInterim.textContent = isStopping ? '' : '聴いています… / 正在听…';
-              if (text) {
-                updateDetectedBadge(detectDirFromText(text));
-                sendToTranslate(text);
-              }
+              if (text) sendToTranslate(text);
               if (isStopping) finishStop();
             }
           } else {
@@ -794,10 +800,7 @@
       const remaining = pendingBuffer.trim();
       pendingBuffer = '';
       isStopping = false;
-      if (remaining) {
-        updateDetectedBadge(detectDirFromText(remaining));
-        sendToTranslate(remaining);
-      }
+      if (remaining) sendToTranslate(remaining);
       prewarmToken();
     }
 
