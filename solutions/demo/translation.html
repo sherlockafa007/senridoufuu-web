@@ -138,38 +138,29 @@
       margin-bottom: 32px;
     }
 
-    /* Language direction */
+    /* Language auto-detect indicator */
     .voice-lang-row {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       margin-bottom: 48px;
     }
-    .voice-lang-btn {
-      flex: 1;
-      padding: 14px 16px;
-      border: 1px solid var(--c-border);
-      background: none;
+    .voice-lang-auto-label {
       font-family: var(--f-mono);
-      font-size: 0.5625rem;
+      font-size: 0.5rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--c-text-3);
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
     }
-    .voice-lang-btn:hover { border-color: var(--c-text-2); color: var(--c-text-2); }
-    .voice-lang-btn.is-active {
-      border-color: var(--c-accent);
+    .voice-lang-detected {
+      font-family: var(--f-mono);
+      font-size: 0.5625rem;
+      letter-spacing: 0.1em;
       color: var(--c-accent);
+      padding: 4px 10px;
+      border: 1px solid var(--c-accent-light);
       background: var(--c-accent-light);
-    }
-    .voice-lang-sep {
-      font-size: 1.25rem;
-      color: var(--c-border);
-      flex-shrink: 0;
-      user-select: none;
+      transition: all 0.3s;
     }
 
     /* Feed */
@@ -514,11 +505,10 @@
             <strong>您的浏览器不支持语音输入，请使用 Chrome 或 Edge。</strong>
           </div>
 
-          <!-- Language direction -->
+          <!-- Auto-detect indicator -->
           <div class="voice-lang-row">
-            <button class="voice-lang-btn is-active" id="dirJaZh">日本語 → 中文</button>
-            <span class="voice-lang-sep">⇄</span>
-            <button class="voice-lang-btn" id="dirZhJa">中文 → 日本語</button>
+            <span class="voice-lang-auto-label">自動検出 / 自动识别</span>
+            <span class="voice-lang-detected" id="detectedLangBadge">— / —</span>
           </div>
 
           <!-- Transcript feed -->
@@ -636,7 +626,7 @@
     const elVoiceStatusDot  = document.getElementById('voiceStatusDot');
     const elVoiceStatusText = document.getElementById('voiceStatusText');
 
-    let currentDir        = 'ja-zh';
+    let currentDir        = 'ja-zh'; // updated automatically by detectDirFromText
     let isRecording       = false;
     let isStopping        = false;
     let dgSocket          = null;
@@ -649,6 +639,8 @@
     let voiceHistory      = [];
     let voiceItemCounter  = 0;
 
+    const elDetectedBadge = document.getElementById('detectedLangBadge');
+
     function prewarmToken() {
       if (isLocal || cachedToken) return;
       fetch('/.netlify/functions/deepgram-token')
@@ -658,20 +650,22 @@
     }
     prewarmToken();
 
+    // Detect language from transcript: Japanese has unique hiragana/katakana chars
+    function detectDirFromText(text) {
+      if (/[぀-ヿ･-ﾟ]/.test(text)) return 'ja-zh'; // Japanese → Chinese
+      if (/[一-鿿㐀-䶿]/.test(text)) return 'zh-ja'; // Chinese → Japanese
+      return currentDir;
+    }
+
+    function updateDetectedBadge(dir) {
+      currentDir = dir;
+      elDetectedBadge.textContent = dir === 'ja-zh' ? '日本語 → 中文' : '中文 → 日本語';
+    }
+
     const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
     if (!hasGetUserMedia) {
       document.getElementById('voiceBrowserWarn').style.display = '';
       elMicBtn.disabled = true;
-    }
-
-    document.getElementById('dirJaZh').addEventListener('click', () => setDir('ja-zh'));
-    document.getElementById('dirZhJa').addEventListener('click', () => setDir('zh-ja'));
-
-    function setDir(dir) {
-      currentDir = dir;
-      document.getElementById('dirJaZh').classList.toggle('is-active', dir === 'ja-zh');
-      document.getElementById('dirZhJa').classList.toggle('is-active', dir === 'zh-ja');
-      if (isRecording) { stopRecording(); startRecording(); }
     }
 
     elMicBtn.addEventListener('click', () => {
@@ -701,30 +695,15 @@
         if (tokenData.error) throw new Error(tokenData.error);
         audioStream = stream;
 
-        // Start MediaRecorder immediately — buffer chunks until WS is ready
-        const audioBuffer = [];
-        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus' : 'audio/webm';
-        mediaRecorder = new MediaRecorder(audioStream, { mimeType: mime });
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size === 0) return;
-          if (dgSocket && dgSocket.readyState === WebSocket.OPEN) {
-            while (audioBuffer.length > 0) dgSocket.send(audioBuffer.shift());
-            dgSocket.send(e.data);
-          } else {
-            audioBuffer.push(e.data);
-          }
-        };
-        mediaRecorder.start(250);
-
-        const lang = currentDir === 'ja-zh' ? 'ja' : 'zh-CN';
-        // Chinese needs longer endpointing — flowing speech has mid-sentence pauses
-        const endpointing = lang === 'ja' ? '600' : '800';
+        // detect_language: Deepgram picks between ja and zh-CN automatically
         const params = new URLSearchParams({
-          language: lang, model: 'nova-2',
+          model: 'nova-2', detect_language: 'true',
           punctuate: 'true', smart_format: 'true',
-          interim_results: 'true', endpointing
+          interim_results: 'true', endpointing: '700'
         });
+        params.append('language', 'ja');
+        params.append('language', 'zh-CN');
+
         dgSocket = new WebSocket(
           `wss://api.deepgram.com/v1/listen?${params}`,
           ['token', tokenData.key]
@@ -732,9 +711,15 @@
 
         dgSocket.onopen = () => {
           elInterim.textContent = '聴いています… / 正在听…';
-          // Flush any audio buffered during WS connection
-          while (audioBuffer.length > 0) dgSocket.send(audioBuffer.shift());
-          // Pre-warm next token in background
+          const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus' : 'audio/webm';
+          mediaRecorder = new MediaRecorder(audioStream, { mimeType: mime });
+          mediaRecorder.ondataavailable = (e) => {
+            if (dgSocket && dgSocket.readyState === WebSocket.OPEN && e.data.size > 0) {
+              dgSocket.send(e.data);
+            }
+          };
+          mediaRecorder.start(250);
           setTimeout(prewarmToken, 500);
         };
 
@@ -751,7 +736,10 @@
               const text = pendingBuffer.trim();
               pendingBuffer = '';
               elInterim.textContent = isStopping ? '' : '聴いています… / 正在听…';
-              if (text) sendToTranslate(text);
+              if (text) {
+                updateDetectedBadge(detectDirFromText(text));
+                sendToTranslate(text);
+              }
               if (isStopping) finishStop();
             }
           } else {
@@ -792,13 +780,10 @@
       clearTimeout(tokenRefreshTimer);
       setMicState(false);
 
-      // Stop sending audio to Deepgram
       if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
 
       if (dgSocket && dgSocket.readyState === WebSocket.OPEN) {
-        // Signal end of stream — Deepgram will process remaining audio and send final results
         dgSocket.send(JSON.stringify({ type: 'CloseStream' }));
-        // Safety timeout: if no response in 1.5s, force finish
         stopCleanupTimer = setTimeout(finishStop, 1500);
       } else {
         finishStop();
@@ -812,7 +797,10 @@
       const remaining = pendingBuffer.trim();
       pendingBuffer = '';
       isStopping = false;
-      if (remaining) sendToTranslate(remaining);
+      if (remaining) {
+        updateDetectedBadge(detectDirFromText(remaining));
+        sendToTranslate(remaining);
+      }
       prewarmToken();
     }
 
