@@ -695,9 +695,8 @@
         if (tokenData.error) throw new Error(tokenData.error);
         audioStream = stream;
 
-        // nova-2 multilingual mode handles Japanese + Chinese in one stream
         const params = new URLSearchParams({
-          model: 'nova-2', language: 'multi',
+          model: 'nova-2', detect_language: 'true',
           punctuate: 'true', smart_format: 'true',
           interim_results: 'true', endpointing: '700'
         });
