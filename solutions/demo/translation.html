@@ -701,11 +701,29 @@
         if (tokenData.error) throw new Error(tokenData.error);
         audioStream = stream;
 
+        // Start MediaRecorder immediately — buffer chunks until WS is ready
+        const audioBuffer = [];
+        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus' : 'audio/webm';
+        mediaRecorder = new MediaRecorder(audioStream, { mimeType: mime });
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size === 0) return;
+          if (dgSocket && dgSocket.readyState === WebSocket.OPEN) {
+            while (audioBuffer.length > 0) dgSocket.send(audioBuffer.shift());
+            dgSocket.send(e.data);
+          } else {
+            audioBuffer.push(e.data);
+          }
+        };
+        mediaRecorder.start(250);
+
         const lang = currentDir === 'ja-zh' ? 'ja' : 'zh-CN';
+        // Chinese needs longer endpointing — flowing speech has mid-sentence pauses
+        const endpointing = lang === 'ja' ? '600' : '800';
         const params = new URLSearchParams({
           language: lang, model: 'nova-2',
           punctuate: 'true', smart_format: 'true',
-          interim_results: 'true', endpointing: '500'
+          interim_results: 'true', endpointing
         });
         dgSocket = new WebSocket(
           `wss://api.deepgram.com/v1/listen?${params}`,
@@ -714,15 +732,8 @@
 
         dgSocket.onopen = () => {
           elInterim.textContent = '聴いています… / 正在听…';
-          const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-            ? 'audio/webm;codecs=opus' : 'audio/webm';
-          mediaRecorder = new MediaRecorder(audioStream, { mimeType: mime });
-          mediaRecorder.ondataavailable = (e) => {
-            if (dgSocket && dgSocket.readyState === WebSocket.OPEN && e.data.size > 0) {
-              dgSocket.send(e.data);
-            }
-          };
-          mediaRecorder.start(250);
+          // Flush any audio buffered during WS connection
+          while (audioBuffer.length > 0) dgSocket.send(audioBuffer.shift());
           // Pre-warm next token in background
           setTimeout(prewarmToken, 500);
         };
