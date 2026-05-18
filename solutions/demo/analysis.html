@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>千里同風 — 文書分析 / 文件分析</title>
+  <base href="../../">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Noto+Serif+JP:wght@300;400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    /* ── Layout ── */
+    .an-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 var(--page-px) 96px;
+    }
+
+    /* ── Notice ── */
+    .an-notice {
+      display: none;
+      padding: 20px 28px;
+      background: var(--c-accent-light);
+      border-left: 3px solid var(--c-accent-mid);
+      font-family: var(--f-sans);
+      font-size: 0.875rem;
+      font-weight: 300;
+      line-height: 1.8;
+      color: var(--c-text-2);
+      margin-bottom: 32px;
+    }
+    .an-notice.is-visible { display: block; }
+
+    /* ── Status ── */
+    .an-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+      font-family: var(--f-mono);
+      font-size: 0.625rem;
+      letter-spacing: 0.24em;
+      color: var(--c-text-3);
+      text-transform: uppercase;
+    }
+    .an-status__dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--c-accent-mid);
+      flex-shrink: 0;
+    }
+
+    /* ── Drop zone ── */
+    .an-drop-zone {
+      border: 1px dashed var(--c-border);
+      padding: 56px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 24px;
+    }
+    .an-drop-zone:hover,
+    .an-drop-zone.is-over {
+      border-color: var(--c-accent);
+      background: var(--c-accent-light);
+    }
+    .an-drop-zone.has-files {
+      padding: 20px 32px;
+    }
+    .an-drop-icon {
+      font-size: 1.75rem;
+      color: var(--c-border);
+      margin-bottom: 16px;
+      line-height: 1;
+    }
+    .an-drop-zone.has-files .an-drop-icon { display: none; }
+    .an-drop-text {
+      font-family: var(--f-sans);
+      font-size: 0.9375rem;
+      font-weight: 300;
+      color: var(--c-text-2);
+      line-height: 1.6;
+    }
+    .an-drop-zone.has-files .an-drop-text {
+      font-size: 0.8125rem;
+      color: var(--c-text-3);
+    }
+    .an-drop-sub {
+      font-family: var(--f-mono);
+      font-size: 0.5625rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--c-text-3);
+      display: block;
+      margin-top: 8px;
+    }
+    .an-drop-zone.has-files .an-drop-sub { margin-top: 4px; }
+
+    /* ── File list ── */
+    .an-file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .an-file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1px solid var(--c-border);
+      background: var(--c-surface);
+    }
+    .an-file-badge {
+      font-family: var(--f-mono);
+      font-size: 0.5rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .an-file-badge--pdf  { background: #fee2e2; color: #b91c1c; }
+    .an-file-badge--docx { background: #dbeafe; color: #1d4ed8; }
+    .an-file-badge--xlsx,
+    .an-file-badge--xls  { background: #dcfce7; color: #15803d; }
+    .an-file-badge--csv  { background: #fef3c7; color: #b45309; }
+    .an-file-name {
+      font-family: var(--f-sans);
+      font-size: 0.875rem;
+      font-weight: 300;
+      color: var(--c-text-1);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .an-file-chars {
+      font-family: var(--f-mono);
+      font-size: 0.5625rem;
+      letter-spacing: 0.15em;
+      color: var(--c-text-3);
+      flex-shrink: 0;
+    }
+    .an-file-chars--warn { color: #b45309; }
+    .an-file-remove {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      color: var(--c-text-3);
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+    .an-file-remove:hover { color: var(--c-text-1); }
+
+    /* ── Prompt ── */
+    .an-prompt-section {
+      margin-bottom: 24px;
+    }
+    .an-prompt-label {
+      font-family: var(--f-mono);
+      font-size: 0.5625rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--c-text-3);
+      margin-bottom: 12px;
+    }
+    .an-prompt-label span {
+      font-size: 0.5rem;
+      opacity: 0.7;
+    }
+    .an-prompt-input {
+      width: 100%;
+      min-height: 88px;
+      padding: 16px;
+      border: 1px solid var(--c-border);
+      background: var(--c-surface);
+      font-family: var(--f-sans);
+      font-size: 0.9375rem;
+      font-weight: 300;
+      color: var(--c-text-1);
+      line-height: 1.7;
+      resize: vertical;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    .an-prompt-input:focus {
+      outline: none;
+      border-color: var(--c-accent);
+    }
+    .an-prompt-input::placeholder { color: var(--c-text-3); }
+
+    /* ── Actions ── */
+    .an-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 48px;
+      flex-wrap: wrap;
+    }
+    .an-action-btn {
+      font-family: var(--f-mono);
+      font-size: 0.5625rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 12px 28px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    .an-action-btn--primary {
+      background: var(--c-accent);
+      color: var(--c-surface);
+    }
+    .an-action-btn--primary:hover { opacity: 0.85; }
+    .an-action-btn--primary:disabled { opacity: 0.35; cursor: not-allowed; }
+    .an-action-btn--ghost {
+      background: none;
+      color: var(--c-text-3);
+      border: 1px solid var(--c-border);
+      cursor: pointer;
+    }
+    .an-action-btn--ghost:hover { border-color: var(--c-accent); color: var(--c-accent); }
+
+    /* ── Result ── */
+    .an-result {
+      border-top: 1px solid var(--c-border);
+      padding-top: 40px;
+    }
+    .an-result-header {
+      font-family: var(--f-mono);
+      font-size: 0.5625rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--c-text-3);
+      margin-bottom: 28px;
+    }
+    .an-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--f-mono);
+      font-size: 0.5625rem;
+      letter-spacing: 0.2em;
+      color: var(--c-text-3);
+      text-transform: uppercase;
+    }
+    .an-spinner {
+      width: 14px; height: 14px;
+      border: 1.5px solid var(--c-border);
+      border-top-color: var(--c-accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .an-error {
+      padding: 16px 20px;
+      border: 1px solid #fee2e2;
+      background: #fef2f2;
+      font-family: var(--f-sans);
+      font-size: 0.875rem;
+      font-weight: 300;
+      color: #b91c1c;
+      line-height: 1.6;
+    }
+
+    /* ── Report typography ── */
+    .an-report {
+      font-family: var(--f-sans);
+      font-size: 0.9375rem;
+      font-weight: 300;
+      color: var(--c-text-1);
+      line-height: 1.85;
+    }
+    .an-report h3 {
+      font-family: var(--f-serif);
+      font-size: 1.125rem;
+      font-weight: 400;
+      color: var(--c-text-1);
+      margin: 2em 0 0.75em;
+      padding-bottom: 0.5em;
+      border-bottom: 1px solid var(--c-border);
+    }
+    .an-report h3:first-child { margin-top: 0; }
+    .an-report h4 {
+      font-family: var(--f-sans);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--c-text-1);
+      margin: 1.5em 0 0.5em;
+    }
+    .an-report p { margin: 0 0 1em; }
+    .an-report p:last-child { margin-bottom: 0; }
+    .an-report ul, .an-report ol {
+      margin: 0 0 1em;
+      padding-left: 1.5em;
+    }
+    .an-report li { margin-bottom: 0.4em; }
+    .an-report strong { font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <div id="nav-placeholder"></div>
+
+  <main>
+    <div class="page-header">
+      <div class="page-header__container">
+        <div data-animate>
+          <span class="section__eyebrow">分析ツール / 分析工具</span>
+          <h1 class="section__title">文書分析 · 比較レポート</h1>
+          <p class="section__lead">
+            複数の PDF・Word・Excel を読み込み、AI が内容を横断分析してレポートを生成します。<br>
+            <span style="font-size:0.875em;opacity:0.7;">上传多份文件，AI 跨文件交叉分析，生成对比报告。</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="an-wrap">
+
+        <!-- Local preview notice -->
+        <div class="an-notice" id="anNotice">
+          ローカルプレビュー中のため、分析機能はご利用いただけません。Netlify にデプロイ後にご利用ください。<br>
+          <strong>本功能需部署到 Netlify 后方可使用（本地预览不支持）。</strong>
+        </div>
+
+        <!-- Status -->
+        <div class="an-status">
+          <div class="an-status__dot"></div>
+          <span>Qwen-Plus · 準備完了 / 就绪</span>
+        </div>
+
+        <!-- Drop zone -->
+        <div class="an-drop-zone" id="anDrop">
+          <input type="file" id="anFileInput" multiple
+            accept=".pdf,.docx,.xlsx,.xls,.csv" hidden>
+          <div class="an-drop-icon">↑</div>
+          <div class="an-drop-text">
+            ファイルをドロップ、またはクリックして選択 / 拖放文件或点击选择
+            <span class="an-drop-sub">PDF · Word (.docx) · Excel (.xlsx/.xls) · CSV &nbsp;|&nbsp; 最大 5 ファイル / 最多 5 个文件</span>
+          </div>
+        </div>
+
+        <!-- File list -->
+        <div class="an-file-list" id="anFileList"></div>
+
+        <!-- Prompt -->
+        <div class="an-prompt-section" id="anPromptSection" style="display:none">
+          <div class="an-prompt-label">
+            分析方向 / 分析问题
+            <span>（省略可・省略时 AI 自动综合分析 / 可留空）</span>
+          </div>
+          <textarea class="an-prompt-input" id="anPrompt"
+            placeholder="例：三つの地下鉄の収益モデルを比較し、持続可能性を評価してください / 比较三条地铁的盈利模式，评估可持续性"></textarea>
+        </div>
+
+        <!-- Actions -->
+        <div class="an-actions" id="anActions" style="display:none">
+          <button class="an-action-btn an-action-btn--primary" id="anSubmit">
+            分析する / 开始分析
+          </button>
+          <button class="an-action-btn an-action-btn--ghost" id="anClear">
+            クリア / 清空
+          </button>
+        </div>
+
+        <!-- Result -->
+        <div class="an-result" id="anResult" style="display:none">
+          <div class="an-result-header">分析レポート / 分析报告</div>
+          <div class="an-loading" id="anLoading" style="display:none">
+            <div class="an-spinner"></div>
+            <span>分析中 / 分析中…</span>
+          </div>
+          <div class="an-error" id="anError" style="display:none"></div>
+          <div class="an-report" id="anReport"></div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-placeholder"></div>
+  <script src="js/main.js"></script>
+
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- mammoth.js (Word) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <!-- SheetJS (Excel) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <script>
+    /* ── Config ── */
+    const API_ENDPOINT = '/.netlify/functions/analyze';
+    const MAX_FILES = 5;
+    const isLocal = location.protocol === 'file:' ||
+                    location.hostname === '127.0.0.1' ||
+                    location.hostname === 'localhost';
+
+    if (isLocal) document.getElementById('anNotice').classList.add('is-visible');
+
+    /* ── PDF.js worker ── */
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    /* ── State ── */
+    const uploadedFiles = []; // { name, content, chars, ext }
+
+    /* ── DOM refs ── */
+    const elDrop       = document.getElementById('anDrop');
+    const elFileInput  = document.getElementById('anFileInput');
+    const elFileList   = document.getElementById('anFileList');
+    const elPromptSec  = document.getElementById('anPromptSection');
+    const elActions    = document.getElementById('anActions');
+    const elSubmit     = document.getElementById('anSubmit');
+    const elClear      = document.getElementById('anClear');
+    const elResult     = document.getElementById('anResult');
+    const elLoading    = document.getElementById('anLoading');
+    const elError      = document.getElementById('anError');
+    const elReport     = document.getElementById('anReport');
+    const elPrompt     = document.getElementById('anPrompt');
+
+    /* ── Drop zone ── */
+    elDrop.addEventListener('dragover', e => {
+      e.preventDefault();
+      elDrop.classList.add('is-over');
+    });
+    elDrop.addEventListener('dragleave', () => elDrop.classList.remove('is-over'));
+    elDrop.addEventListener('drop', e => {
+      e.preventDefault();
+      elDrop.classList.remove('is-over');
+      handleFiles(Array.from(e.dataTransfer.files));
+    });
+    elDrop.addEventListener('click', () => elFileInput.click());
+    elFileInput.addEventListener('change', e => {
+      handleFiles(Array.from(e.target.files));
+      elFileInput.value = '';
+    });
+
+    /* ── File handling ── */
+    async function handleFiles(fileList) {
+      const ALLOWED = ['pdf', 'docx', 'xlsx', 'xls', 'csv'];
+      for (const file of fileList) {
+        if (uploadedFiles.length >= MAX_FILES) break;
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!ALLOWED.includes(ext)) continue;
+        if (uploadedFiles.find(f => f.name === file.name)) continue;
+
+        // Insert placeholder while processing
+        const placeholder = { name: file.name, content: null, chars: null, ext, loading: true };
+        uploadedFiles.push(placeholder);
+        renderFileList();
+
+        try {
+          const content = await extractText(file, ext);
+          placeholder.content = content;
+          placeholder.chars   = content.length;
+          placeholder.loading = false;
+        } catch (err) {
+          placeholder.content = '';
+          placeholder.chars   = 0;
+          placeholder.loading = false;
+          placeholder.error   = err.message;
+        }
+        renderFileList();
+      }
+      updateUI();
+    }
+
+    async function extractText(file, ext) {
+      const buf = await file.arrayBuffer();
+      if (ext === 'pdf')  return extractPDF(buf);
+      if (ext === 'docx') return extractWord(buf);
+      return extractExcel(buf);
+    }
+
+    async function extractPDF(buf) {
+      if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js not loaded');
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page    = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ') + '\n';
+      }
+      return text.trim();
+    }
+
+    async function extractWord(buf) {
+      if (typeof mammoth === 'undefined') throw new Error('mammoth.js not loaded');
+      const result = await mammoth.extractRawText({ arrayBuffer: buf });
+      return result.value.trim();
+    }
+
+    function extractExcel(buf) {
+      if (typeof XLSX === 'undefined') throw new Error('SheetJS not loaded');
+      const wb = XLSX.read(buf, { type: 'array' });
+      return wb.SheetNames.map(name => {
+        const csv = XLSX.utils.sheet_to_csv(wb.Sheets[name]);
+        return `[Sheet: ${name}]\n${csv}`;
+      }).join('\n\n');
+    }
+
+    /* ── Render file list ── */
+    function renderFileList() {
+      elFileList.innerHTML = uploadedFiles.map((f, idx) => {
+        const badge = `<span class="an-file-badge an-file-badge--${f.ext}">${f.ext.toUpperCase()}</span>`;
+        const name  = `<span class="an-file-name" title="${escHtml(f.name)}">${escHtml(f.name)}</span>`;
+
+        let chars;
+        if (f.loading) {
+          chars = `<span class="an-file-chars">読込中… / 读取中…</span>`;
+        } else if (f.error) {
+          chars = `<span class="an-file-chars an-file-chars--warn">エラー / 错误</span>`;
+        } else if (f.chars === 0) {
+          chars = `<span class="an-file-chars an-file-chars--warn">0 文字 — スキャン版？ / 扫描版？</span>`;
+        } else {
+          chars = `<span class="an-file-chars">${f.chars.toLocaleString()} 文字</span>`;
+        }
+
+        const rm = `<button class="an-file-remove" data-idx="${idx}" title="削除 / 移除">×</button>`;
+        return `<div class="an-file-item">${badge}${name}${chars}${rm}</div>`;
+      }).join('');
+
+      // Remove buttons
+      elFileList.querySelectorAll('.an-file-remove').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          uploadedFiles.splice(Number(btn.dataset.idx), 1);
+          renderFileList();
+          updateUI();
+        });
+      });
+
+      // Compact drop zone once files exist
+      elDrop.classList.toggle('has-files', uploadedFiles.length > 0);
+      const dropText = elDrop.querySelector('.an-drop-text');
+      if (uploadedFiles.length > 0) {
+        dropText.childNodes[0].textContent = 'クリックして追加 / 点击继续添加';
+      } else {
+        dropText.childNodes[0].textContent = 'ファイルをドロップ、またはクリックして選択 / 拖放文件或点击选择';
+      }
+    }
+
+    function updateUI() {
+      const hasFiles = uploadedFiles.length > 0 && uploadedFiles.every(f => !f.loading);
+      elPromptSec.style.display = hasFiles ? '' : 'none';
+      elActions.style.display   = hasFiles ? '' : 'none';
+    }
+
+    /* ── Analysis ── */
+    elSubmit.addEventListener('click', runAnalysis);
+
+    async function runAnalysis() {
+      if (isLocal) {
+        showError('ローカル環境では動作しません。Netlify にデプロイしてください。\n本地环境不可用，请部署到 Netlify。');
+        return;
+      }
+
+      const ready = uploadedFiles.filter(f => !f.loading && f.content !== null);
+      if (ready.length === 0) return;
+
+      setLoading(true);
+      clearError();
+
+      try {
+        const res = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            files: ready.map(f => ({ name: f.name, content: f.content })),
+            prompt: elPrompt.value.trim()
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+        elReport.innerHTML = renderMarkdown(data.content || '');
+        elResult.style.display = '';
+      } catch (err) {
+        showError(err.message);
+        elResult.style.display = '';
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    /* ── Clear ── */
+    elClear.addEventListener('click', () => {
+      uploadedFiles.length = 0;
+      renderFileList();
+      updateUI();
+      elResult.style.display = 'none';
+      elReport.innerHTML = '';
+      clearError();
+      elPrompt.value = '';
+    });
+
+    /* ── UI helpers ── */
+    function setLoading(on) {
+      elLoading.style.display = on ? 'flex' : 'none';
+      elSubmit.disabled = on;
+    }
+    function showError(msg) {
+      elError.textContent = msg;
+      elError.style.display = '';
+    }
+    function clearError() {
+      elError.style.display = 'none';
+      elError.textContent = '';
+    }
+    function escHtml(s) {
+      return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    /* ── Markdown renderer (lightweight) ── */
+    function renderMarkdown(text) {
+      const escape = s => s
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+      const inline = s => escape(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+      const blocks = text.split(/\n{2,}/);
+      return blocks.map(block => {
+        const lines = block.split('\n').map(l => l.trimEnd()).filter(Boolean);
+        if (!lines.length) return '';
+
+        const first = lines[0];
+
+        if (/^#{1,2}\s/.test(first)) {
+          return `<h3>${inline(first.replace(/^#{1,2}\s+/, ''))}</h3>`;
+        }
+        if (/^#{3,}\s/.test(first)) {
+          return `<h4>${inline(first.replace(/^#{3,}\s+/, ''))}</h4>`;
+        }
+
+        const isList = lines.every(l => /^[-*•]\s/.test(l) || /^\d+\.\s/.test(l));
+        if (isList) {
+          const items = lines.map(l =>
+            `<li>${inline(l.replace(/^[-*•]\s/, '').replace(/^\d+\.\s/, ''))}</li>`
+          ).join('');
+          return `<ul>${items}</ul>`;
+        }
+
+        return `<p>${lines.map(inline).join('<br>')}</p>`;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
