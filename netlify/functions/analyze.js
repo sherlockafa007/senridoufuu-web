@@ -24,7 +24,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'files array required' }) };
   }
 
-  const CHAR_LIMIT = 20000;
+  const CHAR_LIMIT = 4000;
   const docContext = files.map((f, i) => {
     const content = (f.content || '').trim().slice(0, CHAR_LIMIT);
     return `【文件${i + 1}：${f.name}】\n${content || '（内容为空，可能为扫描版 PDF，无法提取文字层）'}`;
@@ -52,7 +52,7 @@ exports.handler = async (event) => {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ],
-        max_tokens: 2000,
+        max_tokens: 1500,
         temperature: 0.3
       })
     });

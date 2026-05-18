@@ -582,7 +582,15 @@
           })
         });
 
-        const data = await res.json();
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          throw new Error(
+            `サーバーエラー（HTTP ${res.status}）。タイムアウトの可能性があります。ファイルを減らしてお試しください。\n` +
+            `服务器错误（HTTP ${res.status}），可能是超时，请减少文件数量或内容后重试。`
+          );
+        }
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
         elReport.innerHTML = renderMarkdown(data.content || '');
