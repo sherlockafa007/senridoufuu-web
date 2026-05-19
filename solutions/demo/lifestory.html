@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生平故事 · 千里同風</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #faf8f4;
+      --paper:  #ffffff;
+      --text:   #2c2415;
+      --text2:  #7a6845;
+      --accent: #8b6914;
+      --accentl:#f5ede0;
+      --border: #e8ddd0;
+      --red:    #c0392b;
+      --r:      12px;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .hdr {
+      background: var(--paper);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .hdr-left { display: flex; align-items: center; gap: 14px; }
+    .back { color: var(--text2); text-decoration: none; font-size: 14px; }
+    .back:hover { color: var(--accent); }
+    .hdr-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .hdr-prog { font-size: 13px; color: var(--text2); }
+    .btn-gen {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity .2s;
+    }
+    .btn-gen:hover { opacity: .85; }
+    .btn-gen:disabled { opacity: .35; cursor: default; }
+
+    .prog-bar { height: 3px; background: var(--border); }
+    .prog-fill { height: 100%; background: var(--accent); transition: width .5s ease; }
+
+    /* ── Main ── */
+    .main { max-width: 680px; margin: 0 auto; padding: 44px 24px; }
+
+    .sec { display: none; }
+    .sec.on { display: block; }
+
+    /* ── Welcome ── */
+    .welcome {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 56px 44px;
+      text-align: center;
+    }
+    .welcome-icon { font-size: 52px; margin-bottom: 22px; }
+    .welcome-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .welcome-desc {
+      font-size: 15px;
+      line-height: 1.9;
+      color: var(--text2);
+      margin-bottom: 36px;
+    }
+    .btn-start {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 14px 40px;
+      border-radius: 28px;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-start:hover { opacity: .85; }
+    .btn-view-story {
+      display: block;
+      margin-top: 14px;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-view-story:hover { text-decoration: underline; }
+
+    /* ── Loading ── */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px;
+      gap: 18px;
+      color: var(--text2);
+      font-size: 15px;
+    }
+    .spinner {
+      width: 38px; height: 38px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Question ── */
+    .q-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+    .q-cat {
+      background: var(--accentl);
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .q-num { font-size: 13px; color: var(--text2); }
+    .q-dots { display: flex; gap: 6px; margin-left: auto; }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+    .dot.done { background: var(--accent); }
+    .dot.cur  { background: var(--accent); opacity: .45; }
+
+    .q-text {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 21px;
+      line-height: 1.75;
+      margin-bottom: 26px;
+    }
+
+    .answer-box {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+    .answer-ta {
+      width: 100%;
+      border: none;
+      outline: none;
+      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.85;
+      color: var(--text);
+      background: transparent;
+      resize: none;
+      min-height: 120px;
+    }
+    .answer-ta::placeholder { color: var(--text2); opacity: .6; }
+    .answer-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .btn-mic {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: none;
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text2);
+      font-family: inherit;
+      transition: all .2s;
+    }
+    .btn-mic:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-mic.rec {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 50% { opacity: .7; } }
+    .mic-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .char-ct { font-size: 12px; color: var(--text2); }
+
+    .q-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .btn-skip {
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 8px 0;
+    }
+    .btn-skip:hover { color: var(--text); }
+    .btn-submit {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 24px;
+      font-size: 15px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity .2s;
+    }
+    .btn-submit:hover { opacity: .85; }
+
+    .err {
+      background: #fdf0ef;
+      border: 1px solid #f5c6c2;
+      border-radius: 8px;
+      padding: 13px 18px;
+      color: var(--red);
+      margin-bottom: 14px;
+      font-size: 14px;
+    }
+
+    /* ── Between ── */
+    .between {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 44px;
+      text-align: center;
+    }
+    .between-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    .between-desc { color: var(--text2); margin-bottom: 26px; line-height: 1.75; }
+    .between-list { text-align: left; margin-bottom: 28px; }
+    .between-item {
+      border-left: 3px solid var(--accentl);
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .between-q { color: var(--text2); font-size: 12px; margin-bottom: 3px; }
+    .between-btns { display: flex; gap: 12px; justify-content: center; }
+    .btn-more {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 24px;
+      font-size: 15px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-more:hover { opacity: .85; }
+    .btn-rest {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 12px 28px;
+      border-radius: 24px;
+      font-size: 15px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-rest:hover { border-color: var(--text); color: var(--text); }
+
+    /* ── Story ── */
+    .story-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 26px;
+    }
+    .story-hdr-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 21px;
+    }
+    .btn-back {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-back:hover { border-color: var(--text); color: var(--text); }
+    .story-body {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 52px 48px;
+      font-family: 'Noto Serif SC', serif;
+      font-size: 17px;
+      line-height: 1.95;
+    }
+    .story-body h2 {
+      font-size: 19px;
+      color: var(--accent);
+      margin: 34px 0 14px;
+      font-weight: 600;
+    }
+    .story-body h2:first-child { margin-top: 0; }
+    .story-body p { margin-bottom: 16px; }
+
+    /* ── Reset ── */
+    .reset-btn {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      opacity: .4;
+    }
+    .reset-btn:hover { opacity: 1; }
+
+    @media (max-width: 600px) {
+      .main { padding: 24px 16px; }
+      .welcome { padding: 36px 24px; }
+      .story-body { padding: 28px 20px; }
+      .q-text { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <a href="../demo.html" class="back">← 返回</a>
+    <span class="hdr-title">生平故事</span>
+    <span class="hdr-prog" id="hdr-prog"></span>
+  </div>
+  <button class="btn-gen" id="btn-gen" onclick="genStory()" disabled>生成我的故事</button>
+</header>
+<div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+
+<main class="main">
+
+  <!-- 欢迎 -->
+  <section class="sec on" id="sec-welcome">
+    <div class="welcome">
+      <div class="welcome-icon">📖</div>
+      <h1 class="welcome-title" id="w-title">记录你的故事</h1>
+      <p class="welcome-desc" id="w-desc">
+        每次打开，我们会提出几个问题。<br>
+        用文字或语音回答，大约一个月，<br>
+        你的生平故事会在这里慢慢成形。
+      </p>
+      <button class="btn-start" id="btn-start" onclick="startSession()">开始 →</button>
+      <button class="btn-view-story" id="btn-view-prev" style="display:none" onclick="showPrevStory()">查看上次生成的故事</button>
+    </div>
+  </section>
+
+  <!-- 加载中 -->
+  <section class="sec" id="sec-loading">
+    <div class="loading">
+      <div class="spinner"></div>
+      <span id="loading-msg">正在准备今天的问题…</span>
+    </div>
+  </section>
+
+  <!-- 答题 -->
+  <section class="sec" id="sec-q">
+    <div class="q-meta">
+      <span class="q-cat" id="q-cat"></span>
+      <span class="q-num" id="q-num"></span>
+      <div class="q-dots" id="q-dots"></div>
+    </div>
+    <p class="q-text" id="q-text"></p>
+    <div class="answer-box">
+      <textarea class="answer-ta" id="q-ta" placeholder="在这里写下你的回答…" rows="5"></textarea>
+      <div class="answer-foot">
+        <button class="btn-mic" id="btn-mic" onclick="toggleVoice()">
+          <span class="mic-dot"></span>
+          <span id="mic-lbl">语音输入</span>
+        </button>
+        <span class="char-ct" id="char-ct">0 字</span>
+      </div>
+    </div>
+    <div id="q-err"></div>
+    <div class="q-foot">
+      <button class="btn-skip" onclick="skipQ()">跳过这题</button>
+      <button class="btn-submit" onclick="submitAnswer()">提交回答 →</button>
+    </div>
+  </section>
+
+  <!-- 本轮结束 -->
+  <section class="sec" id="sec-between">
+    <div class="between">
+      <div class="between-title">这轮问题答完了</div>
+      <p class="between-desc" id="bw-desc"></p>
+      <div class="between-list" id="bw-list"></div>
+      <div class="between-btns">
+        <button class="btn-more" onclick="startSession()">继续回答</button>
+        <button class="btn-rest" onclick="restForNow()">先到这里</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 故事 -->
+  <section class="sec" id="sec-story">
+    <div class="story-hdr">
+      <h2 class="story-hdr-title">我的生平故事</h2>
+      <button class="btn-back" onclick="backFromStory()">← 返回</button>
+    </div>
+    <div id="story-wrap"></div>
+  </section>
+
+</main>
+
+<button class="reset-btn" onclick="resetAll()">重置数据</button>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// 固定问题（50 题）
+// ══════════════════════════════════════════════════════════════
+const FIXED = [
+  // 基础 10 题（优先出场）
+  { id:'f01', cat:'家乡与童年', q:'你是在哪里长大的？那个地方，在你心里是什么样的？' },
+  { id:'f02', cat:'家乡与童年', q:'你最早的记忆是什么？哪怕只是一个画面或一种气味也好。' },
+  { id:'f03', cat:'家人',       q:'你的家人中，谁对你的成长影响最深？那是一种什么样的影响？' },
+  { id:'f04', cat:'家乡与童年', q:'童年时，你最快乐的记忆是什么？' },
+  { id:'f05', cat:'家人',       q:'你们家有什么固定的传统或习惯吗——节日的方式、吃饭时的规矩，或任何重复的仪式？' },
+  { id:'f06', cat:'童年成长',   q:'小时候，你最喜欢做什么？有没有一件事可以让你玩上一整天？' },
+  { id:'f07', cat:'童年成长',   q:'你有没有特别崇拜过某个人？可以是家人，也可以是任何人。' },
+  { id:'f08', cat:'童年成长',   q:'成长过程中，有没有一句话被反复说过，让你记住了很久？' },
+  { id:'f09', cat:'童年成长',   q:'你小时候，有没有一段艰难的时期？那时候是什么支撑着你？' },
+  { id:'f10', cat:'家人',       q:'你觉得自己更像父亲还是母亲？或者你身上有没有从家人那里继承来的特质？' },
+  // 求学与青春
+  { id:'f11', cat:'求学时代',   q:'你记忆中的学生时代，最常出现的是什么样的画面？' },
+  { id:'f12', cat:'求学时代',   q:'有没有一位老师，让你至今还记得？他/她做了什么，或者说了什么？' },
+  { id:'f13', cat:'求学时代',   q:'你上学时，是什么样的学生？不是指成绩，而是你是怎样的一个人。' },
+  { id:'f14', cat:'求学时代',   q:'你有没有特别要好的朋友？你们是怎么走近的？' },
+  { id:'f15', cat:'青春',       q:'青少年时期，你最大的困惑或烦恼是什么？' },
+  { id:'f16', cat:'青春',       q:'年轻时，有没有一本书、一部电影或一首歌，让你觉得"这就是我"？' },
+  { id:'f17', cat:'青春',       q:'你第一次感觉自己"长大了"是在什么时候？' },
+  { id:'f18', cat:'青春',       q:'你有没有做过什么让父母或长辈担心的事？' },
+  // 工作与事业
+  { id:'f19', cat:'工作与事业', q:'你第一份正式的工作或担起的第一份责任是什么？那是什么感觉？' },
+  { id:'f20', cat:'工作与事业', q:'你是怎么走上现在这条路的？是计划好的，还是有什么机缘巧合？' },
+  { id:'f21', cat:'工作与事业', q:'工作或事业中，有没有一个时刻让你觉得"这正是我想做的"？' },
+  { id:'f22', cat:'工作与事业', q:'你经历过让自己学到最多的挫折或失败是什么？' },
+  { id:'f23', cat:'工作与事业', q:'有没有一个人，在你的成长或事业中给过你特别重要的帮助？' },
+  { id:'f24', cat:'工作与事业', q:'如果不考虑钱和别人的期待，你最想做什么？' },
+  { id:'f25', cat:'工作与事业', q:'你希望自己的工作或努力，最终能留下什么？' },
+  // 重要的人
+  { id:'f26', cat:'重要的人',   q:'你生命中，有没有一段特别深刻的友谊？那是什么样的人，你们之间有什么故事？' },
+  { id:'f27', cat:'重要的人',   q:'在你的生命中，有没有一个人是你最感谢的？他/她做了什么？' },
+  { id:'f28', cat:'重要的人',   q:'有没有一个人，让你对自己或者对世界的看法改变了？' },
+  { id:'f29', cat:'重要的人',   q:'你最珍视的关系是什么样的？是什么让它对你如此重要？' },
+  { id:'f30', cat:'重要的人',   q:'有没有一段关系，是你觉得遗憾，没能好好珍惜的？' },
+  { id:'f31', cat:'重要的人',   q:'如果可以给你生命中最重要的人写一封信，你最想说什么？' },
+  { id:'f32', cat:'重要的人',   q:'你有没有失去过对你很重要的人？那之后，你是怎么面对的？' },
+  // 人生转折
+  { id:'f33', cat:'人生转折',   q:'你人生中，有没有一个决定，改变了你后来的方向？' },
+  { id:'f34', cat:'人生转折',   q:'有没有某件意外的事——好的或者坏的——最终成了一个重要的转折？' },
+  { id:'f35', cat:'人生转折',   q:'你最困难的一段时间是什么时候？你是怎么走过来的？' },
+  { id:'f36', cat:'人生转折',   q:'有没有一次你做了一件很勇敢的事，哪怕当时很害怕？' },
+  { id:'f37', cat:'人生转折',   q:'你觉得自己有没有一个"分水岭"——在那之前是一个你，之后是另一个你？' },
+  // 爱好与热情
+  { id:'f38', cat:'爱好与热情', q:'有什么事是你做起来会忘记时间的？' },
+  { id:'f39', cat:'爱好与热情', q:'有没有一项技艺或爱好，是你特别引以为傲的？' },
+  { id:'f40', cat:'爱好与热情', q:'有没有一个地方——一座城市、一片风景——对你有特别的意义？' },
+  { id:'f41', cat:'爱好与热情', q:'你喜欢什么样的书、电影、音乐或艺术？有没有特别让你触动的作品？' },
+  // 价值观
+  { id:'f42', cat:'价值观',     q:'你觉得什么是真正重要的事？这个答案，有没有随着时间改变过？' },
+  { id:'f43', cat:'价值观',     q:'有没有什么信念或原则，是你无论如何都不愿意违背的？' },
+  { id:'f44', cat:'价值观',     q:'你相信什么样的力量在引导着人的一生——命运、努力，还是别的什么？' },
+  { id:'f45', cat:'价值观',     q:'在你的生命里，有没有某种仪式感或习惯，让你感到踏实？' },
+  { id:'f46', cat:'价值观',     q:'你觉得人与人之间，最难得的是什么？' },
+  // 梦想与遗憾
+  { id:'f47', cat:'梦想与遗憾', q:'你年轻时有没有一个梦想，一直没能实现——现在想起来是什么感觉？' },
+  { id:'f48', cat:'梦想与遗憾', q:'如果可以对年轻时的自己说一句话，你会说什么？' },
+  { id:'f49', cat:'梦想与遗憾', q:'有没有什么遗憾？如果有，你愿意分享吗？没有也完全可以。' },
+  // 传承
+  { id:'f50', cat:'传承与未来', q:'你希望自己被记住的是什么？或者，你最想留给下一代什么？' },
+];
+
+// ══════════════════════════════════════════════════════════════
+// 状态
+// ══════════════════════════════════════════════════════════════
+const SK = 'lifestory_v1';
+const SESSION_SIZE = 4;
+const DYN_THRESHOLD = 5; // 达到此数才生成动态问题
+
+let state, session = [], idx = 0, prevSec = 'sec-welcome';
+let recognition = null, isRec = false;
+
+function defState() { return { answers: [], doneIds: [], lastStory: null }; }
+function load()  { try { return JSON.parse(localStorage.getItem(SK)) || defState(); } catch { return defState(); } }
+function save()  { localStorage.setItem(SK, JSON.stringify(state)); }
+
+// ══════════════════════════════════════════════════════════════
+// 工具
+// ══════════════════════════════════════════════════════════════
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [b[i], b[j]] = [b[j], b[i]];
+  }
+  return b;
+}
+
+function show(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+
+function updateHdr() {
+  const n = state.answers.length;
+  document.getElementById('hdr-prog').textContent = n ? `已回答 ${n} 题` : '';
+  document.getElementById('btn-gen').disabled = n === 0;
+  document.getElementById('prog-fill').style.width = `${Math.min(n, 100)}%`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 构建本轮问题
+// ══════════════════════════════════════════════════════════════
+async function buildSession() {
+  const unanswered = FIXED.filter(q => !state.doneIds.includes(q.id));
+  const foundation = unanswered.filter(q => +q.id.slice(1) <= 10);
+  const others     = unanswered.filter(q => +q.id.slice(1) >  10);
+
+  const fixedCount = Math.min(2, unanswered.length);
+  const fixedPick  = foundation.length > 0
+    ? foundation.slice(0, fixedCount)
+    : shuffle(others).slice(0, fixedCount);
+
+  const items = fixedPick.map(q => ({ ...q, type: 'fixed', answered: false }));
+  const dynCount = SESSION_SIZE - items.length;
+
+  if (state.answers.length >= DYN_THRESHOLD && dynCount > 0) {
+    try {
+      const qs = await fetchDynamic(dynCount);
+      qs.forEach((q, i) => items.push({
+        id: `d${Date.now()}_${i}`, type: 'dynamic',
+        cat: '个性追问', q, answered: false,
+      }));
+    } catch {
+      // 动态生成失败，补充固定题
+      const extra = shuffle(others.filter(o => !fixedPick.includes(o))).slice(0, dynCount);
+      extra.forEach(q => items.push({ ...q, type: 'fixed', answered: false }));
+    }
+  } else if (items.length < SESSION_SIZE) {
+    const extra = shuffle(others.filter(o => !fixedPick.includes(o))).slice(0, SESSION_SIZE - items.length);
+    extra.forEach(q => items.push({ ...q, type: 'fixed', answered: false }));
+  }
+
+  return items;
+}
+
+// ══════════════════════════════════════════════════════════════
+// API
+// ══════════════════════════════════════════════════════════════
+async function fetchDynamic(count) {
+  const recent = state.answers.slice(-12);
+  const res = await fetch('/.netlify/functions/lifestory', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'questions', answers: recent, count }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'API error');
+  return data.questions || [];
+}
+
+async function genStory() {
+  if (!state.answers.length) return;
+  prevSec = document.querySelector('.sec.on')?.id || 'sec-welcome';
+  show('sec-story');
+  document.getElementById('story-wrap').innerHTML =
+    '<div class="loading"><div class="spinner"></div><span>正在撰写你的故事，请稍候…</span></div>';
+
+  try {
+    const res = await fetch('/.netlify/functions/lifestory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'story', answers: state.answers }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    state.lastStory = data.story;
+    save();
+    renderStory(data.story);
+  } catch (e) {
+    document.getElementById('story-wrap').innerHTML =
+      `<div class="err">生成失败：${e.message}<br>（若超时，可稍后重试，或等待网站升级后生成完整版）</div>`;
+  }
+}
+
+function renderStory(md) {
+  document.getElementById('story-wrap').innerHTML =
+    `<div class="story-body">${marked.parse(md)}</div>`;
+}
+
+function backFromStory() { show(prevSec); }
+
+// ══════════════════════════════════════════════════════════════
+// 语音
+// ══════════════════════════════════════════════════════════════
+function initRec() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return false;
+  recognition = new SR();
+  recognition.lang = 'zh-CN';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  return true;
+}
+
+function toggleVoice() {
+  if (!recognition && !initRec()) {
+    alert('您的浏览器不支持语音输入，请使用 Chrome 或 Edge。');
+    return;
+  }
+  if (isRec) { recognition.stop(); return; }
+
+  const ta  = document.getElementById('q-ta');
+  const btn = document.getElementById('btn-mic');
+  const lbl = document.getElementById('mic-lbl');
+  let base = ta.value, final = base;
+
+  recognition.onstart = () => {
+    isRec = true;
+    btn.classList.add('rec');
+    lbl.textContent = '停止录音';
+  };
+  recognition.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim = e.results[i][0].transcript;
+    }
+    ta.value = final + interim;
+    updateCount();
+  };
+  recognition.onend = () => {
+    isRec = false;
+    btn.classList.remove('rec');
+    lbl.textContent = '语音输入';
+    ta.value = final;
+    updateCount();
+  };
+  recognition.onerror = (e) => {
+    isRec = false;
+    btn.classList.remove('rec');
+    lbl.textContent = '语音输入';
+    if (e.error !== 'aborted') console.warn('语音错误:', e.error);
+  };
+  recognition.start();
+}
+
+function updateCount() {
+  document.getElementById('char-ct').textContent =
+    `${document.getElementById('q-ta').value.length} 字`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// UI 渲染
+// ══════════════════════════════════════════════════════════════
+function renderDots() {
+  document.getElementById('q-dots').innerHTML = session.map((_, i) => {
+    const cls = i < idx ? 'dot done' : i === idx ? 'dot cur' : 'dot';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+}
+
+function showQ() {
+  const item = session[idx];
+  document.getElementById('q-cat').textContent = item.cat;
+  document.getElementById('q-num').textContent = `第 ${state.answers.length + 1} 题`;
+  document.getElementById('q-text').textContent = item.q;
+  document.getElementById('q-ta').value = '';
+  document.getElementById('char-ct').textContent = '0 字';
+  document.getElementById('q-err').innerHTML = '';
+  renderDots();
+  show('sec-q');
+  document.getElementById('q-ta').focus();
+}
+
+function submitAnswer() {
+  const answer = document.getElementById('q-ta').value.trim();
+  if (!answer) {
+    document.getElementById('q-err').innerHTML =
+      '<div class="err">请先写下你的回答，或者点击"跳过这题"。</div>';
+    return;
+  }
+  const item = session[idx];
+  state.answers.push({
+    id: item.id, type: item.type, cat: item.cat,
+    question: item.q, answer,
+    timestamp: new Date().toISOString(),
+  });
+  if (item.type === 'fixed') state.doneIds.push(item.id);
+  item.answered = true;
+  save();
+  updateHdr();
+  next();
+}
+
+function skipQ() {
+  const item = session[idx];
+  if (item.type === 'fixed') { state.doneIds.push(item.id); save(); }
+  next();
+}
+
+function next() {
+  idx++;
+  if (idx >= session.length) showBetween();
+  else showQ();
+}
+
+function showBetween() {
+  const justDone = session.filter(q => q.answered);
+  const total = state.answers.length;
+  document.getElementById('bw-desc').textContent =
+    `你已经回答了 ${total} 个问题。${justDone.length ? '这轮的回答：' : ''}`;
+  document.getElementById('bw-list').innerHTML = justDone.map(item => {
+    const a = state.answers.find(x => x.question === item.q);
+    if (!a) return '';
+    const preview = a.answer.length > 60 ? a.answer.slice(0, 60) + '…' : a.answer;
+    return `<div class="between-item"><div class="between-q">${item.q}</div><div>${preview}</div></div>`;
+  }).join('');
+  show('sec-between');
+}
+
+function restForNow() {
+  const n = state.answers.length;
+  document.getElementById('w-title').textContent = '今天到这里吧';
+  document.getElementById('w-desc').innerHTML =
+    `你已经分享了 ${n} 个故事片段。<br>随时回来继续，你的答案都保存好了。`;
+  document.getElementById('btn-start').textContent = '继续回答 →';
+  show('sec-welcome');
+}
+
+// ══════════════════════════════════════════════════════════════
+// 主流程
+// ══════════════════════════════════════════════════════════════
+async function startSession() {
+  show('sec-loading');
+  document.getElementById('loading-msg').textContent = '正在准备问题…';
+  try {
+    session = await buildSession();
+    idx = 0;
+    if (!session.length) {
+      document.getElementById('w-title').textContent = '了不起';
+      document.getElementById('w-desc').innerHTML = '你已经回答了所有问题！<br>现在可以生成你的生平故事了。';
+      document.getElementById('btn-start').style.display = 'none';
+      show('sec-welcome');
+      return;
+    }
+    showQ();
+  } catch (e) {
+    console.error(e);
+    show('sec-welcome');
+  }
+}
+
+function showPrevStory() {
+  if (state.lastStory) { renderStory(state.lastStory); show('sec-story'); }
+}
+
+function resetAll() {
+  if (!confirm('确定要清除所有回答和数据吗？此操作不可撤销。')) return;
+  localStorage.removeItem(SK);
+  location.reload();
+}
+
+// ══════════════════════════════════════════════════════════════
+// 初始化
+// ══════════════════════════════════════════════════════════════
+state = load();
+updateHdr();
+
+if (state.answers.length > 0) {
+  document.getElementById('w-title').textContent = '欢迎回来';
+  document.getElementById('w-desc').innerHTML =
+    `你已经分享了 ${state.answers.length} 个故事片段。<br>准备好继续了吗？`;
+  document.getElementById('btn-start').textContent = '继续 →';
+  if (state.lastStory) document.getElementById('btn-view-prev').style.display = '';
+}
+
+document.getElementById('q-ta').addEventListener('input', updateCount);
+</script>
+</body>
+</html>

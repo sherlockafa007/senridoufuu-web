@@ -16,3 +16,6 @@ Thumbs.db
 # Editor
 .vscode/
 *.swp
+
+# Local tool config (contains API keys)
+tools/document-analyzer/config.json
