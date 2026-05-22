@@ -9,7 +9,6 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --bg:     #faf8f4;
       --paper:  #ffffff;
@@ -21,351 +20,104 @@
       --red:    #c0392b;
       --r:      12px;
     }
-
-    body {
-      font-family: 'Noto Sans SC', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
+    body { font-family: 'Noto Sans SC', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
     /* ── Header ── */
-    .hdr {
-      background: var(--paper);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
+    .hdr { background: var(--paper); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
     .hdr-left { display: flex; align-items: center; gap: 14px; }
     .back { color: var(--text2); text-decoration: none; font-size: 14px; }
     .back:hover { color: var(--accent); }
-    .hdr-title {
-      font-family: 'Noto Serif SC', serif;
-      font-size: 17px;
-      font-weight: 600;
-    }
+    .hdr-title { font-family: 'Noto Serif SC', serif; font-size: 17px; font-weight: 600; }
     .hdr-prog { font-size: 13px; color: var(--text2); }
-    .btn-gen {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 8px 20px;
-      border-radius: 20px;
-      font-size: 14px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: opacity .2s;
-    }
+    .btn-gen { background: var(--accent); color: #fff; border: none; padding: 8px 20px; border-radius: 20px; font-size: 14px; cursor: pointer; font-family: inherit; transition: opacity .2s; }
     .btn-gen:hover { opacity: .85; }
     .btn-gen:disabled { opacity: .35; cursor: default; }
-
     .prog-bar { height: 3px; background: var(--border); }
     .prog-fill { height: 100%; background: var(--accent); transition: width .5s ease; }
 
-    /* ── Main ── */
+    /* ── Layout ── */
     .main { max-width: 680px; margin: 0 auto; padding: 44px 24px; }
-
     .sec { display: none; }
     .sec.on { display: block; }
 
     /* ── Welcome ── */
-    .welcome {
-      background: var(--paper);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 56px 44px;
-      text-align: center;
-    }
+    .welcome { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r); padding: 56px 44px; text-align: center; }
     .welcome-icon { font-size: 52px; margin-bottom: 22px; }
-    .welcome-title {
-      font-family: 'Noto Serif SC', serif;
-      font-size: 26px;
-      font-weight: 700;
-      margin-bottom: 16px;
-    }
-    .welcome-desc {
-      font-size: 15px;
-      line-height: 1.9;
-      color: var(--text2);
-      margin-bottom: 36px;
-    }
-    .btn-start {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 14px 40px;
-      border-radius: 28px;
-      font-size: 16px;
-      cursor: pointer;
-      font-family: inherit;
-    }
+    .welcome-title { font-family: 'Noto Serif SC', serif; font-size: 26px; font-weight: 700; margin-bottom: 16px; }
+    .welcome-desc { font-size: 15px; line-height: 1.9; color: var(--text2); margin-bottom: 36px; }
+    .btn-start { background: var(--accent); color: #fff; border: none; padding: 14px 40px; border-radius: 28px; font-size: 16px; cursor: pointer; font-family: inherit; }
     .btn-start:hover { opacity: .85; }
-    .btn-view-story {
-      display: block;
-      margin-top: 14px;
-      background: none;
-      border: none;
-      color: var(--accent);
-      font-size: 14px;
-      cursor: pointer;
-      font-family: inherit;
-    }
+    .btn-view-story { display: block; margin: 14px auto 0; background: none; border: none; color: var(--accent); font-size: 14px; cursor: pointer; font-family: inherit; }
     .btn-view-story:hover { text-decoration: underline; }
 
     /* ── Loading ── */
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 80px;
-      gap: 18px;
-      color: var(--text2);
-      font-size: 15px;
-    }
-    .spinner {
-      width: 38px; height: 38px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
+    .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px; gap: 18px; color: var(--text2); font-size: 15px; }
+    .spinner { width: 38px; height: 38px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Question ── */
-    .q-meta {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 22px;
-    }
-    .q-cat {
-      background: var(--accentl);
-      color: var(--accent);
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-    }
+    .q-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .q-cat { background: var(--accentl); color: var(--accent); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
     .q-num { font-size: 13px; color: var(--text2); }
-    .q-dots { display: flex; gap: 6px; margin-left: auto; }
-    .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--border);
-    }
-    .dot.done { background: var(--accent); }
-    .dot.cur  { background: var(--accent); opacity: .45; }
-
-    .q-text {
-      font-family: 'Noto Serif SC', serif;
-      font-size: 21px;
-      line-height: 1.75;
-      margin-bottom: 26px;
-    }
-
-    .answer-box {
-      background: var(--paper);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 20px;
-      margin-bottom: 14px;
-    }
-    .answer-ta {
-      width: 100%;
-      border: none;
-      outline: none;
-      font-family: 'Noto Sans SC', system-ui, sans-serif;
-      font-size: 16px;
-      line-height: 1.85;
-      color: var(--text);
-      background: transparent;
-      resize: none;
-      min-height: 120px;
-    }
-    .answer-ta::placeholder { color: var(--text2); opacity: .6; }
-    .answer-foot {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
-    }
-    .btn-mic {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      background: none;
-      border: 1px solid var(--border);
-      padding: 7px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--text2);
-      font-family: inherit;
-      transition: all .2s;
-    }
+    .q-transition { font-size: 14px; color: var(--text2); font-style: italic; margin-bottom: 10px; line-height: 1.7; min-height: 20px; }
+    .q-text { font-family: 'Noto Serif SC', serif; font-size: 21px; line-height: 1.8; margin-bottom: 26px; }
+    .answer-box { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin-bottom: 14px; }
+    .answer-ta { width: 100%; border: none; outline: none; font-family: 'Noto Sans SC', system-ui, sans-serif; font-size: 16px; line-height: 1.85; color: var(--text); background: transparent; resize: none; min-height: 120px; }
+    .answer-ta::placeholder { color: var(--text2); opacity: .55; }
+    .answer-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .btn-mic { display: flex; align-items: center; gap: 7px; background: none; border: 1px solid var(--border); padding: 7px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; color: var(--text2); font-family: inherit; transition: all .2s; }
     .btn-mic:hover { border-color: var(--accent); color: var(--accent); }
-    .btn-mic.rec {
-      background: var(--red);
-      border-color: var(--red);
-      color: #fff;
-      animation: pulse 1.5s infinite;
-    }
+    .btn-mic.rec { background: var(--red); border-color: var(--red); color: #fff; animation: pulse 1.5s infinite; }
     @keyframes pulse { 50% { opacity: .7; } }
     .mic-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
     .char-ct { font-size: 12px; color: var(--text2); }
-
-    .q-foot {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .btn-skip {
-      background: none;
-      border: none;
-      color: var(--text2);
-      font-size: 14px;
-      cursor: pointer;
-      font-family: inherit;
-      padding: 8px 0;
-    }
+    .q-foot { display: flex; align-items: center; justify-content: space-between; }
+    .btn-skip { background: none; border: none; color: var(--text2); font-size: 14px; cursor: pointer; font-family: inherit; padding: 8px 0; }
     .btn-skip:hover { color: var(--text); }
-    .btn-submit {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 12px 28px;
-      border-radius: 24px;
-      font-size: 15px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: opacity .2s;
-    }
+    .btn-submit { background: var(--accent); color: #fff; border: none; padding: 12px 28px; border-radius: 24px; font-size: 15px; cursor: pointer; font-family: inherit; transition: opacity .2s; }
     .btn-submit:hover { opacity: .85; }
+    .err { background: #fdf0ef; border: 1px solid #f5c6c2; border-radius: 8px; padding: 13px 18px; color: var(--red); margin-bottom: 14px; font-size: 14px; }
 
-    .err {
-      background: #fdf0ef;
-      border: 1px solid #f5c6c2;
-      border-radius: 8px;
-      padding: 13px 18px;
-      color: var(--red);
-      margin-bottom: 14px;
-      font-size: 14px;
-    }
+    /* ── Soft Landing ── */
+    .soft-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r); padding: 48px 44px; text-align: center; }
+    .soft-icon { font-size: 36px; margin-bottom: 18px; }
+    .soft-msg { font-family: 'Noto Serif SC', serif; font-size: 18px; line-height: 1.9; color: var(--text2); margin-bottom: 32px; max-width: 440px; margin-left: auto; margin-right: auto; }
+    .btn-continue { background: var(--accent); color: #fff; border: none; padding: 12px 32px; border-radius: 24px; font-size: 15px; cursor: pointer; font-family: inherit; }
+    .btn-continue:hover { opacity: .85; }
 
     /* ── Between ── */
-    .between {
-      background: var(--paper);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 44px;
-      text-align: center;
-    }
-    .between-title {
-      font-family: 'Noto Serif SC', serif;
-      font-size: 22px;
-      margin-bottom: 10px;
-    }
+    .between { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r); padding: 44px; text-align: center; }
+    .between-title { font-family: 'Noto Serif SC', serif; font-size: 22px; margin-bottom: 10px; }
     .between-desc { color: var(--text2); margin-bottom: 26px; line-height: 1.75; }
     .between-list { text-align: left; margin-bottom: 28px; }
-    .between-item {
-      border-left: 3px solid var(--accentl);
-      padding: 8px 12px;
-      margin-bottom: 8px;
-      font-size: 14px;
-    }
+    .between-item { border-left: 3px solid var(--accentl); padding: 8px 12px; margin-bottom: 8px; font-size: 14px; }
     .between-q { color: var(--text2); font-size: 12px; margin-bottom: 3px; }
-    .between-btns { display: flex; gap: 12px; justify-content: center; }
-    .btn-more {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 12px 28px;
-      border-radius: 24px;
-      font-size: 15px;
-      cursor: pointer;
-      font-family: inherit;
-    }
+    .between-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-more { background: var(--accent); color: #fff; border: none; padding: 12px 28px; border-radius: 24px; font-size: 15px; cursor: pointer; font-family: inherit; }
     .btn-more:hover { opacity: .85; }
-    .btn-rest {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text2);
-      padding: 12px 28px;
-      border-radius: 24px;
-      font-size: 15px;
-      cursor: pointer;
-      font-family: inherit;
-    }
+    .btn-rest { background: none; border: 1px solid var(--border); color: var(--text2); padding: 12px 28px; border-radius: 24px; font-size: 15px; cursor: pointer; font-family: inherit; }
     .btn-rest:hover { border-color: var(--text); color: var(--text); }
 
     /* ── Story ── */
-    .story-hdr {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 26px;
-    }
-    .story-hdr-title {
-      font-family: 'Noto Serif SC', serif;
-      font-size: 21px;
-    }
-    .btn-back {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text2);
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-size: 14px;
-      cursor: pointer;
-      font-family: inherit;
-    }
+    .story-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 26px; }
+    .story-hdr-title { font-family: 'Noto Serif SC', serif; font-size: 21px; }
+    .btn-back { background: none; border: 1px solid var(--border); color: var(--text2); padding: 8px 18px; border-radius: 20px; font-size: 14px; cursor: pointer; font-family: inherit; }
     .btn-back:hover { border-color: var(--text); color: var(--text); }
-    .story-body {
-      background: var(--paper);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 52px 48px;
-      font-family: 'Noto Serif SC', serif;
-      font-size: 17px;
-      line-height: 1.95;
-    }
-    .story-body h2 {
-      font-size: 19px;
-      color: var(--accent);
-      margin: 34px 0 14px;
-      font-weight: 600;
-    }
+    .story-body { background: var(--paper); border: 1px solid var(--border); border-radius: var(--r); padding: 52px 48px; font-family: 'Noto Serif SC', serif; font-size: 17px; line-height: 1.95; }
+    .story-body h2 { font-size: 19px; color: var(--accent); margin: 34px 0 14px; font-weight: 600; }
     .story-body h2:first-child { margin-top: 0; }
     .story-body p { margin-bottom: 16px; }
 
     /* ── Reset ── */
-    .reset-btn {
-      position: fixed;
-      bottom: 18px;
-      right: 18px;
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text2);
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      cursor: pointer;
-      font-family: inherit;
-      opacity: .4;
-    }
+    .reset-btn { position: fixed; bottom: 18px; right: 18px; background: none; border: 1px solid var(--border); color: var(--text2); padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; font-family: inherit; opacity: .4; }
     .reset-btn:hover { opacity: 1; }
+
+    .hidden { display: none !important; }
+    .prog-fill-init { width: 0%; }
 
     @media (max-width: 600px) {
       .main { padding: 24px 16px; }
-      .welcome { padding: 36px 24px; }
+      .welcome, .soft-card, .between { padding: 36px 24px; }
       .story-body { padding: 28px 20px; }
       .q-text { font-size: 18px; }
     }
@@ -379,9 +131,9 @@
     <span class="hdr-title">生平故事</span>
     <span class="hdr-prog" id="hdr-prog"></span>
   </div>
-  <button class="btn-gen" id="btn-gen" onclick="genStory()" disabled>生成我的故事</button>
+  <button type="button" class="btn-gen" id="btn-gen" onclick="genStory()" disabled>生成我的故事</button>
 </header>
-<div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+<div class="prog-bar"><div class="prog-fill prog-fill-init" id="prog-fill"></div></div>
 
 <main class="main">
 
@@ -391,20 +143,20 @@
       <div class="welcome-icon">📖</div>
       <h1 class="welcome-title" id="w-title">记录你的故事</h1>
       <p class="welcome-desc" id="w-desc">
-        每次打开，我们会提出几个问题。<br>
-        用文字或语音回答，大约一个月，<br>
-        你的生平故事会在这里慢慢成形。
+        我会提出一些问题，你用文字或语音回答。<br>
+        不需要一次说完，随时可以停下来。<br>
+        当你觉得够了，AI 会为你写出一篇传记。
       </p>
-      <button class="btn-start" id="btn-start" onclick="startSession()">开始 →</button>
-      <button class="btn-view-story" id="btn-view-prev" style="display:none" onclick="showPrevStory()">查看上次生成的故事</button>
+      <button type="button" class="btn-start" id="btn-start" onclick="nextTurn(null)">开始 →</button>
+      <button type="button" class="btn-view-story hidden" id="btn-prev-story" onclick="showPrevStory()">查看上次的故事</button>
     </div>
   </section>
 
-  <!-- 加载中 -->
+  <!-- 分析中 -->
   <section class="sec" id="sec-loading">
     <div class="loading">
       <div class="spinner"></div>
-      <span id="loading-msg">正在准备今天的问题…</span>
+      <span id="loading-msg">正在思考下一个问题…</span>
     </div>
   </section>
 
@@ -413,13 +165,13 @@
     <div class="q-meta">
       <span class="q-cat" id="q-cat"></span>
       <span class="q-num" id="q-num"></span>
-      <div class="q-dots" id="q-dots"></div>
     </div>
+    <p class="q-transition" id="q-transition"></p>
     <p class="q-text" id="q-text"></p>
     <div class="answer-box">
       <textarea class="answer-ta" id="q-ta" placeholder="在这里写下你的回答…" rows="5"></textarea>
       <div class="answer-foot">
-        <button class="btn-mic" id="btn-mic" onclick="toggleVoice()">
+        <button type="button" class="btn-mic" id="btn-mic" onclick="toggleVoice()">
           <span class="mic-dot"></span>
           <span id="mic-lbl">语音输入</span>
         </button>
@@ -428,20 +180,29 @@
     </div>
     <div id="q-err"></div>
     <div class="q-foot">
-      <button class="btn-skip" onclick="skipQ()">跳过这题</button>
-      <button class="btn-submit" onclick="submitAnswer()">提交回答 →</button>
+      <button type="button" class="btn-skip" onclick="skipCurrent()">跳过这题</button>
+      <button type="button" class="btn-submit" onclick="submitAnswer()">提交回答 →</button>
+    </div>
+  </section>
+
+  <!-- 软着陆（拒答引导） -->
+  <section class="sec" id="sec-soft">
+    <div class="soft-card">
+      <div class="soft-icon">○</div>
+      <p class="soft-msg" id="soft-msg"></p>
+      <button type="button" class="btn-continue" onclick="nextTurn(null)">继续 →</button>
     </div>
   </section>
 
   <!-- 本轮结束 -->
   <section class="sec" id="sec-between">
     <div class="between">
-      <div class="between-title">这轮问题答完了</div>
+      <div class="between-title" id="bw-title">这段到这里</div>
       <p class="between-desc" id="bw-desc"></p>
       <div class="between-list" id="bw-list"></div>
       <div class="between-btns">
-        <button class="btn-more" onclick="startSession()">继续回答</button>
-        <button class="btn-rest" onclick="restForNow()">先到这里</button>
+        <button type="button" class="btn-more" onclick="nextTurn(null)">继续回答</button>
+        <button type="button" class="btn-rest" onclick="restForNow()">先到这里</button>
       </div>
     </div>
   </section>
@@ -450,168 +211,221 @@
   <section class="sec" id="sec-story">
     <div class="story-hdr">
       <h2 class="story-hdr-title">我的生平故事</h2>
-      <button class="btn-back" onclick="backFromStory()">← 返回</button>
+      <button type="button" class="btn-back" onclick="backFromStory()">← 返回</button>
     </div>
     <div id="story-wrap"></div>
   </section>
 
 </main>
 
-<button class="reset-btn" onclick="resetAll()">重置数据</button>
+<button type="button" class="reset-btn" onclick="resetAll()">重置数据</button>
 
 <script>
-// ══════════════════════════════════════════════════════════════
-// 固定问题（50 题）
-// ══════════════════════════════════════════════════════════════
-const FIXED = [
-  // 基础 10 题（优先出场）
-  { id:'f01', cat:'家乡与童年', q:'你是在哪里长大的？那个地方，在你心里是什么样的？' },
-  { id:'f02', cat:'家乡与童年', q:'你最早的记忆是什么？哪怕只是一个画面或一种气味也好。' },
-  { id:'f03', cat:'家人',       q:'你的家人中，谁对你的成长影响最深？那是一种什么样的影响？' },
-  { id:'f04', cat:'家乡与童年', q:'童年时，你最快乐的记忆是什么？' },
-  { id:'f05', cat:'家人',       q:'你们家有什么固定的传统或习惯吗——节日的方式、吃饭时的规矩，或任何重复的仪式？' },
-  { id:'f06', cat:'童年成长',   q:'小时候，你最喜欢做什么？有没有一件事可以让你玩上一整天？' },
-  { id:'f07', cat:'童年成长',   q:'你有没有特别崇拜过某个人？可以是家人，也可以是任何人。' },
-  { id:'f08', cat:'童年成长',   q:'成长过程中，有没有一句话被反复说过，让你记住了很久？' },
-  { id:'f09', cat:'童年成长',   q:'你小时候，有没有一段艰难的时期？那时候是什么支撑着你？' },
-  { id:'f10', cat:'家人',       q:'你觉得自己更像父亲还是母亲？或者你身上有没有从家人那里继承来的特质？' },
-  // 求学与青春
-  { id:'f11', cat:'求学时代',   q:'你记忆中的学生时代，最常出现的是什么样的画面？' },
-  { id:'f12', cat:'求学时代',   q:'有没有一位老师，让你至今还记得？他/她做了什么，或者说了什么？' },
-  { id:'f13', cat:'求学时代',   q:'你上学时，是什么样的学生？不是指成绩，而是你是怎样的一个人。' },
-  { id:'f14', cat:'求学时代',   q:'你有没有特别要好的朋友？你们是怎么走近的？' },
-  { id:'f15', cat:'青春',       q:'青少年时期，你最大的困惑或烦恼是什么？' },
-  { id:'f16', cat:'青春',       q:'年轻时，有没有一本书、一部电影或一首歌，让你觉得"这就是我"？' },
-  { id:'f17', cat:'青春',       q:'你第一次感觉自己"长大了"是在什么时候？' },
-  { id:'f18', cat:'青春',       q:'你有没有做过什么让父母或长辈担心的事？' },
-  // 工作与事业
-  { id:'f19', cat:'工作与事业', q:'你第一份正式的工作或担起的第一份责任是什么？那是什么感觉？' },
-  { id:'f20', cat:'工作与事业', q:'你是怎么走上现在这条路的？是计划好的，还是有什么机缘巧合？' },
-  { id:'f21', cat:'工作与事业', q:'工作或事业中，有没有一个时刻让你觉得"这正是我想做的"？' },
-  { id:'f22', cat:'工作与事业', q:'你经历过让自己学到最多的挫折或失败是什么？' },
-  { id:'f23', cat:'工作与事业', q:'有没有一个人，在你的成长或事业中给过你特别重要的帮助？' },
-  { id:'f24', cat:'工作与事业', q:'如果不考虑钱和别人的期待，你最想做什么？' },
-  { id:'f25', cat:'工作与事业', q:'你希望自己的工作或努力，最终能留下什么？' },
-  // 重要的人
-  { id:'f26', cat:'重要的人',   q:'你生命中，有没有一段特别深刻的友谊？那是什么样的人，你们之间有什么故事？' },
-  { id:'f27', cat:'重要的人',   q:'在你的生命中，有没有一个人是你最感谢的？他/她做了什么？' },
-  { id:'f28', cat:'重要的人',   q:'有没有一个人，让你对自己或者对世界的看法改变了？' },
-  { id:'f29', cat:'重要的人',   q:'你最珍视的关系是什么样的？是什么让它对你如此重要？' },
-  { id:'f30', cat:'重要的人',   q:'有没有一段关系，是你觉得遗憾，没能好好珍惜的？' },
-  { id:'f31', cat:'重要的人',   q:'如果可以给你生命中最重要的人写一封信，你最想说什么？' },
-  { id:'f32', cat:'重要的人',   q:'你有没有失去过对你很重要的人？那之后，你是怎么面对的？' },
-  // 人生转折
-  { id:'f33', cat:'人生转折',   q:'你人生中，有没有一个决定，改变了你后来的方向？' },
-  { id:'f34', cat:'人生转折',   q:'有没有某件意外的事——好的或者坏的——最终成了一个重要的转折？' },
-  { id:'f35', cat:'人生转折',   q:'你最困难的一段时间是什么时候？你是怎么走过来的？' },
-  { id:'f36', cat:'人生转折',   q:'有没有一次你做了一件很勇敢的事，哪怕当时很害怕？' },
-  { id:'f37', cat:'人生转折',   q:'你觉得自己有没有一个"分水岭"——在那之前是一个你，之后是另一个你？' },
-  // 爱好与热情
-  { id:'f38', cat:'爱好与热情', q:'有什么事是你做起来会忘记时间的？' },
-  { id:'f39', cat:'爱好与热情', q:'有没有一项技艺或爱好，是你特别引以为傲的？' },
-  { id:'f40', cat:'爱好与热情', q:'有没有一个地方——一座城市、一片风景——对你有特别的意义？' },
-  { id:'f41', cat:'爱好与热情', q:'你喜欢什么样的书、电影、音乐或艺术？有没有特别让你触动的作品？' },
-  // 价值观
-  { id:'f42', cat:'价值观',     q:'你觉得什么是真正重要的事？这个答案，有没有随着时间改变过？' },
-  { id:'f43', cat:'价值观',     q:'有没有什么信念或原则，是你无论如何都不愿意违背的？' },
-  { id:'f44', cat:'价值观',     q:'你相信什么样的力量在引导着人的一生——命运、努力，还是别的什么？' },
-  { id:'f45', cat:'价值观',     q:'在你的生命里，有没有某种仪式感或习惯，让你感到踏实？' },
-  { id:'f46', cat:'价值观',     q:'你觉得人与人之间，最难得的是什么？' },
-  // 梦想与遗憾
-  { id:'f47', cat:'梦想与遗憾', q:'你年轻时有没有一个梦想，一直没能实现——现在想起来是什么感觉？' },
-  { id:'f48', cat:'梦想与遗憾', q:'如果可以对年轻时的自己说一句话，你会说什么？' },
-  { id:'f49', cat:'梦想与遗憾', q:'有没有什么遗憾？如果有，你愿意分享吗？没有也完全可以。' },
-  // 传承
-  { id:'f50', cat:'传承与未来', q:'你希望自己被记住的是什么？或者，你最想留给下一代什么？' },
+// ══════════════════════════════════════════════════════════════════════════════
+// 问题库
+// ══════════════════════════════════════════════════════════════════════════════
+
+// 锚点题 — 覆盖人生大轮廓的必答骨架（按优先级排列）
+const ANCHORS = [
+  { id:'a01', cat:'起点',     text:'你是在哪里长大的？那个地方，塑造了你性格里的哪些东西？' },
+  { id:'a02', cat:'家人',     text:'家里谁对你影响最深？那种影响，你现在还能感受到吗？' },
+  { id:'a03', cat:'成长',     text:'成长过程中，有没有某件具体的事，让你意识到"世界和我想的不一样"？' },
+  { id:'a04', cat:'职业',     text:'你是怎么走上现在这条路的？是主动选择，还是被某些事情推着走的？' },
+  { id:'a05', cat:'转折',     text:'你人生里有没有一个决定，回头看是真正的分叉口？那时候你是怎么做决定的？' },
+  { id:'a06', cat:'关系',     text:'对你来说，最重要的关系是什么样的？可以是任何形式的。' },
+  { id:'a07', cat:'挫折',     text:'你有没有经历过一次彻底的失败或溃败？那段日子是怎么过的？' },
+  { id:'a08', cat:'热忱',     text:'什么事情是你做起来完全不需要理由的？这个答案，有没有随时间变过？' },
+  { id:'a09', cat:'内心',     text:'你害怕什么？不是蛇或高空那种，而是深处的、会影响你做决定的那种。' },
+  { id:'a10', cat:'价值观',   text:'有没有什么事是你绝对不会做的？这条线，是怎么划定的？' },
+  { id:'a11', cat:'金钱',     text:'你和钱的关系是什么样的？有没有哪段时期，金钱真正改变了你的选择？' },
+  { id:'a12', cat:'影响力',   text:'你觉得你改变过谁吗？或者，有没有人会因为认识你而不一样？' },
+  { id:'a13', cat:'遗憾',     text:'如果有遗憾，你愿意说说吗？没有也完全可以。' },
+  { id:'a14', cat:'印记',     text:'你希望自己被记住的是什么？或者，你根本不在乎被记住？' },
+  { id:'a15', cat:'传承',     text:'如果你的故事能传下去，你最想让人知道的一件事是什么？' },
 ];
 
-// ══════════════════════════════════════════════════════════════
+// 衍生题 — 根据用户标签动态匹配的深化追问
+const BRANCHES = [
+  // 创业 / 职业变动
+  { id:'b01', triggerTags:['entrepreneur','startup','quit_job'],
+    cat:'创业',   text:'创业那一步，是什么让你觉得"现在必须做"？有没有一个具体的临界点？' },
+  { id:'b02', triggerTags:['startup','risk','entrepreneur'],
+    cat:'坚持',   text:'那段最难的时期——你怎么知道要继续，而不是放弃？' },
+  { id:'b03', triggerTags:['career_change','quit_job','pivot'],
+    cat:'转身',   text:'做那个转变之前，你身边的人是怎么反应的？你在乎他们的看法吗？' },
+  { id:'b04', triggerTags:['fired','achievement','success'],
+    cat:'代价',   text:'那个结果的背后，最不被人看到的那部分代价是什么？' },
+  // 家庭 / 压力
+  { id:'b05', triggerTags:['parent_conflict','family_pressure'],
+    cat:'家庭',   text:'和家里的那些分歧，你们后来有没有和解的时刻？或者一直就这样搁在那里？' },
+  { id:'b06', triggerTags:['expectation','family_pressure'],
+    cat:'期待',   text:'家人对你的期望，你是怎么处理那种压力的？有没有某个时刻，你决定按自己的方式来？' },
+  // 感情 / 关系
+  { id:'b07', triggerTags:['marriage','divorce','partner','love'],
+    cat:'感情',   text:'那段关系，让你明白了什么关于自己的事？' },
+  { id:'b08', triggerTags:['loneliness','isolation'],
+    cat:'孤独',   text:'独处的时候，你最常想的是什么？那种感觉，现在还有吗？' },
+  { id:'b09', triggerTags:['betrayal','friendship'],
+    cat:'信任',   text:'那件事之后，你对人的信任有没有什么变化？' },
+  // 迁移 / 异乡
+  { id:'b10', triggerTags:['migration','moved'],
+    cat:'离开',   text:'离开那个地方之后，你有没有过后悔的时刻？或者某个瞬间很想回去？' },
+  { id:'b11', triggerTags:['abroad','cultural_shock','belonging'],
+    cat:'归属',   text:'在那个新的地方，你什么时候才第一次觉得"这里也是我的"？' },
+  // 失去 / 健康
+  { id:'b12', triggerTags:['death','loss','grief'],
+    cat:'失去',   text:'失去他/她之后，你的生活里有没有什么东西悄然变了，自己都没意识到的那种？' },
+  { id:'b13', triggerTags:['illness','health'],
+    cat:'身体',   text:'那段时候，你对时间的感受有没有变化？' },
+  // 创作 / 热忱
+  { id:'b14', triggerTags:['art','music','writing','creative','design'],
+    cat:'创作',   text:'你第一次感觉到"这就是我需要的东西"是什么时候？' },
+  { id:'b15', triggerTags:['art','music','writing','creative'],
+    cat:'放弃',   text:'如果有一天你必须放弃它，你会失去什么？' },
+  // 教育
+  { id:'b16', triggerTags:['study','university','teacher'],
+    cat:'求学',   text:'学那些东西的时候，你心里真正想要的是什么？和表面上的目标一样吗？' },
+  // 信仰 / 价值
+  { id:'b17', triggerTags:['faith','religion','belief','spiritual'],
+    cat:'信仰',   text:'这种信仰或信念，有没有在你最难的时候真正撑住你？' },
+  { id:'b18', triggerTags:['fairness','justice','courage','sacrifice'],
+    cat:'选择',   text:'有没有一次，你明知道应该做什么，但还是选了另一条路？' },
+  // 金钱
+  { id:'b19', triggerTags:['finance','debt','poor','investment'],
+    cat:'困境',   text:'那段财务上最艰难的时期，对你来说最难熬的不是钱的事，而是什么？' },
+  // 身份
+  { id:'b20', triggerTags:['identity','culture','heritage','belonging'],
+    cat:'身份',   text:'你觉得自己"属于"哪里？这个答案现在和年轻时一样吗？' },
+];
+
+// 历史时空触发 — 年份 + 地点匹配后作为"故事催化剂"出现（全程最多 2 次）
+const HISTORICAL = [
+  {
+    id:'h01', yearRange:[1996,1998],
+    locations:['香港','深圳','广州','珠海','澳门'],
+    text:'1997年香港回归的时候你正好在{location}，那个夏天，身边的人和环境有没有什么悄然的变化？',
+  },
+  {
+    id:'h02', yearRange:[1999,2002],
+    locations:null, // 任何地方
+    text:'{year}年前后互联网刚开始热起来，那阵子你有没有感觉到什么机会，或者看到周围有人突然就不一样了？',
+  },
+  {
+    id:'h03', yearRange:[2002,2004],
+    locations:['北京','上海','广州','香港','深圳'],
+    text:'2003年SARS那段时期，隔离或者恐慌的日子，你最清楚记得的是什么？',
+  },
+  {
+    id:'h04', yearRange:[2007,2009],
+    locations:['北京','上海','全国'],
+    text:'2008年北京奥运那时候，整体氛围很特别，你当时是什么感受？有没有什么具体的画面留下来？',
+  },
+  {
+    id:'h05', yearRange:[2007,2010],
+    locations:null,
+    text:'2008年金融危机，你身边有没有人受到很大冲击？那段时间你自己有没有受影响？',
+  },
+  {
+    id:'h06', yearRange:[2010,2012],
+    locations:['日本','东京','大阪','仙台','东北'],
+    text:'2011年3·11地震，你那时候在日本，那件事对你来说意味着什么？有没有什么永远改变了？',
+  },
+  {
+    id:'h07', yearRange:[2019,2022],
+    locations:null,
+    text:'2020年疫情开始的那段时间，生活里有什么是彻底变了、再也回不去的？',
+  },
+];
+
+// ══════════════════════════════════════════════════════════════════════════════
 // 状态
-// ══════════════════════════════════════════════════════════════
-const SK = 'lifestory_v1';
-const SESSION_SIZE = 4;
-const DYN_THRESHOLD = 5; // 达到此数才生成动态问题
+// ══════════════════════════════════════════════════════════════════════════════
 
-let state, session = [], idx = 0, prevSec = 'sec-welcome';
-let recognition = null, isRec = false;
+const SK = 'lifestory_v2';
 
-function defState() { return { answers: [], doneIds: [], lastStory: null }; }
-function load()  { try { return JSON.parse(localStorage.getItem(SK)) || defState(); } catch { return defState(); } }
-function save()  { localStorage.setItem(SK, JSON.stringify(state)); }
-
-// ══════════════════════════════════════════════════════════════
-// 工具
-// ══════════════════════════════════════════════════════════════
-function shuffle(a) {
-  const b = [...a];
-  for (let i = b.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [b[i], b[j]] = [b[j], b[i]];
-  }
-  return b;
+function defState() {
+  return {
+    answers:       [],  // [{id, type, cat, question, answer, analysis, timestamp}]
+    usedIds:       [],  // 所有已出现的题目 ID（含跳过）
+    anchorsDone:   [],  // 已答完的锚点 ID
+    tags:          [],  // 累积的用户标签
+    historicalUsed: 0,  // 历史时空题使用次数（上限 2）
+    lastAnalysis:  null,
+    lastStory:     null,
+  };
 }
 
-function show(id) {
-  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
-  document.getElementById(id).classList.add('on');
-}
+let state;
+let currentQ   = null;  // 当前题目对象
+let prevSec    = 'sec-welcome';
+let recognition = null;
+let isRec      = false;
 
-function updateHdr() {
-  const n = state.answers.length;
-  document.getElementById('hdr-prog').textContent = n ? `已回答 ${n} 题` : '';
-  document.getElementById('btn-gen').disabled = n === 0;
-  document.getElementById('prog-fill').style.width = `${Math.min(n, 100)}%`;
-}
+function loadState()  { try { return JSON.parse(localStorage.getItem(SK)) || defState(); } catch { return defState(); } }
+function saveState()  { localStorage.setItem(SK, JSON.stringify(state)); }
 
-// ══════════════════════════════════════════════════════════════
-// 构建本轮问题
-// ══════════════════════════════════════════════════════════════
-async function buildSession() {
-  const unanswered = FIXED.filter(q => !state.doneIds.includes(q.id));
-  const foundation = unanswered.filter(q => +q.id.slice(1) <= 10);
-  const others     = unanswered.filter(q => +q.id.slice(1) >  10);
+// ══════════════════════════════════════════════════════════════════════════════
+// 路由引擎 — 决定下一道题
+// ══════════════════════════════════════════════════════════════════════════════
 
-  const fixedCount = Math.min(2, unanswered.length);
-  const fixedPick  = foundation.length > 0
-    ? foundation.slice(0, fixedCount)
-    : shuffle(others).slice(0, fixedCount);
+function pickNext(analysis) {
+  const { usedIds, tags, historicalUsed } = state;
 
-  const items = fixedPick.map(q => ({ ...q, type: 'fixed', answered: false }));
-  const dynCount = SESSION_SIZE - items.length;
-
-  if (state.answers.length >= DYN_THRESHOLD && dynCount > 0) {
-    try {
-      const qs = await fetchDynamic(dynCount);
-      qs.forEach((q, i) => items.push({
-        id: `d${Date.now()}_${i}`, type: 'dynamic',
-        cat: '个性追问', q, answered: false,
-      }));
-    } catch {
-      // 动态生成失败，补充固定题
-      const extra = shuffle(others.filter(o => !fixedPick.includes(o))).slice(0, dynCount);
-      extra.forEach(q => items.push({ ...q, type: 'fixed', answered: false }));
+  // 优先级 1：历史时空催化（满足年份+地点，且全程 < 2 次）
+  if (analysis && !analysis.isEvasion && historicalUsed < 2 && analysis.year) {
+    const hist = HISTORICAL.find(h => {
+      if (usedIds.includes(h.id)) return false;
+      const inRange = analysis.year >= h.yearRange[0] && analysis.year <= h.yearRange[1];
+      if (!inRange) return false;
+      if (!h.locations) return true;
+      return !analysis.location || h.locations.some(l => analysis.location.includes(l));
+    });
+    if (hist) {
+      state.historicalUsed++;
+      const text = hist.text
+        .replace('{location}', analysis.location || '那里')
+        .replace('{year}', String(analysis.year));
+      return { ...hist, type: 'historical', text };
     }
-  } else if (items.length < SESSION_SIZE) {
-    const extra = shuffle(others.filter(o => !fixedPick.includes(o))).slice(0, SESSION_SIZE - items.length);
-    extra.forEach(q => items.push({ ...q, type: 'fixed', answered: false }));
   }
 
-  return items;
+  // 优先级 2：衍生追问（标签匹配，且对话已有足够信息 ≥ 3 轮）
+  if (analysis && !analysis.isEvasion && state.answers.length >= 3 && tags.length > 0) {
+    const best = BRANCHES
+      .filter(b => !usedIds.includes(b.id))
+      .map(b => ({ b, score: b.triggerTags.filter(t => tags.includes(t)).length }))
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score)[0];
+    if (best) return { ...best.b, type: 'branch' };
+  }
+
+  // 优先级 3：下一道锚点题
+  const anchor = ANCHORS.find(q => !usedIds.includes(q.id));
+  if (anchor) return { ...anchor, type: 'anchor' };
+
+  // 优先级 4：剩余衍生题（锚点全部答完后）
+  const anyBranch = BRANCHES.find(q => !usedIds.includes(q.id));
+  return anyBranch ? { ...anyBranch, type: 'branch' } : null;
 }
 
-// ══════════════════════════════════════════════════════════════
-// API
-// ══════════════════════════════════════════════════════════════
-async function fetchDynamic(count) {
-  const recent = state.answers.slice(-12);
+// ══════════════════════════════════════════════════════════════════════════════
+// API 调用
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function callAnalyze(question, answer) {
   const res = await fetch('/.netlify/functions/lifestory', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'questions', answers: recent, count }),
+    body: JSON.stringify({
+      action: 'analyze',
+      question, answer,
+      recentHistory: state.answers.slice(-4),
+      knownTags: state.tags,
+    }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'API error');
-  return data.questions || [];
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data.analysis;
 }
 
 async function genStory() {
@@ -620,7 +434,6 @@ async function genStory() {
   show('sec-story');
   document.getElementById('story-wrap').innerHTML =
     '<div class="loading"><div class="spinner"></div><span>正在撰写你的故事，请稍候…</span></div>';
-
   try {
     const res = await fetch('/.netlify/functions/lifestory', {
       method: 'POST',
@@ -630,12 +443,153 @@ async function genStory() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     state.lastStory = data.story;
-    save();
+    saveState();
     renderStory(data.story);
   } catch (e) {
     document.getElementById('story-wrap').innerHTML =
-      `<div class="err">生成失败：${e.message}<br>（若超时，可稍后重试，或等待网站升级后生成完整版）</div>`;
+      `<div class="err">生成失败：${e.message}<br>（若超时，可稍后重试）</div>`;
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 主流程
+// ══════════════════════════════════════════════════════════════════════════════
+
+// nextTurn：分析上一条回答（如有），然后展示下一道题
+async function nextTurn(analysis) {
+  show('sec-loading');
+  document.getElementById('loading-msg').textContent =
+    analysis ? '正在理解你的回答…' : '正在准备问题…';
+
+  const next = pickNext(analysis);
+  if (!next) {
+    // 所有题目已用完
+    showBetween('你已经回答了所有问题！', true);
+    return;
+  }
+
+  currentQ = next;
+  if (!state.usedIds.includes(next.id)) state.usedIds.push(next.id);
+  saveState();
+  showQ(next, analysis?.transition || '');
+}
+
+function showQ(q, transition) {
+  document.getElementById('q-cat').textContent = q.cat;
+  document.getElementById('q-num').textContent = `第 ${state.answers.length + 1} 题`;
+  document.getElementById('q-transition').textContent = transition || '';
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('q-ta').value = '';
+  document.getElementById('char-ct').textContent = '0 字';
+  document.getElementById('q-err').innerHTML = '';
+  show('sec-q');
+  document.getElementById('q-ta').focus();
+}
+
+async function submitAnswer() {
+  const answer = document.getElementById('q-ta').value.trim();
+  if (!answer) {
+    document.getElementById('q-err').innerHTML =
+      '<div class="err">请先写下你的回答，或者点"跳过这题"。</div>';
+    return;
+  }
+
+  show('sec-loading');
+  document.getElementById('loading-msg').textContent = '正在理解你的回答…';
+
+  let analysis;
+  try {
+    analysis = await callAnalyze(currentQ.text, answer);
+  } catch {
+    // API 失败时退化处理，继续流程
+    analysis = { tags:[], year:null, location:null, isEvasion:false, transition:'', softLanding:null };
+  }
+
+  // 累积标签
+  if (analysis.tags?.length) {
+    state.tags = [...new Set([...state.tags, ...analysis.tags])];
+  }
+  state.lastAnalysis = analysis;
+
+  if (analysis.isEvasion) {
+    // 软着陆：记录跳过，不保存到 answers
+    if (!state.usedIds.includes(currentQ.id)) state.usedIds.push(currentQ.id);
+    saveState();
+    showSoftLanding(analysis.softLanding);
+    return;
+  }
+
+  // 保存正式回答
+  state.answers.push({
+    id: currentQ.id,
+    type: currentQ.type,
+    cat: currentQ.cat,
+    question: currentQ.text,
+    answer,
+    analysis,
+    timestamp: new Date().toISOString(),
+  });
+  if (currentQ.type === 'anchor') {
+    if (!state.anchorsDone.includes(currentQ.id)) state.anchorsDone.push(currentQ.id);
+  }
+  saveState();
+  updateHdr();
+
+  // 每答完 8 题提示一次"可以生成故事了"
+  if (state.answers.length > 0 && state.answers.length % 8 === 0) {
+    showBetween(`已回答 ${state.answers.length} 题，现在可以生成故事，或者继续深入。`, false);
+    return;
+  }
+
+  await nextTurn(analysis);
+}
+
+function skipCurrent() {
+  if (!state.usedIds.includes(currentQ.id)) state.usedIds.push(currentQ.id);
+  if (currentQ.type === 'anchor') state.anchorsDone.push(currentQ.id);
+  saveState();
+  nextTurn(null);
+}
+
+function showSoftLanding(msg) {
+  const defaultMsg = '没关系，有些经历确实适合存放在心底。\n我们换个方向聊聊别的。';
+  document.getElementById('soft-msg').textContent = msg || defaultMsg;
+  show('sec-soft');
+}
+
+function showBetween(desc, allDone) {
+  const n = state.answers.length;
+  document.getElementById('bw-title').textContent = allDone ? '了不起' : '这里是一个好的停顿';
+  document.getElementById('bw-desc').textContent = desc || `你已经分享了 ${n} 个故事片段。`;
+
+  const recent = state.answers.slice(-3);
+  document.getElementById('bw-list').innerHTML = recent.map(a => `
+    <div class="between-item">
+      <div class="between-q">${a.question}</div>
+      <div>${a.answer.length > 60 ? a.answer.slice(0, 60) + '…' : a.answer}</div>
+    </div>`).join('');
+
+  if (allDone) {
+    document.querySelector('.btn-more').style.display = 'none';
+  } else {
+    document.querySelector('.btn-more').style.display = '';
+  }
+  show('sec-between');
+}
+
+function restForNow() {
+  const n = state.answers.length;
+  document.getElementById('w-title').textContent = '今天到这里吧';
+  document.getElementById('w-desc').innerHTML =
+    `你已经分享了 ${n} 个故事片段。<br>随时回来继续，你的答案都保存好了。`;
+  document.getElementById('btn-start').textContent = '继续 →';
+  show('sec-welcome');
+}
+
+function backFromStory() { show(prevSec); }
+
+function showPrevStory() {
+  if (state.lastStory) { renderStory(state.lastStory); prevSec = 'sec-welcome'; show('sec-story'); }
 }
 
 function renderStory(md) {
@@ -643,11 +597,16 @@ function renderStory(md) {
     `<div class="story-body">${marked.parse(md)}</div>`;
 }
 
-function backFromStory() { show(prevSec); }
+function resetAll() {
+  if (!confirm('确定要清除所有回答和数据吗？此操作不可撤销。')) return;
+  localStorage.removeItem(SK);
+  location.reload();
+}
 
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // 语音
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+
 function initRec() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return false;
@@ -659,10 +618,7 @@ function initRec() {
 }
 
 function toggleVoice() {
-  if (!recognition && !initRec()) {
-    alert('您的浏览器不支持语音输入，请使用 Chrome 或 Edge。');
-    return;
-  }
+  if (!recognition && !initRec()) { alert('您的浏览器不支持语音输入，请使用 Chrome 或 Edge。'); return; }
   if (isRec) { recognition.stop(); return; }
 
   const ta  = document.getElementById('q-ta');
@@ -670,11 +626,7 @@ function toggleVoice() {
   const lbl = document.getElementById('mic-lbl');
   let base = ta.value, final = base;
 
-  recognition.onstart = () => {
-    isRec = true;
-    btn.classList.add('rec');
-    lbl.textContent = '停止录音';
-  };
+  recognition.onstart  = () => { isRec = true;  btn.classList.add('rec');    lbl.textContent = '停止录音'; };
   recognition.onresult = (e) => {
     let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -684,19 +636,8 @@ function toggleVoice() {
     ta.value = final + interim;
     updateCount();
   };
-  recognition.onend = () => {
-    isRec = false;
-    btn.classList.remove('rec');
-    lbl.textContent = '语音输入';
-    ta.value = final;
-    updateCount();
-  };
-  recognition.onerror = (e) => {
-    isRec = false;
-    btn.classList.remove('rec');
-    lbl.textContent = '语音输入';
-    if (e.error !== 'aborted') console.warn('语音错误:', e.error);
-  };
+  recognition.onend    = () => { isRec = false; btn.classList.remove('rec'); lbl.textContent = '语音输入'; ta.value = final; updateCount(); };
+  recognition.onerror  = (e) => { isRec = false; btn.classList.remove('rec'); lbl.textContent = '语音输入'; if (e.error !== 'aborted') console.warn('语音错误:', e.error); };
   recognition.start();
 }
 
@@ -705,121 +646,27 @@ function updateCount() {
     `${document.getElementById('q-ta').value.length} 字`;
 }
 
-// ══════════════════════════════════════════════════════════════
-// UI 渲染
-// ══════════════════════════════════════════════════════════════
-function renderDots() {
-  document.getElementById('q-dots').innerHTML = session.map((_, i) => {
-    const cls = i < idx ? 'dot done' : i === idx ? 'dot cur' : 'dot';
-    return `<div class="${cls}"></div>`;
-  }).join('');
+// ══════════════════════════════════════════════════════════════════════════════
+// 工具
+// ══════════════════════════════════════════════════════════════════════════════
+
+function show(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
 }
 
-function showQ() {
-  const item = session[idx];
-  document.getElementById('q-cat').textContent = item.cat;
-  document.getElementById('q-num').textContent = `第 ${state.answers.length + 1} 题`;
-  document.getElementById('q-text').textContent = item.q;
-  document.getElementById('q-ta').value = '';
-  document.getElementById('char-ct').textContent = '0 字';
-  document.getElementById('q-err').innerHTML = '';
-  renderDots();
-  show('sec-q');
-  document.getElementById('q-ta').focus();
-}
-
-function submitAnswer() {
-  const answer = document.getElementById('q-ta').value.trim();
-  if (!answer) {
-    document.getElementById('q-err').innerHTML =
-      '<div class="err">请先写下你的回答，或者点击"跳过这题"。</div>';
-    return;
-  }
-  const item = session[idx];
-  state.answers.push({
-    id: item.id, type: item.type, cat: item.cat,
-    question: item.q, answer,
-    timestamp: new Date().toISOString(),
-  });
-  if (item.type === 'fixed') state.doneIds.push(item.id);
-  item.answered = true;
-  save();
-  updateHdr();
-  next();
-}
-
-function skipQ() {
-  const item = session[idx];
-  if (item.type === 'fixed') { state.doneIds.push(item.id); save(); }
-  next();
-}
-
-function next() {
-  idx++;
-  if (idx >= session.length) showBetween();
-  else showQ();
-}
-
-function showBetween() {
-  const justDone = session.filter(q => q.answered);
-  const total = state.answers.length;
-  document.getElementById('bw-desc').textContent =
-    `你已经回答了 ${total} 个问题。${justDone.length ? '这轮的回答：' : ''}`;
-  document.getElementById('bw-list').innerHTML = justDone.map(item => {
-    const a = state.answers.find(x => x.question === item.q);
-    if (!a) return '';
-    const preview = a.answer.length > 60 ? a.answer.slice(0, 60) + '…' : a.answer;
-    return `<div class="between-item"><div class="between-q">${item.q}</div><div>${preview}</div></div>`;
-  }).join('');
-  show('sec-between');
-}
-
-function restForNow() {
+function updateHdr() {
   const n = state.answers.length;
-  document.getElementById('w-title').textContent = '今天到这里吧';
-  document.getElementById('w-desc').innerHTML =
-    `你已经分享了 ${n} 个故事片段。<br>随时回来继续，你的答案都保存好了。`;
-  document.getElementById('btn-start').textContent = '继续回答 →';
-  show('sec-welcome');
+  document.getElementById('hdr-prog').textContent = n ? `已回答 ${n} 题` : '';
+  document.getElementById('btn-gen').disabled = n === 0;
+  document.getElementById('prog-fill').style.width = `${Math.min(n / 15 * 100, 100)}%`;
 }
 
-// ══════════════════════════════════════════════════════════════
-// 主流程
-// ══════════════════════════════════════════════════════════════
-async function startSession() {
-  show('sec-loading');
-  document.getElementById('loading-msg').textContent = '正在准备问题…';
-  try {
-    session = await buildSession();
-    idx = 0;
-    if (!session.length) {
-      document.getElementById('w-title').textContent = '了不起';
-      document.getElementById('w-desc').innerHTML = '你已经回答了所有问题！<br>现在可以生成你的生平故事了。';
-      document.getElementById('btn-start').style.display = 'none';
-      show('sec-welcome');
-      return;
-    }
-    showQ();
-  } catch (e) {
-    console.error(e);
-    show('sec-welcome');
-  }
-}
-
-function showPrevStory() {
-  if (state.lastStory) { renderStory(state.lastStory); show('sec-story'); }
-}
-
-function resetAll() {
-  if (!confirm('确定要清除所有回答和数据吗？此操作不可撤销。')) return;
-  localStorage.removeItem(SK);
-  location.reload();
-}
-
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 // 初始化
-// ══════════════════════════════════════════════════════════════
-state = load();
+// ══════════════════════════════════════════════════════════════════════════════
+
+state = loadState();
 updateHdr();
 
 if (state.answers.length > 0) {
@@ -827,7 +674,7 @@ if (state.answers.length > 0) {
   document.getElementById('w-desc').innerHTML =
     `你已经分享了 ${state.answers.length} 个故事片段。<br>准备好继续了吗？`;
   document.getElementById('btn-start').textContent = '继续 →';
-  if (state.lastStory) document.getElementById('btn-view-prev').style.display = '';
+  if (state.lastStory) document.getElementById('btn-prev-story').classList.remove('hidden');
 }
 
 document.getElementById('q-ta').addEventListener('input', updateCount);
