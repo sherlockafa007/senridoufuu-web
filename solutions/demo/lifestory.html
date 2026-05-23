@@ -360,6 +360,8 @@ let currentQ   = null;  // 当前题目对象
 let prevSec    = 'sec-welcome';
 let recognition = null;
 let isRec      = false;
+let recTimer   = null;
+let recSeconds = 0;
 
 function loadState()  { try { return JSON.parse(localStorage.getItem(SK)) || defState(); } catch { return defState(); } }
 function saveState()  { localStorage.setItem(SK, JSON.stringify(state)); }
@@ -428,6 +430,17 @@ async function callAnalyze(question, answer) {
   return data.analysis;
 }
 
+async function callBridge(lastAnswer, nextQuestion) {
+  const res = await fetch('/.netlify/functions/lifestory', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'bridge', lastAnswer, nextQuestion }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data.bridge || '';
+}
+
 async function genStory() {
   if (!state.answers.length) return;
   prevSec = document.querySelector('.sec.on')?.id || 'sec-welcome';
@@ -455,15 +468,14 @@ async function genStory() {
 // 主流程
 // ══════════════════════════════════════════════════════════════════════════════
 
-// nextTurn：分析上一条回答（如有），然后展示下一道题
-async function nextTurn(analysis) {
+// nextTurn：选下一道题，如有 lastAnswer 则生成衔接语
+async function nextTurn(analysis, lastAnswer) {
   show('sec-loading');
   document.getElementById('loading-msg').textContent =
-    analysis ? '正在理解你的回答…' : '正在准备问题…';
+    lastAnswer ? '正在思考下一个问题…' : '正在准备问题…';
 
   const next = pickNext(analysis);
   if (!next) {
-    // 所有题目已用完
     showBetween('你已经回答了所有问题！', true);
     return;
   }
@@ -471,7 +483,15 @@ async function nextTurn(analysis) {
   currentQ = next;
   if (!state.usedIds.includes(next.id)) state.usedIds.push(next.id);
   saveState();
-  showQ(next, analysis?.transition || '');
+
+  // 知道下一题后，才生成精准衔接语
+  let bridge = '';
+  if (lastAnswer && !analysis?.isEvasion) {
+    try { bridge = await callBridge(lastAnswer, next.text); }
+    catch { bridge = ''; }
+  }
+
+  showQ(next, bridge);
 }
 
 function showQ(q, transition) {
@@ -502,7 +522,7 @@ async function submitAnswer() {
     analysis = await callAnalyze(currentQ.text, answer);
   } catch {
     // API 失败时退化处理，继续流程
-    analysis = { tags:[], year:null, location:null, isEvasion:false, transition:'', softLanding:null };
+    analysis = { tags:[], year:null, location:null, isEvasion:false, softLanding:null };
   }
 
   // 累积标签
@@ -541,7 +561,7 @@ async function submitAnswer() {
     return;
   }
 
-  await nextTurn(analysis);
+  await nextTurn(analysis, answer);
 }
 
 function skipCurrent() {
@@ -612,9 +632,22 @@ function initRec() {
   if (!SR) return false;
   recognition = new SR();
   recognition.lang = 'zh-CN';
-  recognition.continuous = false;
+  recognition.continuous = true;   // 不自动停止，手动控制
   recognition.interimResults = true;
   return true;
+}
+
+function startRecTimer() {
+  recSeconds = 0;
+  recTimer = setInterval(() => {
+    recSeconds++;
+    document.getElementById('mic-lbl').textContent = `录音中… ${recSeconds} 秒`;
+  }, 1000);
+}
+
+function stopRecTimer() {
+  if (recTimer) { clearInterval(recTimer); recTimer = null; }
+  document.getElementById('mic-lbl').textContent = '语音输入';
 }
 
 function toggleVoice() {
@@ -623,21 +656,36 @@ function toggleVoice() {
 
   const ta  = document.getElementById('q-ta');
   const btn = document.getElementById('btn-mic');
-  const lbl = document.getElementById('mic-lbl');
-  let base = ta.value, final = base;
+  const accumulated = ta.value;   // 手动录音前已有的文字
+  let finalBuffer = '';           // 本次录音中已确定的文字
 
-  recognition.onstart  = () => { isRec = true;  btn.classList.add('rec');    lbl.textContent = '停止录音'; };
+  recognition.onstart = () => {
+    isRec = true;
+    btn.classList.add('rec');
+    startRecTimer();
+  };
   recognition.onresult = (e) => {
     let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalBuffer += e.results[i][0].transcript;
       else interim = e.results[i][0].transcript;
     }
-    ta.value = final + interim;
+    ta.value = accumulated + finalBuffer + interim;
     updateCount();
   };
-  recognition.onend    = () => { isRec = false; btn.classList.remove('rec'); lbl.textContent = '语音输入'; ta.value = final; updateCount(); };
-  recognition.onerror  = (e) => { isRec = false; btn.classList.remove('rec'); lbl.textContent = '语音输入'; if (e.error !== 'aborted') console.warn('语音错误:', e.error); };
+  recognition.onend = () => {
+    isRec = false;
+    btn.classList.remove('rec');
+    stopRecTimer();
+    ta.value = accumulated + finalBuffer;
+    updateCount();
+  };
+  recognition.onerror = (e) => {
+    isRec = false;
+    btn.classList.remove('rec');
+    stopRecTimer();
+    if (e.error !== 'aborted') console.warn('语音错误:', e.error);
+  };
   recognition.start();
 }
 
