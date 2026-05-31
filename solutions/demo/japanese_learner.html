@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日語学習ツール · 千里同風</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Noto Sans SC', system-ui, sans-serif; }
+    .jp { font-family: 'Noto Sans JP', system-ui, sans-serif; }
+    ruby { ruby-align: center; }
+    rt { font-size: 0.52em; color: #9ca3af; letter-spacing: 0.02em; }
+
+    .tab-on  { background: #2563eb; color: #fff; }
+    .tab-off { background: transparent; color: #6b7280; }
+    .tab-off:hover { color: #374151; }
+
+    .word-card-on  { border-color: #3b82f6; background: #eff6ff; }
+    .word-card-off { border-color: #f3f4f6; background: #fff; }
+    .word-card-off:hover { border-color: #d1d5db; }
+
+    .conj-row:hover { background: #f9fafb; border-radius: 6px; }
+
+    .ans-btn {
+      transition: all .15s;
+      border: 2px solid #e5e7eb;
+      background: #fff;
+      color: #374151;
+    }
+    .ans-btn:hover:not(:disabled) { border-color: #93c5fd; background: #eff6ff; }
+    .ans-btn:disabled { cursor: default; }
+    .ans-correct { border-color: #10b981 !important; background: #d1fae5 !important; color: #065f46 !important; }
+    .ans-wrong   { border-color: #ef4444 !important; background: #fee2e2 !important; color: #991b1b !important; }
+    .ans-show    { border-color: #10b981 !important; background: #d1fae5 !important; color: #065f46 !important; }
+    .ans-dim     { border-color: #f3f4f6 !important; color: #9ca3af !important; }
+
+    .fade-in { animation: fi .18s ease both; }
+    @keyframes fi { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+  </style>
+</head>
+<body class="bg-stone-50 min-h-screen">
+
+<!-- ══ Header ════════════════════════════════════════════════════ -->
+<header class="bg-white border-b border-gray-100 sticky top-0 z-20">
+  <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <a href="../demo.html" class="text-gray-400 hover:text-gray-600 text-sm flex-shrink-0">← 返回</a>
+      <span class="text-gray-200">|</span>
+      <span class="jp font-semibold text-gray-800 truncate">日語基礎学習ツール</span>
+      <span class="hidden sm:inline text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded flex-shrink-0">词汇 · 变形 · 测试</span>
+    </div>
+    <!-- Tabs -->
+    <div class="flex gap-1 bg-gray-100 rounded-lg p-1 flex-shrink-0">
+      <button id="tab-learn" onclick="setTab('learn')"
+        class="tab-on px-4 py-1.5 rounded-md text-sm font-medium transition-all">
+        📖 学习
+      </button>
+      <button id="tab-quiz" onclick="setTab('quiz')"
+        class="tab-off px-4 py-1.5 rounded-md text-sm font-medium transition-all">
+        ✏️ 测试
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ══ Main ══════════════════════════════════════════════════════ -->
+<div class="max-w-6xl mx-auto px-4 py-5">
+
+  <!-- ─── LEARN TAB ─────────────────────────────────────────── -->
+  <div id="learn-view">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <!-- Left: Word List -->
+      <div class="md:col-span-1 flex flex-col gap-3">
+        <!-- Search -->
+        <div class="relative">
+          <input id="search-input" type="text" placeholder="搜索单词、罗马音…"
+            oninput="onSearch(this.value)"
+            class="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition">
+          <span class="absolute left-2.5 top-2.5 text-gray-400 text-xs">🔍</span>
+        </div>
+        <!-- POS Filter -->
+        <div id="pos-filter" class="flex flex-wrap gap-1.5"></div>
+        <!-- Cards -->
+        <div id="word-list" class="space-y-1.5 overflow-y-auto" style="max-height: calc(100vh - 230px)"></div>
+      </div>
+
+      <!-- Right: Word Detail -->
+      <div class="md:col-span-2">
+        <div id="word-detail"
+          class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 min-h-64 fade-in"
+          style="position: sticky; top: 72px;">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── QUIZ TAB ───────────────────────────────────────────── -->
+  <div id="quiz-view" class="hidden max-w-xl mx-auto">
+
+    <!-- Mode Selector -->
+    <div class="grid grid-cols-2 gap-2 mb-5">
+      <button id="qm-meaning" onclick="setQuizMode('meaning')"
+        class="py-2.5 rounded-xl text-sm font-medium border-2 transition-all border-blue-500 bg-blue-50 text-blue-700">
+        🀄 词义辨析
+      </button>
+      <button id="qm-conjugation" onclick="setQuizMode('conjugation')"
+        class="py-2.5 rounded-xl text-sm font-medium border-2 transition-all border-gray-200 bg-white text-gray-500">
+        🔀 变形挑战
+      </button>
+    </div>
+
+    <!-- Score Row -->
+    <div class="flex items-center justify-between mb-4">
+      <span id="score-text" class="text-sm text-gray-400">准备好了，开始！</span>
+      <div id="score-dots" class="flex gap-1"></div>
+    </div>
+
+    <!-- Question Card -->
+    <div id="question-card"
+      class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4 text-center min-h-36 flex flex-col items-center justify-center fade-in">
+    </div>
+
+    <!-- Answer Grid -->
+    <div id="answer-options" class="grid grid-cols-2 gap-3 mb-4"></div>
+
+    <!-- Feedback -->
+    <div id="quiz-feedback" class="hidden mb-4"></div>
+
+    <!-- Next Button -->
+    <div class="flex justify-center">
+      <button id="next-btn" onclick="nextQuestion()"
+        class="hidden px-10 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-colors">
+        下一题 →
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script src="japanese_learner.js"></script>
+</body>
+</html>
