@@ -387,6 +387,7 @@ const NAV_HTML = `
           </div>
         </div>
       </div>
+      <a href="/account.html" class="nav__link" style="font-size:0.8125rem;opacity:.7;">会员</a>
       <div class="nav__lang" id="langDesktop">
         <button class="nav__lang-btn" data-lang="ja">日</button>
         <span class="nav__lang-sep">/</span>

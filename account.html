@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>会员中心 · 千里同風</title>
+  <!-- Netlify Identity Widget — must load before body so tokens in hash are detected -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:     #faf9f7;
+      --paper:  #ffffff;
+      --text:   #1f1c17;
+      --text2:  #6b6359;
+      --accent: #2563eb;
+      --border: #e8e2da;
+    }
+    body {
+      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    /* ── Header ── */
+    .hdr {
+      padding: 18px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--paper);
+    }
+    .hdr a {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+    }
+    .hdr a:hover { color: var(--accent); }
+    /* ── Card ── */
+    .wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 52px 44px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+    }
+    .icon { font-size: 52px; margin-bottom: 20px; }
+    .card-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .card-desc {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.9;
+      margin-bottom: 32px;
+    }
+    /* ── Buttons ── */
+    .btn-primary {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity .2s;
+      text-decoration: none;
+      margin-bottom: 10px;
+    }
+    .btn-primary:hover { opacity: .88; }
+    .btn-secondary {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      background: none;
+      color: var(--text2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+      text-decoration: none;
+      margin-bottom: 10px;
+    }
+    .btn-secondary:hover { border-color: #9ca3af; color: var(--text); }
+    .btn-danger {
+      display: inline-block;
+      margin-top: 20px;
+      background: none;
+      border: none;
+      font-size: 13px;
+      color: #9ca3af;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-danger:hover { color: #ef4444; }
+    /* ── User state ── */
+    #state-loading { display: block; }
+    #state-guest   { display: none; }
+    #state-member  { display: none; }
+    .member-email {
+      font-size: 13px;
+      color: var(--text2);
+      margin-bottom: 24px;
+      padding: 8px 16px;
+      background: #f3f4f6;
+      border-radius: 8px;
+    }
+    .tool-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 14px;
+      transition: border-color .2s, background .2s;
+      margin-bottom: 10px;
+      text-align: left;
+    }
+    .tool-link:hover { border-color: var(--accent); background: #eff6ff; }
+    .tool-link__name { font-weight: 500; }
+    .tool-link__desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .tool-link__arrow { color: #9ca3af; font-size: 16px; }
+    /* ── Footer ── */
+    .foot {
+      padding: 20px 32px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+    }
+    @media (max-width: 500px) {
+      .card { padding: 36px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="hdr">
+  <a href="./">千里同風 株式会社</a>
+</header>
+
+<div class="wrap">
+  <div class="card">
+
+    <!-- Loading -->
+    <div id="state-loading">
+      <div class="icon">⟳</div>
+      <p class="card-desc">正在验证身份…</p>
+    </div>
+
+    <!-- Guest (not logged in) -->
+    <div id="state-guest">
+      <div class="icon">🔑</div>
+      <h1 class="card-title">会员中心</h1>
+      <p class="card-desc">
+        此区域仅对受邀会员开放。<br>
+        如已收到邀请邮件，请点击邮件中的链接完成注册；<br>
+        已有账号可直接登录。
+      </p>
+      <button class="btn-primary" onclick="netlifyIdentity.open()">登录 / 注册</button>
+      <a class="btn-secondary" href="./">← 返回首页</a>
+    </div>
+
+    <!-- Member (logged in) -->
+    <div id="state-member">
+      <div class="icon">✦</div>
+      <h1 class="card-title">欢迎回来</h1>
+      <p class="member-email" id="member-email"></p>
+      <div id="tool-list">
+        <a class="tool-link" href="solutions/demo/japanese_learner.html">
+          <div>
+            <div class="tool-link__name">日語基礎学習ツール</div>
+            <div class="tool-link__desc">词汇 · 变形引擎 · 小测试</div>
+          </div>
+          <span class="tool-link__arrow">→</span>
+        </a>
+        <a class="tool-link" href="solutions/demo.html">
+          <div>
+            <div class="tool-link__name">全部演示工具</div>
+            <div class="tool-link__desc">翻译 · 文档分析 · 生平故事</div>
+          </div>
+          <span class="tool-link__arrow">→</span>
+        </a>
+      </div>
+      <button class="btn-danger" onclick="doLogout()">退出登录</button>
+    </div>
+
+  </div>
+</div>
+
+<footer class="foot">© 2024 千里同風株式会社</footer>
+
+<script>
+  function show(id) {
+    ['state-loading','state-guest','state-member'].forEach(function(s){
+      document.getElementById(s).style.display = s === id ? 'block' : 'none';
+    });
+  }
+
+  function setUser(user) {
+    if (user) {
+      document.getElementById('member-email').textContent = user.email;
+      show('state-member');
+    } else {
+      show('state-guest');
+    }
+  }
+
+  function doLogout() {
+    netlifyIdentity.logout();
+  }
+
+  netlifyIdentity.on('init',  function(u){ setUser(u); });
+  netlifyIdentity.on('login', function(u){ setUser(u); netlifyIdentity.close(); });
+  netlifyIdentity.on('logout', function(){ show('state-guest'); });
+
+  // Initialize — widget will auto-detect invite/recovery tokens in URL hash
+  netlifyIdentity.init();
+</script>
+
+</body>
+</html>

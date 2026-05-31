@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>日語学習ツール · 千里同風</title>
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
@@ -41,6 +42,45 @@
 
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+    .word-list-h { max-height: calc(100vh - 230px); }
+    .detail-sticky { position: sticky; top: 72px; }
+
+    /* ── Auth Gate ── */
+    #auth-gate {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      align-items: center; justify-content: center;
+      background: rgba(28,25,20,.72);
+      backdrop-filter: blur(6px);
+    }
+    .auth-card {
+      background: #fff; border-radius: 18px;
+      padding: 52px 44px; max-width: 400px;
+      width: calc(100% - 48px); text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,.18);
+    }
+    .auth-icon { font-size: 48px; margin-bottom: 20px; }
+    .auth-title {
+      font-family: 'Noto Sans SC', sans-serif;
+      font-size: 20px; font-weight: 600;
+      color: #1c1917; margin-bottom: 10px;
+    }
+    .auth-desc {
+      font-size: 14px; color: #78716c;
+      line-height: 1.85; margin-bottom: 28px;
+    }
+    .auth-btn {
+      display: block; width: 100%; padding: 14px;
+      background: #2563eb; color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 15px; font-family: inherit;
+      cursor: pointer; margin-bottom: 10px;
+    }
+    .auth-back {
+      display: block; font-size: 13px;
+      color: #9ca3af; text-decoration: none;
+    }
+    .auth-back:hover { color: #6b7280; }
   </style>
 </head>
 <body class="bg-stone-50 min-h-screen">
@@ -48,7 +88,7 @@
 <!-- ══ Header ════════════════════════════════════════════════════ -->
 <header class="bg-white border-b border-gray-100 sticky top-0 z-20">
   <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-    <div class="flex items-center gap-3 min-w-0">
+    <div class="flex items-center gap-3 flex-1 min-w-0">
       <a href="../demo.html" class="text-gray-400 hover:text-gray-600 text-sm flex-shrink-0">← 返回</a>
       <span class="text-gray-200">|</span>
       <span class="jp font-semibold text-gray-800 truncate">日語基礎学習ツール</span>
@@ -56,13 +96,21 @@
     </div>
     <!-- Tabs -->
     <div class="flex gap-1 bg-gray-100 rounded-lg p-1 flex-shrink-0">
-      <button id="tab-learn" onclick="setTab('learn')"
+      <button type="button" id="tab-learn" onclick="setTab('learn')"
         class="tab-on px-4 py-1.5 rounded-md text-sm font-medium transition-all">
         📖 学习
       </button>
-      <button id="tab-quiz" onclick="setTab('quiz')"
+      <button type="button" id="tab-quiz" onclick="setTab('quiz')"
         class="tab-off px-4 py-1.5 rounded-md text-sm font-medium transition-all">
         ✏️ 测试
+      </button>
+    </div>
+    <!-- User area (shown after login) -->
+    <div id="user-area" class="hidden items-center gap-2 flex-shrink-0">
+      <span id="user-email" class="text-xs text-gray-400 hidden sm:block max-w-32 truncate"></span>
+      <button type="button" onclick="netlifyIdentity.logout()"
+        class="text-xs px-2 py-1 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors">
+        退出
       </button>
     </div>
   </div>
@@ -87,14 +135,13 @@
         <!-- POS Filter -->
         <div id="pos-filter" class="flex flex-wrap gap-1.5"></div>
         <!-- Cards -->
-        <div id="word-list" class="space-y-1.5 overflow-y-auto" style="max-height: calc(100vh - 230px)"></div>
+        <div id="word-list" class="space-y-1.5 overflow-y-auto word-list-h"></div>
       </div>
 
       <!-- Right: Word Detail -->
       <div class="md:col-span-2">
         <div id="word-detail"
-          class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 min-h-64 fade-in"
-          style="position: sticky; top: 72px;">
+          class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 min-h-64 fade-in detail-sticky">
         </div>
       </div>
 
@@ -106,11 +153,11 @@
 
     <!-- Mode Selector -->
     <div class="grid grid-cols-2 gap-2 mb-5">
-      <button id="qm-meaning" onclick="setQuizMode('meaning')"
+      <button type="button" id="qm-meaning" onclick="setQuizMode('meaning')"
         class="py-2.5 rounded-xl text-sm font-medium border-2 transition-all border-blue-500 bg-blue-50 text-blue-700">
         🀄 词义辨析
       </button>
-      <button id="qm-conjugation" onclick="setQuizMode('conjugation')"
+      <button type="button" id="qm-conjugation" onclick="setQuizMode('conjugation')"
         class="py-2.5 rounded-xl text-sm font-medium border-2 transition-all border-gray-200 bg-white text-gray-500">
         🔀 变形挑战
       </button>
@@ -135,7 +182,7 @@
 
     <!-- Next Button -->
     <div class="flex justify-center">
-      <button id="next-btn" onclick="nextQuestion()"
+      <button type="button" id="next-btn" onclick="nextQuestion()"
         class="hidden px-10 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-colors">
         下一题 →
       </button>
@@ -145,5 +192,47 @@
 </div>
 
 <script src="japanese_learner.js"></script>
+
+<!-- ══ Auth Gate Overlay ══════════════════════════════════════════ -->
+<div id="auth-gate">
+  <div class="auth-card">
+    <div class="auth-icon">🔑</div>
+    <h2 class="auth-title">会员专属功能</h2>
+    <p class="auth-desc">
+      此工具仅对受邀会员开放。<br>
+      已收到邀请邮件请点击邮件链接完成注册，<br>
+      已有账号可直接登录。
+    </p>
+    <button type="button" class="auth-btn" onclick="netlifyIdentity.open()">
+      登录 / 注册
+    </button>
+    <a href="../demo.html" class="auth-back">← 返回演示页面</a>
+  </div>
+</div>
+
+<script>
+  function _authShowGate()   { document.getElementById('auth-gate').style.display = 'flex'; }
+  function _authHideGate()   { document.getElementById('auth-gate').style.display = 'none'; }
+  function _authShowUser(u)  {
+    var area = document.getElementById('user-area');
+    var mail = document.getElementById('user-email');
+    area.style.display = 'flex';
+    mail.textContent = u.email;
+  }
+  function _authHideUser()   { document.getElementById('user-area').style.display = 'none'; }
+
+  netlifyIdentity.on('init', function(u) {
+    if (u) { _authHideGate(); _authShowUser(u); }
+    else   { _authShowGate(); }
+  });
+  netlifyIdentity.on('login', function(u) {
+    _authHideGate(); _authShowUser(u); netlifyIdentity.close();
+  });
+  netlifyIdentity.on('logout', function() {
+    _authShowGate(); _authHideUser();
+  });
+
+  netlifyIdentity.init();
+</script>
 </body>
 </html>

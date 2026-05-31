@@ -2,6 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <!-- Redirect Netlify Identity invite/recovery tokens to account page -->
+  <script>(function(){var h=location.hash;if(h&&(h.includes('invite_token')||h.includes('recovery_token')||h.includes('access_token'))){location.replace('/account.html'+h);}})();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>千里同風株式会社 — AIハードウェア研究・企画</title>
   <meta name="description" content="千里同風株式会社は、生成AIを搭載したハードウェア製品の研究・企画に特化した会社です。大阪を拠点に、人と技術の距離を縮める製品を生み出します。">
