@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>内容管理 · 千里同風</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #faf9f7; --paper: #fff; --border: #e8e2da;
+      --text: #1f1c17; --text2: #6b6359; --text3: #9ca3af;
+      --accent: #2563eb; --green: #10b981; --red: #ef4444;
+    }
+    body { font-family: 'Noto Sans SC', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Login ── */
+    #login {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .login-card {
+      background: var(--paper); border: 1px solid var(--border); border-radius: 16px;
+      padding: 48px 40px; max-width: 420px; width: 100%; text-align: center;
+    }
+    .login-logo { font-size: 28px; font-weight: 700; letter-spacing: .1em; margin-bottom: 6px; }
+    .login-sub { font-size: 13px; color: var(--text3); margin-bottom: 32px; }
+    .login-label { display: block; text-align: left; font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+    .login-input {
+      display: block; width: 100%; padding: 11px 14px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; font-family: monospace; outline: none;
+      transition: border-color .15s;
+    }
+    .login-input:focus { border-color: var(--accent); }
+    .login-hint { font-size: 12px; color: var(--text3); text-align: left; margin-top: 8px; margin-bottom: 24px; line-height: 1.7; }
+    .login-hint a { color: var(--accent); }
+    .btn-primary {
+      display: block; width: 100%; padding: 13px; background: var(--accent); color: #fff;
+      border: none; border-radius: 10px; font-size: 15px; font-family: inherit;
+      cursor: pointer; transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .88; }
+    .btn-primary:disabled { opacity: .5; cursor: default; }
+    .login-err { font-size: 13px; color: var(--red); margin-top: 12px; min-height: 18px; }
+
+    /* ── Editor ── */
+    #editor { display: none; }
+    .top-bar {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--paper); border-bottom: 1px solid var(--border);
+      padding: 0 24px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .top-bar__title { font-weight: 500; font-size: 15px; }
+    .top-bar__right { display: flex; align-items: center; gap: 10px; }
+    .status { font-size: 12px; color: var(--text3); }
+    .status.ok { color: var(--green); }
+    .status.err { color: var(--red); }
+    .btn-save {
+      padding: 8px 20px; background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; font-size: 13px; font-family: inherit; cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn-save:hover { opacity: .88; }
+    .btn-save:disabled { opacity: .5; cursor: default; }
+    .btn-link { background: none; border: none; font-size: 12px; color: var(--text3); cursor: pointer; }
+    .btn-link:hover { color: var(--red); }
+
+    /* ── Tabs ── */
+    .tab-bar {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      padding: 0 24px; background: var(--paper);
+    }
+    .tab-btn {
+      padding: 12px 18px; font-size: 13px; font-family: inherit; background: none; border: none;
+      border-bottom: 2px solid transparent; cursor: pointer; color: var(--text3);
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-btn:hover:not(.active) { color: var(--text2); }
+
+    /* ── Content area ── */
+    .content-area { max-width: 860px; margin: 0 auto; padding: 24px; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── Section ── */
+    .section-block { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .section-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; cursor: pointer; background: var(--paper);
+      user-select: none;
+    }
+    .section-hd:hover { background: #faf9f7; }
+    .section-hd__title { font-size: 13px; font-weight: 500; color: var(--text2); }
+    .section-hd__arrow { font-size: 11px; color: var(--text3); transition: transform .2s; }
+    .section-hd__arrow.open { transform: rotate(90deg); }
+    .section-body { padding: 16px 18px 18px; border-top: 1px solid var(--border); background: var(--bg); }
+    .section-body.collapsed { display: none; }
+
+    /* ── Field ── */
+    .field-row { margin-bottom: 14px; }
+    .field-row:last-child { margin-bottom: 0; }
+    .field-label { font-size: 12px; color: var(--text3); margin-bottom: 5px; }
+    .field-input, .field-textarea {
+      width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px;
+      font-size: 13px; font-family: inherit; background: var(--paper); color: var(--text);
+      outline: none; transition: border-color .15s; resize: vertical;
+    }
+    .field-input:focus, .field-textarea:focus { border-color: var(--accent); }
+    .field-textarea { min-height: 72px; line-height: 1.65; }
+
+    /* ── Images ── */
+    .img-field { margin-bottom: 18px; }
+    .img-field:last-child { margin-bottom: 0; }
+    .img-label { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    .img-hint { font-size: 12px; color: var(--text3); margin-bottom: 8px; }
+    .img-row { display: flex; gap: 10px; align-items: flex-start; }
+    .img-input {
+      flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px;
+      font-size: 13px; font-family: monospace; background: var(--paper); color: var(--text);
+      outline: none; transition: border-color .15s;
+    }
+    .img-input:focus { border-color: var(--accent); }
+    .img-preview { width: 56px; height: 56px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); display: none; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 48px 0; color: var(--text3); font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<!-- ══ Login ══════════════════════════════════════════════════════════ -->
+<div id="login">
+  <div class="login-card">
+    <div class="login-logo">千里同風</div>
+    <div class="login-sub">内容管理后台</div>
+    <label class="login-label">GitHub Personal Access Token</label>
+    <input id="pat-input" class="login-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxx" autocomplete="off">
+    <p class="login-hint">
+      前往 <a href="https://github.com/settings/tokens/new" target="_blank">GitHub → Settings → Tokens</a>，
+      生成 Fine-grained token，勾选仓库 <code>senridoufuu-web</code>，权限选 <strong>Contents: Read and write</strong>。
+      Token 只保存在本浏览器，不会上传。
+    </p>
+    <button class="btn-primary" id="connect-btn" onclick="connect()">连接</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ══ Editor ═════════════════════════════════════════════════════════ -->
+<div id="editor">
+  <div class="top-bar">
+    <span class="top-bar__title">千里同風 · 内容管理</span>
+    <div class="top-bar__right">
+      <span class="status" id="status"></span>
+      <button class="btn-save" id="save-btn" onclick="save()">保存并发布</button>
+      <button class="btn-link" onclick="disconnect()">断开连接</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="setTab('zh')">中文</button>
+    <button class="tab-btn" onclick="setTab('ja')">日本語</button>
+    <button class="tab-btn" onclick="setTab('en')">English</button>
+    <button class="tab-btn" onclick="setTab('images')">图片</button>
+  </div>
+
+  <div class="content-area">
+    <div id="pane-zh" class="tab-pane active"></div>
+    <div id="pane-ja" class="tab-pane"></div>
+    <div id="pane-en" class="tab-pane"></div>
+    <div id="pane-images" class="tab-pane"></div>
+  </div>
+</div>
+
+<script>
+const REPO = 'sherlockafa007/senridoufuu-web';
+const FILE = 'content.json';
+
+const SECTIONS = [
+  { id:'hero', label:'首页 · Hero', fields:[
+    { key:'hero_tagline', label:'主标语', multiline:true }
+  ]},
+  { id:'mission', label:'首页 · 使命', fields:[
+    { key:'mission_eyebrow', label:'眉标（小标题）' },
+    { key:'mission_title',   label:'标题', multiline:true },
+    { key:'mission_body',    label:'正文', multiline:true }
+  ]},
+  { id:'vision', label:'首页 · 愿景', fields:[
+    { key:'vision_eyebrow', label:'眉标' },
+    { key:'vision_title',   label:'标题', multiline:true },
+    { key:'vision_body',    label:'正文', multiline:true }
+  ]},
+  { id:'values', label:'首页 · 价值观', fields:[
+    { key:'values_eyebrow', label:'眉标' },
+    { key:'values_title',   label:'标题' },
+    { key:'val1_name', label:'价值观 01 名称' },
+    { key:'val1_desc', label:'价值观 01 描述', multiline:true },
+    { key:'val2_name', label:'价值观 02 名称' },
+    { key:'val2_desc', label:'价值观 02 描述', multiline:true },
+    { key:'val3_name', label:'价值观 03 名称' },
+    { key:'val3_desc', label:'价值观 03 描述', multiline:true }
+  ]},
+  { id:'about_teaser', label:'首页 · 关于预览', fields:[
+    { key:'about_teaser_eyebrow', label:'眉标' },
+    { key:'about_teaser_title',   label:'标题', multiline:true },
+    { key:'about_teaser_body',    label:'正文', multiline:true }
+  ]},
+  { id:'footer', label:'页脚', fields:[
+    { key:'footer_tagline', label:'品牌标语', multiline:true },
+    { key:'addr_street',    label:'街道地址' },
+    { key:'addr_city',      label:'城市' }
+  ]},
+  { id:'team', label:'关于我们 · 团队', fields:[
+    { key:'team_eyebrow', label:'眉标' },
+    { key:'team_title',   label:'标题' },
+    { key:'team_body',    label:'简介', multiline:true },
+    { key:'team1_role',   label:'成员 1 职位' },
+    { key:'team1_bio',    label:'成员 1 简介', multiline:true },
+    { key:'team2_role',   label:'成员 2 职位' },
+    { key:'team2_bio',    label:'成员 2 简介', multiline:true }
+  ]},
+  { id:'milestones', label:'关于我们 · 大事记', fields:[
+    { key:'milestones_eyebrow', label:'眉标' },
+    { key:'milestones_title',   label:'标题' },
+    { key:'milestones_body',    label:'简介', multiline:true },
+    { key:'ms1_event', label:'里程碑 1 事件' },
+    { key:'ms1_desc',  label:'里程碑 1 描述', multiline:true },
+    { key:'ms2_event', label:'里程碑 2 事件' },
+    { key:'ms2_desc',  label:'里程碑 2 描述', multiline:true },
+    { key:'ms3_event', label:'里程碑 3 事件' },
+    { key:'ms3_desc',  label:'里程碑 3 描述', multiline:true }
+  ]},
+  { id:'solutions', label:'解决方案 · 概述', fields:[
+    { key:'solutions_eyebrow', label:'眉标' },
+    { key:'solutions_title',   label:'标题' },
+    { key:'solutions_body',    label:'正文', multiline:true }
+  ]},
+  { id:'services', label:'解决方案 · 服务', fields:[
+    { key:'services_eyebrow', label:'眉标' },
+    { key:'services_title',   label:'标题' },
+    { key:'srv1_name', label:'服务 1 名称' },
+    { key:'srv1_desc', label:'服务 1 描述', multiline:true },
+    { key:'srv2_name', label:'服务 2 名称' },
+    { key:'srv2_desc', label:'服务 2 描述', multiline:true },
+    { key:'srv3_name', label:'服务 3 名称' },
+    { key:'srv3_desc', label:'服务 3 描述', multiline:true }
+  ]},
+  { id:'products', label:'解决方案 · 产品', fields:[
+    { key:'product1_name', label:'产品 1 名称' },
+    { key:'product1_desc', label:'产品 1 描述', multiline:true },
+    { key:'product2_name', label:'产品 2 名称' },
+    { key:'product2_desc', label:'产品 2 描述', multiline:true },
+    { key:'product3_name', label:'产品 3 名称' },
+    { key:'product3_desc', label:'产品 3 描述', multiline:true }
+  ]}
+];
+
+const IMAGE_FIELDS = [
+  { key:'team1_photo', label:'成员 1 照片', hint:'团队页面照片，建议正方形，JPG/PNG/WebP' },
+  { key:'team2_photo', label:'成员 2 照片', hint:'团队页面照片，建议正方形' },
+  { key:'og_image',    label:'社交分享图',  hint:'分享到微信、Twitter 时显示的预览图，建议 1200×630px' }
+];
+
+let pat = '';
+let fileSha = '';
+let currentOverrides = {};
+
+/* ── Auth ──────────────────────────────────────────────────────────── */
+async function connect() {
+  const val = document.getElementById('pat-input').value.trim();
+  if (!val) return;
+  const btn = document.getElementById('connect-btn');
+  btn.disabled = true;
+  btn.textContent = '连接中…';
+  document.getElementById('login-err').textContent = '';
+  try {
+    const res = await ghGet();
+    if (res.status === 401 || res.status === 403) throw new Error('Token 无效或权限不足，请检查后重试。');
+    pat = val;
+    localStorage.setItem('sdf_admin_pat', pat);
+    if (res.status === 200) {
+      const data = await res.json();
+      fileSha = data.sha;
+      currentOverrides = JSON.parse(atob(data.content.replace(/\n/g, '')));
+    }
+    buildEditor();
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('editor').style.display = 'block';
+  } catch(e) {
+    document.getElementById('login-err').textContent = e.message || '连接失败，请检查 Token。';
+    btn.disabled = false;
+    btn.textContent = '连接';
+  }
+}
+
+function disconnect() {
+  localStorage.removeItem('sdf_admin_pat');
+  pat = ''; fileSha = ''; currentOverrides = {};
+  document.getElementById('editor').style.display = 'none';
+  document.getElementById('login').style.display = 'flex';
+  document.getElementById('pat-input').value = '';
+}
+
+/* ── GitHub API ─────────────────────────────────────────────────────── */
+function ghGet() {
+  const v = document.getElementById('pat-input').value.trim() || pat;
+  return fetch(`https://api.github.com/repos/${REPO}/contents/${FILE}`, {
+    headers: { Authorization: `Bearer ${v}`, Accept: 'application/vnd.github+json' }
+  });
+}
+
+async function ghPut(content, sha) {
+  const body = { message: 'Update content via admin panel', content: btoa(unescape(encodeURIComponent(content))) };
+  if (sha) body.sha = sha;
+  const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${pat}`, 'Content-Type': 'application/json', Accept: 'application/vnd.github+json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`GitHub API 错误 ${res.status}`);
+  return res.json();
+}
+
+/* ── Build editor ───────────────────────────────────────────────────── */
+function buildEditor() {
+  ['zh','ja','en'].forEach(lang => {
+    const pane = document.getElementById(`pane-${lang}`);
+    pane.innerHTML = SECTIONS.map(sec => buildSection(sec, lang)).join('');
+    // open first section by default
+    const firstBody = pane.querySelector('.section-body');
+    const firstArrow = pane.querySelector('.section-hd__arrow');
+    if (firstBody) { firstBody.classList.remove('collapsed'); firstArrow.classList.add('open'); }
+  });
+  buildImages();
+  // restore saved values
+  const ov = currentOverrides;
+  ['zh','ja','en'].forEach(lang => {
+    if (!ov[lang]) return;
+    for (const [key, val] of Object.entries(ov[lang])) {
+      const el = document.getElementById(`${lang}__${key}`);
+      if (el) el.value = val;
+    }
+  });
+  if (ov.images) {
+    for (const [key, val] of Object.entries(ov.images)) {
+      const el = document.getElementById(`img__${key}`);
+      if (el) { el.value = val; updateImgPreview(key, val); }
+    }
+  }
+}
+
+function buildSection(sec, lang) {
+  const fields = sec.fields.map(f => {
+    const id = `${lang}__${f.key}`;
+    const input = f.multiline
+      ? `<textarea id="${id}" class="field-textarea" rows="3" placeholder="留空则使用默认值"></textarea>`
+      : `<input id="${id}" class="field-input" type="text" placeholder="留空则使用默认值">`;
+    return `<div class="field-row"><div class="field-label">${f.label}</div>${input}</div>`;
+  }).join('');
+  return `
+    <div class="section-block">
+      <div class="section-hd" onclick="toggleSection(this)">
+        <span class="section-hd__title">${sec.label}</span>
+        <span class="section-hd__arrow">▶</span>
+      </div>
+      <div class="section-body collapsed">${fields}</div>
+    </div>`;
+}
+
+function buildImages() {
+  const pane = document.getElementById('pane-images');
+  pane.innerHTML = `<div style="padding:4px 0">` + IMAGE_FIELDS.map(f => `
+    <div class="img-field">
+      <div class="img-label">${f.label}</div>
+      <div class="img-hint">${f.hint}</div>
+      <div class="img-row">
+        <input id="img__${f.key}" class="img-input" type="url" placeholder="https://…" oninput="updateImgPreview('${f.key}', this.value)">
+        <img id="imgprev__${f.key}" class="img-preview" alt="">
+      </div>
+    </div>`).join('') + `</div>`;
+}
+
+function updateImgPreview(key, url) {
+  const img = document.getElementById(`imgprev__${key}`);
+  if (!img) return;
+  if (url && url.startsWith('http')) {
+    img.src = url; img.style.display = 'block';
+    img.onerror = () => { img.style.display = 'none'; };
+  } else {
+    img.style.display = 'none';
+  }
+}
+
+/* ── Section toggle ─────────────────────────────────────────────────── */
+function toggleSection(hd) {
+  const body = hd.nextElementSibling;
+  const arrow = hd.querySelector('.section-hd__arrow');
+  body.classList.toggle('collapsed');
+  arrow.classList.toggle('open');
+}
+
+/* ── Tab switch ─────────────────────────────────────────────────────── */
+function setTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', ['zh','ja','en','images'][i] === name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById(`pane-${name}`).classList.add('active');
+}
+
+/* ── Save ───────────────────────────────────────────────────────────── */
+async function save() {
+  const btn = document.getElementById('save-btn');
+  const statusEl = document.getElementById('status');
+  btn.disabled = true; btn.textContent = '保存中…';
+  statusEl.className = 'status'; statusEl.textContent = '';
+  try {
+    const ov = { ja:{}, zh:{}, en:{}, images:{} };
+    ['zh','ja','en'].forEach(lang => {
+      SECTIONS.forEach(sec => {
+        sec.fields.forEach(f => {
+          const el = document.getElementById(`${lang}__${f.key}`);
+          const v = el ? el.value.trim() : '';
+          if (v) ov[lang][f.key] = v;
+        });
+      });
+    });
+    IMAGE_FIELDS.forEach(f => {
+      const el = document.getElementById(`img__${f.key}`);
+      const v = el ? el.value.trim() : '';
+      if (v) ov.images[f.key] = v;
+    });
+    const json = JSON.stringify(ov, null, 2);
+    const res = await ghPut(json, fileSha || undefined);
+    fileSha = res.content.sha;
+    currentOverrides = ov;
+    statusEl.className = 'status ok'; statusEl.textContent = '✓ 已保存，部署中…';
+    setTimeout(() => { statusEl.textContent = ''; }, 5000);
+  } catch(e) {
+    statusEl.className = 'status err'; statusEl.textContent = '✗ 保存失败：' + e.message;
+  }
+  btn.disabled = false; btn.textContent = '保存并发布';
+}
+
+/* ── Auto-login ─────────────────────────────────────────────────────── */
+(function() {
+  const saved = localStorage.getItem('sdf_admin_pat');
+  if (saved) { document.getElementById('pat-input').value = saved; connect(); }
+})();
+</script>
+</body>
+</html>

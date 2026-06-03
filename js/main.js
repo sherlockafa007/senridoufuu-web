@@ -46,6 +46,8 @@ const T = {
     about_teaser_body:    '千里同風株式会社は、生成AI搭載ハードウェアの研究・企画に特化した会社です。市場調査から製品コンセプト開発まで、一貫したサポートを提供します。',
     about_teaser_cta:     'チームを見る',
 
+    nav_member:            'メンバー',
+
     /* Footer */
     footer_tagline:        '人間がAIとの寄り添いを求めるすべての願いは、魂の共鳴への渇望にほかならない。',
     footer_nav_heading:    'ナビゲーション',
@@ -167,6 +169,8 @@ const T = {
     about_teaser_body:    '千里同風株式会社是一家专注于生成式AI硬件产品研究与企划的公司。我们提供从市场调研到产品概念开发的全程支持。',
     about_teaser_cta:     '了解团队',
 
+    nav_member:            '会员',
+
     footer_tagline:        '人类对AI陪伴的一切渴望，不过是对灵魂共鸣的向往。',
     footer_nav_heading:    '导航',
     footer_contact_heading:'联系方式',
@@ -281,6 +285,8 @@ const T = {
     about_teaser_body:    'Senridoufuu Co., Ltd. specializes in research and planning for generative AI-embedded hardware products. We offer end-to-end support from market research to product concept development.',
     about_teaser_cta:     'Meet the team',
 
+    nav_member:            'Member',
+
     footer_tagline:        'Every human desire for closeness with AI is nothing but a yearning for resonance of souls.',
     footer_nav_heading:    'Navigation',
     footer_contact_heading:'Contact',
@@ -387,7 +393,7 @@ const NAV_HTML = `
           </div>
         </div>
       </div>
-      <a href="/account.html" class="nav__link" style="font-size:0.8125rem;opacity:.7;">会员</a>
+      <a href="/account.html" class="nav__link" style="font-size:0.8125rem;opacity:.7;" data-i18n="nav_member">会员</a>
       <div class="nav__lang" id="langDesktop">
         <button class="nav__lang-btn" data-lang="ja">日</button>
         <span class="nav__lang-sep">/</span>
@@ -552,6 +558,9 @@ function initScrollAnimations() {
 /* === INIT === */
 document.addEventListener('DOMContentLoaded', () => {
   injectShared();
-  applyTranslations(currentLang);
-  initScrollAnimations();
+  fetch('/content.json')
+    .then(r => r.ok ? r.json() : {})
+    .then(ov => { ['ja','zh','en'].forEach(l => { if (ov[l]) Object.assign(T[l], ov[l]); }); })
+    .catch(() => {})
+    .finally(() => { applyTranslations(currentLang); initScrollAnimations(); });
 });
