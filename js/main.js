@@ -32,7 +32,7 @@ const T = {
 
     /* Values */
     values_eyebrow:   '価値観',
-    values_title:     '私たちが大切にすること',
+    values_title:     '技術は人間のために',
     val1_name:        'リアリズム',
     val1_desc:        '現実に根ざした企画と実行。理想を掲げながらも、実現可能な道筋を誠実に追い求めます。',
     val2_name:        '明確さ',
@@ -154,7 +154,7 @@ const T = {
     vision_body:      '通过玩具、教具与IoT设备，探索人与AI之间新的关系。这就是我们所追求的未来。',
 
     values_eyebrow:   '价值观',
-    values_title:     '我们所珍视的',
+    values_title:     '技术服务于人',
     val1_name:        '现实主义',
     val1_desc:        '脚踏实地的规划与执行。在追求理想的同时，诚实地寻求可实现的路径。',
     val2_name:        '清晰',
@@ -268,7 +268,7 @@ const T = {
     vision_body:      'Through toys, educational tools, and IoT devices, we explore new relationships between humans and AI. This is the future we seek.',
 
     values_eyebrow:   'Values',
-    values_title:     'What we care about',
+    values_title:     'Technology Serves People',
     val1_name:        'Realism',
     val1_desc:        'Grounded planning and execution. While holding onto ideals, we honestly pursue achievable paths.',
     val2_name:        'Clarity',
