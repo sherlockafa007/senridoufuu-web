@@ -444,7 +444,7 @@ const FOOTER_HTML = `
       <div>
         <div class="footer__col-heading" data-i18n="footer_contact_heading"></div>
         <address class="footer__address">
-          <a href="mailto:minami-yuki@senridoufuu.com">minami-yuki@senridoufuu.com</a><br><br>
+          <a href="mailto:yuki.minami@senridf.com">yuki.minami@senridf.com</a><br><br>
           <span data-i18n="addr_street"></span><br>
           <span data-i18n="addr_city"></span>
         </address>
