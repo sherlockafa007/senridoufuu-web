@@ -15,9 +15,21 @@
     }
     body { font-family: 'Noto Sans SC', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
+    /* ── Firebase login ── */
+    #fb-login {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+    }
+    .fb-input {
+      display: block; width: 100%; padding: 11px 14px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; font-family: inherit; outline: none;
+      transition: border-color .15s; margin-bottom: 10px; background: var(--paper);
+    }
+    .fb-input:focus { border-color: var(--accent); }
+    .fb-err { font-size: 13px; color: var(--red); min-height: 18px; margin-bottom: 10px; }
+
     /* ── Login ── */
     #login {
-      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+      min-height: 100vh; display: none; align-items: center; justify-content: center; padding: 24px;
     }
     .login-card {
       background: var(--paper); border: 1px solid var(--border); border-radius: 16px;
@@ -89,7 +101,7 @@
     .section-hd {
       display: flex; align-items: center; justify-content: space-between;
       padding: 14px 18px; cursor: pointer; background: var(--paper);
-      user-select: none;
+      -webkit-user-select: none; user-select: none;
     }
     .section-hd:hover { background: #faf9f7; }
     .section-hd__title { font-size: 13px; font-weight: 500; color: var(--text2); }
@@ -130,6 +142,18 @@
 </head>
 <body>
 
+<!-- ══ Firebase Login ════════════════════════════════════════════════ -->
+<div id="fb-login">
+  <div class="login-card">
+    <div class="login-logo">千里同風</div>
+    <div class="login-sub">管理员登录</div>
+    <input id="fb-email" type="email" class="fb-input" placeholder="邮箱地址" autocomplete="email">
+    <input id="fb-password" type="password" class="fb-input" placeholder="密码" autocomplete="current-password">
+    <div id="fb-err" class="fb-err"></div>
+    <button type="button" class="btn-primary" id="fb-login-btn" onclick="fbLogin()">登录</button>
+  </div>
+</div>
+
 <!-- ══ Login ══════════════════════════════════════════════════════════ -->
 <div id="login">
   <div class="login-card">
@@ -138,11 +162,11 @@
     <label class="login-label">GitHub Personal Access Token</label>
     <input id="pat-input" class="login-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxx" autocomplete="off">
     <p class="login-hint">
-      前往 <a href="https://github.com/settings/tokens/new" target="_blank">GitHub → Settings → Tokens</a>，
+      前往 <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">GitHub → Settings → Tokens</a>，
       生成 Fine-grained token，勾选仓库 <code>senridoufuu-web</code>，权限选 <strong>Contents: Read and write</strong>。
       Token 只保存在本浏览器，不会上传。
     </p>
-    <button class="btn-primary" id="connect-btn" onclick="connect()">连接</button>
+    <button type="button" class="btn-primary" id="connect-btn" onclick="connect()">连接</button>
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
@@ -153,16 +177,16 @@
     <span class="top-bar__title">千里同風 · 内容管理</span>
     <div class="top-bar__right">
       <span class="status" id="status"></span>
-      <button class="btn-save" id="save-btn" onclick="save()">保存并发布</button>
-      <button class="btn-link" onclick="disconnect()">断开连接</button>
+      <button type="button" class="btn-save" id="save-btn" onclick="save()">保存并发布</button>
+      <button type="button" class="btn-link" onclick="disconnect()">断开连接</button>
     </div>
   </div>
 
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="setTab('zh')">中文</button>
-    <button class="tab-btn" onclick="setTab('ja')">日本語</button>
-    <button class="tab-btn" onclick="setTab('en')">English</button>
-    <button class="tab-btn" onclick="setTab('images')">图片</button>
+    <button type="button" class="tab-btn active" onclick="setTab('zh')">中文</button>
+    <button type="button" class="tab-btn" onclick="setTab('ja')">日本語</button>
+    <button type="button" class="tab-btn" onclick="setTab('en')">English</button>
+    <button type="button" class="tab-btn" onclick="setTab('images')">图片</button>
   </div>
 
   <div class="content-area">
@@ -443,11 +467,57 @@ async function save() {
   btn.disabled = false; btn.textContent = '保存并发布';
 }
 
-/* ── Auto-login ─────────────────────────────────────────────────────── */
-(function() {
+/* ── Auto-login (PAT) ───────────────────────────────────────────────── */
+function tryAutoPat() {
   const saved = localStorage.getItem('sdf_admin_pat');
   if (saved) { document.getElementById('pat-input').value = saved; connect(); }
-})();
+  else {
+    document.getElementById('login').style.display = 'flex';
+  }
+}
+</script>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword }
+  from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+
+const ADMIN_EMAIL = 'yuki.minami@senridf.com';
+
+const app = initializeApp({
+  apiKey:            'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',
+  authDomain:        'senridfauthentication.firebaseapp.com',
+  projectId:         'senridfauthentication',
+  storageBucket:     'senridfauthentication.firebasestorage.app',
+  messagingSenderId: '86494932585',
+  appId:             '1:86494932585:web:185b8ed922cd491a63fcf8'
+});
+const auth = getAuth(app);
+
+onAuthStateChanged(auth, user => {
+  if (user && user.email === ADMIN_EMAIL) {
+    document.getElementById('fb-login').style.display = 'none';
+    tryAutoPat();
+  } else if (user) {
+    document.getElementById('fb-err').textContent = '该账号无管理员权限。';
+  } else {
+    document.getElementById('fb-login').style.display = 'flex';
+  }
+});
+
+window.fbLogin = async function() {
+  const email = document.getElementById('fb-email').value.trim();
+  const password = document.getElementById('fb-password').value;
+  const errEl = document.getElementById('fb-err');
+  const btn = document.getElementById('fb-login-btn');
+  errEl.textContent = ''; btn.disabled = true; btn.textContent = '登录中…';
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch {
+    errEl.textContent = '邮箱或密码错误，请重试。';
+    btn.disabled = false; btn.textContent = '登录';
+  }
+};
 </script>
 </body>
 </html>

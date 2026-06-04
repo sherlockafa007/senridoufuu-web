@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>日語学習ツール · 千里同風</title>
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
@@ -44,6 +44,22 @@
     ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
     .word-list-h { max-height: calc(100vh - 230px); }
     .detail-sticky { position: sticky; top: 72px; }
+
+    /* ── Auth Gate form ── */
+    .auth-input {
+      display: block; width: 100%; padding: 10px 14px; margin-bottom: 10px;
+      border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;
+      font-family: inherit; outline: none; transition: border-color .15s;
+    }
+    .auth-input:focus { border-color: #2563eb; }
+    .auth-msg { font-size: 12px; min-height: 16px; margin-bottom: 10px; }
+    .auth-msg.err { color: #ef4444; }
+    .auth-msg.ok  { color: #10b981; }
+    .auth-forgot {
+      display: block; font-size: 12px; color: #9ca3af; background: none;
+      border: none; cursor: pointer; font-family: inherit; margin-bottom: 10px;
+    }
+    .auth-forgot:hover { color: #6b7280; }
 
     /* ── Auth Gate ── */
     #auth-gate {
@@ -108,7 +124,7 @@
     <!-- User area (shown after login) -->
     <div id="user-area" class="hidden items-center gap-2 flex-shrink-0">
       <span id="user-email" class="text-xs text-gray-400 hidden sm:block max-w-32 truncate"></span>
-      <button type="button" onclick="netlifyIdentity.logout()"
+      <button type="button" id="logout-btn"
         class="text-xs px-2 py-1 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors">
         退出
       </button>
@@ -198,41 +214,73 @@
   <div class="auth-card">
     <div class="auth-icon">🔑</div>
     <h2 class="auth-title">会员专属功能</h2>
-    <p class="auth-desc">
-      此工具仅对受邀会员开放。<br>
-      已收到邀请邮件请点击邮件链接完成注册，<br>
-      已有账号可直接登录。
-    </p>
-    <button type="button" class="auth-btn" onclick="netlifyIdentity.open()">
-      登录 / 注册
-    </button>
+    <p class="auth-desc">此工具仅对受邀会员开放，请登录继续。</p>
+    <input id="gate-email" type="email" class="auth-input" placeholder="邮箱地址" autocomplete="email">
+    <input id="gate-password" type="password" class="auth-input" placeholder="密码" autocomplete="current-password">
+    <div id="gate-msg" class="auth-msg"></div>
+    <button type="button" class="auth-btn" id="gate-login-btn">登录</button>
+    <button type="button" class="auth-forgot" id="gate-forgot-btn">忘记密码？</button>
     <a href="../demo.html" class="auth-back">← 返回演示页面</a>
   </div>
 </div>
 
-<script>
-  function _authShowGate()   { document.getElementById('auth-gate').style.display = 'flex'; }
-  function _authHideGate()   { document.getElementById('auth-gate').style.display = 'none'; }
-  function _authShowUser(u)  {
-    var area = document.getElementById('user-area');
-    var mail = document.getElementById('user-email');
-    area.style.display = 'flex';
-    mail.textContent = u.email;
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail }
+    from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+
+  const app = initializeApp({
+    apiKey:            'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',
+    authDomain:        'senridfauthentication.firebaseapp.com',
+    projectId:         'senridfauthentication',
+    storageBucket:     'senridfauthentication.firebasestorage.app',
+    messagingSenderId: '86494932585',
+    appId:             '1:86494932585:web:185b8ed922cd491a63fcf8'
+  });
+  const auth = getAuth(app);
+
+  function showGate()  { document.getElementById('auth-gate').style.display = 'flex'; }
+  function hideGate()  { document.getElementById('auth-gate').style.display = 'none'; }
+  function showUser(u) {
+    document.getElementById('user-area').style.display = 'flex';
+    document.getElementById('user-email').textContent = u.email;
   }
-  function _authHideUser()   { document.getElementById('user-area').style.display = 'none'; }
+  function hideUser()  { document.getElementById('user-area').style.display = 'none'; }
 
-  netlifyIdentity.on('init', function(u) {
-    if (u) { _authHideGate(); _authShowUser(u); }
-    else   { _authShowGate(); }
-  });
-  netlifyIdentity.on('login', function(u) {
-    _authHideGate(); _authShowUser(u); netlifyIdentity.close();
-  });
-  netlifyIdentity.on('logout', function() {
-    _authShowGate(); _authHideUser();
+  onAuthStateChanged(auth, user => {
+    if (user) { hideGate(); showUser(user); }
+    else { showGate(); hideUser(); }
   });
 
-  netlifyIdentity.init();
+  function setMsg(text, type) {
+    const el = document.getElementById('gate-msg');
+    el.textContent = text;
+    el.className = 'auth-msg' + (type ? ' ' + type : '');
+  }
+
+  document.getElementById('gate-login-btn').addEventListener('click', async () => {
+    const email = document.getElementById('gate-email').value.trim();
+    const password = document.getElementById('gate-password').value;
+    setMsg('');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch {
+      setMsg('邮箱或密码错误，请重试。', 'err');
+    }
+  });
+
+  document.getElementById('gate-forgot-btn').addEventListener('click', async () => {
+    const email = document.getElementById('gate-email').value.trim();
+    if (!email) { setMsg('请先填写邮箱地址。', 'err'); return; }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setMsg('重置密码邮件已发送，请查收。', 'ok');
+    } catch {
+      setMsg('发送失败，请检查邮箱地址。', 'err');
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 </script>
 </body>
 </html>
