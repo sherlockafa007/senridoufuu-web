@@ -29,38 +29,46 @@ exports.handler = async (event) => {
   if (mode === 'interpret') {
     maxTokens = 600;
     temperature = 0.1;
+    const ciBase = 'You are a professional consecutive interpreter. The following is one complete speaking turn. Translate naturally and fluently, preserving the speaker\'s register and intent. Output ONLY the translation — no labels, no original text, no explanations. For Japanese output, use polite ます/です form unless the source is clearly casual speech.';
     if (direction === 'ja-zh') {
-      systemPrompt = 'You are a professional simultaneous interpreter. The input is Japanese. Translate it into Simplified Chinese. Output ONLY the translation — no labels, no original text, no explanations.';
+      systemPrompt = ciBase + ' Input language: Japanese. Target language: Simplified Chinese.';
     } else if (direction === 'zh-ja') {
-      systemPrompt = 'You are a professional simultaneous interpreter. The input is Chinese. Translate it into Japanese. Output ONLY the translation — no labels, no original text, no explanations.';
+      systemPrompt = ciBase + ' Input language: Simplified Chinese. Target language: Japanese.';
+    } else if (direction === 'en-zh') {
+      systemPrompt = ciBase + ' Input language: English. Target language: Simplified Chinese.';
+    } else if (direction === 'en-ja') {
+      systemPrompt = ciBase + ' Input language: English. Target language: Japanese.';
+    } else if (direction === 'zh-en') {
+      systemPrompt = ciBase + ' Input language: Simplified Chinese. Target language: English.';
+    } else if (direction === 'ja-en') {
+      systemPrompt = ciBase + ' Input language: Japanese. Target language: English.';
     } else {
-      systemPrompt = 'You are a professional Chinese-Japanese simultaneous interpreter. Detect the input language and translate: Japanese → Simplified Chinese, Chinese → Japanese. Output ONLY the translation, no labels or explanations.';
+      systemPrompt = ciBase + ' Detect the input language and translate to the most appropriate target language among Japanese, Simplified Chinese, and English.';
     }
   } else {
     maxTokens = 2000;
     temperature = 0.2;
-    systemPrompt = `You are a professional Chinese-Japanese interpreter. Follow these rules for every user message:
+    systemPrompt = `You are a professional interpreter specializing in Japanese, Chinese, and English. Follow these rules for every user message:
 
 1. If the input is Chinese:
-   【原文】
-   (repeat the original Chinese text)
-   【日本語訳】
-   (provide the Japanese translation)
-   【回訳】
-   (back-translate the Japanese into Chinese so the user can verify nuance)
+   【原文】(original Chinese)
+   【日本語訳】(Japanese translation)
+   【回訳】(back-translate Japanese → Chinese to verify nuance)
 
 2. If the input is Japanese:
-   【原文】
-   (repeat the original Japanese text)
-   【中文翻译】
-   (provide the Chinese translation)
-   【回訳】
-   (back-translate the Chinese into Japanese so the user can verify accuracy)
+   【原文】(original Japanese)
+   【中文翻译】(Chinese translation)
+   【回訳】(back-translate Chinese → Japanese to verify accuracy)
 
-3. If the user asks for a summary or meeting minutes (会議まとめ / 会议摘要):
-   Generate a structured bilingual summary (Japanese and Chinese) of all the content in this conversation, covering key points in bullet form.
+3. If the input is English:
+   【Original】(original English)
+   【日本語訳】(Japanese translation)
+   【中文翻译】(Chinese translation)
 
-Use formal, precise language. Never skip the back-translation step for rules 1 and 2.`;
+4. If the user asks for a summary (会議まとめ / 会议摘要 / meeting summary):
+   Generate a structured multilingual summary covering key points in bullet form.
+
+Use formal, precise language appropriate to the context. Never skip the back-translation step for rules 1 and 2.`;
   }
 
   try {

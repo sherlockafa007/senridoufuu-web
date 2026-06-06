@@ -1,286 +1,353 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>日語学習ツール · 千里同風</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Noto Sans SC', system-ui, sans-serif; }
-    .jp { font-family: 'Noto Sans JP', system-ui, sans-serif; }
-    ruby { ruby-align: center; }
-    rt { font-size: 0.52em; color: #9ca3af; letter-spacing: 0.02em; }
-
-    .tab-on  { background: #2563eb; color: #fff; }
-    .tab-off { background: transparent; color: #6b7280; }
-    .tab-off:hover { color: #374151; }
-
-    .word-card-on  { border-color: #3b82f6; background: #eff6ff; }
-    .word-card-off { border-color: #f3f4f6; background: #fff; }
-    .word-card-off:hover { border-color: #d1d5db; }
-
-    .conj-row:hover { background: #f9fafb; border-radius: 6px; }
-
-    .ans-btn {
-      transition: all .15s;
-      border: 2px solid #e5e7eb;
-      background: #fff;
-      color: #374151;
-    }
-    .ans-btn:hover:not(:disabled) { border-color: #93c5fd; background: #eff6ff; }
-    .ans-btn:disabled { cursor: default; }
-    .ans-correct { border-color: #10b981 !important; background: #d1fae5 !important; color: #065f46 !important; }
-    .ans-wrong   { border-color: #ef4444 !important; background: #fee2e2 !important; color: #991b1b !important; }
-    .ans-show    { border-color: #10b981 !important; background: #d1fae5 !important; color: #065f46 !important; }
-    .ans-dim     { border-color: #f3f4f6 !important; color: #9ca3af !important; }
-
-    .fade-in { animation: fi .18s ease both; }
-    @keyframes fi { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
-
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
-    .word-list-h { max-height: calc(100vh - 230px); }
-    .detail-sticky { position: sticky; top: 72px; }
-
-    /* ── Auth Gate form ── */
-    .auth-input {
-      display: block; width: 100%; padding: 10px 14px; margin-bottom: 10px;
-      border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px;
-      font-family: inherit; outline: none; transition: border-color .15s;
-    }
-    .auth-input:focus { border-color: #2563eb; }
-    .auth-msg { font-size: 12px; min-height: 16px; margin-bottom: 10px; }
-    .auth-msg.err { color: #ef4444; }
-    .auth-msg.ok  { color: #10b981; }
-    .auth-forgot {
-      display: block; font-size: 12px; color: #9ca3af; background: none;
-      border: none; cursor: pointer; font-family: inherit; margin-bottom: 10px;
-    }
-    .auth-forgot:hover { color: #6b7280; }
-
-    /* ── Auth Gate ── */
-    #auth-gate {
-      display: none;
-      position: fixed; inset: 0; z-index: 200;
-      align-items: center; justify-content: center;
-      background: rgba(28,25,20,.72);
-      backdrop-filter: blur(6px);
-    }
-    .auth-card {
-      background: #fff; border-radius: 18px;
-      padding: 52px 44px; max-width: 400px;
-      width: calc(100% - 48px); text-align: center;
-      box-shadow: 0 24px 64px rgba(0,0,0,.18);
-    }
-    .auth-icon { font-size: 48px; margin-bottom: 20px; }
-    .auth-title {
-      font-family: 'Noto Sans SC', sans-serif;
-      font-size: 20px; font-weight: 600;
-      color: #1c1917; margin-bottom: 10px;
-    }
-    .auth-desc {
-      font-size: 14px; color: #78716c;
-      line-height: 1.85; margin-bottom: 28px;
-    }
-    .auth-btn {
-      display: block; width: 100%; padding: 14px;
-      background: #2563eb; color: #fff;
-      border: none; border-radius: 12px;
-      font-size: 15px; font-family: inherit;
-      cursor: pointer; margin-bottom: 10px;
-    }
-    .auth-back {
-      display: block; font-size: 13px;
-      color: #9ca3af; text-decoration: none;
-    }
-    .auth-back:hover { color: #6b7280; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日本語動詞活用 · 千里同風</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Noto Sans SC',sans-serif}
+.jp{font-family:'Noto Sans JP',sans-serif}
+thead th{position:sticky;top:0;background:#fff;z-index:5;border-bottom:2px solid #e5e7eb;white-space:nowrap}
+.c{cursor:pointer;color:transparent!important;background:#e5e7eb;border-radius:3px;-webkit-user-select:none;user-select:none}
+.c:hover{background:#d1d5db}
+.c.open{color:#065f46!important;background:#d1fae5;cursor:default}
+.tab-on{background:#2563eb!important;color:#fff!important}
+td,th{border:1px solid #e5e7eb}
+.qopt{padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;background:#fff;transition:all .15s;width:100%}
+.qopt:hover{background:#eff6ff;border-color:#93c5fd}
+.qopt.ok{border-color:#10b981!important;background:#d1fae5!important;pointer-events:none}
+.qopt.ng{border-color:#ef4444!important;background:#fee2e2!important;pointer-events:none}
+</style>
 </head>
-<body class="bg-stone-50 min-h-screen">
+<body class="bg-gray-50 min-h-screen">
 
-<!-- ══ Header ════════════════════════════════════════════════════ -->
-<header class="bg-white border-b border-gray-100 sticky top-0 z-20">
-  <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-    <div class="flex items-center gap-3 flex-1 min-w-0">
-      <a href="../demo.html" class="text-gray-400 hover:text-gray-600 text-sm flex-shrink-0">← 返回</a>
-      <span class="text-gray-200">|</span>
-      <span class="jp font-semibold text-gray-800 truncate">日語基礎学習ツール</span>
-      <span class="hidden sm:inline text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded flex-shrink-0">词汇 · 变形 · 测试</span>
+<header class="bg-white border-b border-gray-200 sticky top-0 z-20 h-14">
+  <div class="px-3 h-full flex items-center gap-2 flex-wrap">
+    <a href="../demo.html" class="text-gray-400 hover:text-gray-600 text-sm shrink-0">← 返回</a>
+    <span class="jp font-semibold text-gray-800 shrink-0 text-sm">日本語動詞活用</span>
+    <div class="flex gap-1 ml-1 shrink-0">
+      <button type="button" data-g="1" onclick="setG(1)" class="tab-on px-3 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors">一类</button>
+      <button type="button" data-g="2" onclick="setG(2)" class="px-3 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors">二类</button>
+      <button type="button" data-g="3" onclick="setG(3)" class="px-3 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors">三类</button>
+      <button type="button" data-g="0" onclick="setG(0)" class="px-3 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors">全部</button>
     </div>
-    <!-- Tabs -->
-    <div class="flex gap-1 bg-gray-100 rounded-lg p-1 flex-shrink-0">
-      <button type="button" id="tab-learn" onclick="setTab('learn')"
-        class="tab-on px-4 py-1.5 rounded-md text-sm font-medium transition-all">
-        📖 学习
-      </button>
-      <button type="button" id="tab-quiz" onclick="setTab('quiz')"
-        class="tab-off px-4 py-1.5 rounded-md text-sm font-medium transition-all">
-        ✏️ 测试
-      </button>
-    </div>
-    <!-- User area (shown after login) -->
-    <div id="user-area" class="hidden items-center gap-2 flex-shrink-0">
-      <span id="user-email" class="text-xs text-gray-400 hidden sm:block max-w-32 truncate"></span>
-      <button type="button" id="logout-btn"
-        class="text-xs px-2 py-1 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors">
-        退出
-      </button>
+    <button type="button" id="practBtn" onclick="togglePractice()" class="ml-auto px-3 py-1 rounded border border-gray-300 text-xs text-gray-600 hover:bg-gray-100 shrink-0 transition-colors">遮盖练习</button>
+    <button type="button" onclick="startQuiz()" class="px-3 py-1 rounded border border-purple-300 text-xs text-purple-600 hover:bg-purple-50 shrink-0 transition-colors">小测试</button>
+    <div id="uarea" class="hidden items-center gap-2 shrink-0">
+      <span id="uemail" class="text-xs text-gray-400 max-w-xs truncate hidden sm:block"></span>
+      <button type="button" id="logoutBtn" class="text-xs px-2 py-1 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors">退出</button>
     </div>
   </div>
 </header>
 
-<!-- ══ Main ══════════════════════════════════════════════════════ -->
-<div class="max-w-6xl mx-auto px-4 py-5">
+<div style="height:calc(100vh - 56px);overflow:auto">
+<table class="text-xs border-collapse w-full">
+<thead>
+<tr class="text-gray-500 font-medium">
+  <th class="px-2 py-2 text-left w-7">#</th>
+  <th class="px-2 py-2 text-left jp">基本形</th>
+  <th class="px-2 py-2 text-left">中文</th>
+  <th class="px-2 py-2 text-left">英文</th>
+  <th class="px-2 py-2 text-left jp">ます形</th>
+  <th class="px-2 py-2 text-left jp">て形</th>
+  <th class="px-2 py-2 text-left jp">ない形</th>
+  <th class="px-2 py-2 text-left jp">た形</th>
+  <th class="px-2 py-2 text-left jp">意志形</th>
+  <th class="px-2 py-2 text-left jp">ば形</th>
+  <th class="px-2 py-2 text-left jp">命令形</th>
+  <th class="px-2 py-2 text-left jp">可能形</th>
+  <th class="px-2 py-2 text-left jp">被动形</th>
+  <th class="px-2 py-2 text-left jp">使役形</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
 
-  <!-- ─── LEARN TAB ─────────────────────────────────────────── -->
-  <div id="learn-view">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-      <!-- Left: Word List -->
-      <div class="md:col-span-1 flex flex-col gap-3">
-        <!-- Search -->
-        <div class="relative">
-          <input id="search-input" type="text" placeholder="搜索单词、罗马音…"
-            oninput="onSearch(this.value)"
-            class="w-full pl-8 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition">
-          <span class="absolute left-2.5 top-2.5 text-gray-400 text-xs">🔍</span>
-        </div>
-        <!-- POS Filter -->
-        <div id="pos-filter" class="flex flex-wrap gap-1.5"></div>
-        <!-- Cards -->
-        <div id="word-list" class="space-y-1.5 overflow-y-auto word-list-h"></div>
-      </div>
-
-      <!-- Right: Word Detail -->
-      <div class="md:col-span-2">
-        <div id="word-detail"
-          class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 min-h-64 fade-in detail-sticky">
-        </div>
-      </div>
-
+<!-- Quiz Modal -->
+<div id="quizBox" style="display:none;position:fixed;inset:0;z-index:150;align-items:center;justify-content:center;background:rgba(0,0,0,.5)">
+  <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:480px;width:calc(100% - 32px);text-align:center">
+    <div style="display:flex;align-items:center;margin-bottom:16px">
+      <span id="qNum" style="font-size:12px;color:#6b7280;white-space:nowrap">1/20</span>
+      <div style="flex:1;height:4px;background:#f3f4f6;border-radius:2px;margin:0 10px"><div id="qBar" style="height:100%;background:#7c3aed;border-radius:2px;transition:width .3s;width:5%"></div></div>
+      <button onclick="document.getElementById('quizBox').style.display='none'" style="font-size:20px;border:none;background:none;cursor:pointer;color:#9ca3af;line-height:1">×</button>
     </div>
-  </div>
-
-  <!-- ─── QUIZ TAB ───────────────────────────────────────────── -->
-  <div id="quiz-view" class="hidden max-w-xl mx-auto">
-
-    <!-- Mode Selector -->
-    <div class="grid grid-cols-2 gap-2 mb-5">
-      <button type="button" id="qm-meaning" onclick="setQuizMode('meaning')"
-        class="py-2.5 rounded-xl text-sm font-medium border-2 transition-all border-blue-500 bg-blue-50 text-blue-700">
-        🀄 词义辨析
-      </button>
-      <button type="button" id="qm-conjugation" onclick="setQuizMode('conjugation')"
-        class="py-2.5 rounded-xl text-sm font-medium border-2 transition-all border-gray-200 bg-white text-gray-500">
-        🔀 变形挑战
-      </button>
+    <div id="qVerb" class="jp" style="font-size:26px;font-weight:600;margin-bottom:6px"></div>
+    <div id="qMean" style="font-size:13px;color:#6b7280;margin-bottom:4px"></div>
+    <div style="font-size:13px;color:#374151;margin-bottom:18px">请选择正确的 <b id="qForm" style="color:#7c3aed"></b></div>
+    <div id="qOpts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+    <div id="qResult" style="display:none;padding:16px 0">
+      <div id="qEmoji" style="font-size:52px;margin-bottom:10px"></div>
+      <div id="qScore" style="font-size:22px;font-weight:600;margin-bottom:6px"></div>
+      <div id="qMsg" style="font-size:14px;color:#6b7280;margin-bottom:18px"></div>
+      <button onclick="startQuiz()" style="padding:10px 22px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px">再来一次</button>
+      <button onclick="document.getElementById('quizBox').style.display='none'" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer">关闭</button>
     </div>
-
-    <!-- Score Row -->
-    <div class="flex items-center justify-between mb-4">
-      <span id="score-text" class="text-sm text-gray-400">准备好了，开始！</span>
-      <div id="score-dots" class="flex gap-1"></div>
-    </div>
-
-    <!-- Question Card -->
-    <div id="question-card"
-      class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4 text-center min-h-36 flex flex-col items-center justify-center fade-in">
-    </div>
-
-    <!-- Answer Grid -->
-    <div id="answer-options" class="grid grid-cols-2 gap-3 mb-4"></div>
-
-    <!-- Feedback -->
-    <div id="quiz-feedback" class="hidden mb-4"></div>
-
-    <!-- Next Button -->
-    <div class="flex justify-center">
-      <button type="button" id="next-btn" onclick="nextQuestion()"
-        class="hidden px-10 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-colors">
-        下一题 →
-      </button>
-    </div>
-
   </div>
 </div>
 
-<script src="japanese_learner.js"></script>
-
-<!-- ══ Auth Gate Overlay ══════════════════════════════════════════ -->
-<div id="auth-gate">
-  <div class="auth-card">
-    <div class="auth-icon">🔑</div>
-    <h2 class="auth-title">会员专属功能</h2>
-    <p class="auth-desc">此工具仅对受邀会员开放，请登录继续。</p>
-    <input id="gate-email" type="email" class="auth-input" placeholder="邮箱地址" autocomplete="email">
-    <input id="gate-password" type="password" class="auth-input" placeholder="密码" autocomplete="current-password">
-    <div id="gate-msg" class="auth-msg"></div>
-    <button type="button" class="auth-btn" id="gate-login-btn">登录</button>
-    <button type="button" class="auth-forgot" id="gate-forgot-btn">忘记密码？</button>
-    <a href="../demo.html" class="auth-back">← 返回演示页面</a>
+<!-- Auth Gate -->
+<div id="gate" style="display:flex;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.75);backdrop-filter:blur(6px)">
+  <div style="background:#fff;border-radius:16px;padding:44px 36px;max-width:360px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="font-size:38px;margin-bottom:14px">🔑</div>
+    <h2 style="font-size:17px;font-weight:600;margin-bottom:8px;font-family:'Noto Sans SC',sans-serif">会员专属功能</h2>
+    <p style="font-size:13px;color:#78716c;line-height:1.8;margin-bottom:22px">此工具仅对受邀会员开放，请登录继续。</p>
+    <input id="ge" type="email" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none" placeholder="邮箱地址">
+    <input id="gp" type="password" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none" placeholder="密码">
+    <div id="gm" style="font-size:12px;min-height:16px;margin-bottom:8px;color:#ef4444"></div>
+    <button type="button" id="glogin" style="display:block;width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer;margin-bottom:8px">登录</button>
+    <button type="button" id="gforgot" style="display:block;background:none;border:none;font-size:12px;color:#9ca3af;cursor:pointer;font-family:inherit;margin-bottom:10px">忘记密码？</button>
+    <a href="../demo.html" style="font-size:12px;color:#9ca3af;text-decoration:none">← 返回演示页面</a>
   </div>
 </div>
+
+<script>
+const V=[
+  // 一类 -う
+  {b:'会う',r:'あう',m:'见面',e:'meet',g:1},{b:'買う',r:'かう',m:'买',e:'buy',g:1},{b:'歌う',r:'うたう',m:'唱歌',e:'sing',g:1},
+  {b:'洗う',r:'あらう',m:'洗',e:'wash',g:1},{b:'使う',r:'つかう',m:'使用',e:'use',g:1},{b:'言う',r:'いう',m:'说',e:'say',g:1},
+  {b:'笑う',r:'わらう',m:'笑',e:'laugh',g:1},{b:'習う',r:'ならう',m:'学习',e:'learn',g:1},{b:'払う',r:'はらう',m:'付款',e:'pay',g:1},
+  {b:'思う',r:'おもう',m:'思考',e:'think',g:1},{b:'手伝う',r:'てつだう',m:'帮忙',e:'help',g:1},{b:'吸う',r:'すう',m:'吸',e:'inhale',g:1},
+  // 一类 -く
+  {b:'書く',r:'かく',m:'写',e:'write',g:1},{b:'聞く',r:'きく',m:'听;问',e:'listen',g:1},{b:'歩く',r:'あるく',m:'走路',e:'walk',g:1},
+  {b:'働く',r:'はたらく',m:'工作',e:'work',g:1},{b:'置く',r:'おく',m:'放置',e:'place',g:1},{b:'引く',r:'ひく',m:'拉',e:'pull',g:1},
+  {b:'磨く',r:'みがく',m:'刷;磨',e:'polish',g:1},{b:'開く',r:'ひらく',m:'打开',e:'open',g:1},{b:'行く',r:'いく',m:'去',e:'go',g:1,sp:1},
+  {b:'泣く',r:'なく',m:'哭',e:'cry',g:1},{b:'着く',r:'つく',m:'到达',e:'arrive',g:1},{b:'続く',r:'つづく',m:'持续',e:'continue',g:1},
+  {b:'動く',r:'うごく',m:'移动',e:'move',g:1},{b:'抱く',r:'だく',m:'拥抱',e:'hug',g:1},
+  // 一类 -ぐ
+  {b:'泳ぐ',r:'およぐ',m:'游泳',e:'swim',g:1},{b:'急ぐ',r:'いそぐ',m:'赶紧',e:'hurry',g:1},{b:'脱ぐ',r:'ぬぐ',m:'脱',e:'take off',g:1},
+  {b:'防ぐ',r:'ふせぐ',m:'防止',e:'prevent',g:1},{b:'稼ぐ',r:'かせぐ',m:'赚钱',e:'earn',g:1},
+  // 一类 -す
+  {b:'話す',r:'はなす',m:'说话',e:'speak',g:1},{b:'貸す',r:'かす',m:'借出',e:'lend',g:1},{b:'押す',r:'おす',m:'推',e:'push',g:1},
+  {b:'出す',r:'だす',m:'拿出',e:'take out',g:1},{b:'直す',r:'なおす',m:'修复',e:'fix',g:1},{b:'渡す',r:'わたす',m:'交给',e:'hand over',g:1},
+  {b:'返す',r:'かえす',m:'归还',e:'return',g:1},{b:'消す',r:'けす',m:'消除',e:'erase',g:1},{b:'起こす',r:'おこす',m:'叫醒',e:'wake up',g:1},
+  // 一类 -つ
+  {b:'待つ',r:'まつ',m:'等待',e:'wait',g:1},{b:'持つ',r:'もつ',m:'持有',e:'hold',g:1},{b:'立つ',r:'たつ',m:'站立',e:'stand',g:1},
+  {b:'勝つ',r:'かつ',m:'获胜',e:'win',g:1},{b:'打つ',r:'うつ',m:'打',e:'hit',g:1},{b:'保つ',r:'たもつ',m:'保持',e:'maintain',g:1},
+  // 一类 -ぬ
+  {b:'死ぬ',r:'しぬ',m:'死',e:'die',g:1},
+  // 一类 -ぶ
+  {b:'遊ぶ',r:'あそぶ',m:'玩',e:'play',g:1},{b:'飛ぶ',r:'とぶ',m:'飞',e:'fly',g:1},{b:'呼ぶ',r:'よぶ',m:'叫',e:'call',g:1},
+  {b:'選ぶ',r:'えらぶ',m:'选择',e:'choose',g:1},{b:'学ぶ',r:'まなぶ',m:'学习',e:'study',g:1},{b:'並ぶ',r:'ならぶ',m:'排队',e:'line up',g:1},
+  {b:'運ぶ',r:'はこぶ',m:'搬运',e:'carry',g:1},
+  // 一类 -む
+  {b:'読む',r:'よむ',m:'读',e:'read',g:1},{b:'飲む',r:'のむ',m:'喝',e:'drink',g:1},{b:'休む',r:'やすむ',m:'休息',e:'rest',g:1},
+  {b:'住む',r:'すむ',m:'居住',e:'live',g:1},{b:'頼む',r:'たのむ',m:'拜托',e:'request',g:1},{b:'楽しむ',r:'たのしむ',m:'享受',e:'enjoy',g:1},
+  {b:'進む',r:'すすむ',m:'前进',e:'advance',g:1},{b:'望む',r:'のぞむ',m:'希望',e:'hope',g:1},{b:'盗む',r:'ぬすむ',m:'偷',e:'steal',g:1},
+  // 一类 -る
+  {b:'帰る',r:'かえる',m:'回家',e:'return',g:1},{b:'分かる',r:'わかる',m:'明白',e:'understand',g:1},{b:'入る',r:'はいる',m:'进入',e:'enter',g:1},
+  {b:'切る',r:'きる',m:'切',e:'cut',g:1},{b:'走る',r:'はしる',m:'跑',e:'run',g:1},{b:'知る',r:'しる',m:'知道',e:'know',g:1},
+  {b:'売る',r:'うる',m:'卖',e:'sell',g:1},{b:'乗る',r:'のる',m:'乘坐',e:'ride',g:1},{b:'作る',r:'つくる',m:'制作',e:'make',g:1},
+  {b:'座る',r:'すわる',m:'坐',e:'sit',g:1},{b:'困る',r:'こまる',m:'困扰',e:'be troubled',g:1},{b:'通る',r:'とおる',m:'通过',e:'pass',g:1},
+  {b:'取る',r:'とる',m:'拿取',e:'take',g:1},{b:'降る',r:'ふる',m:'下(雨雪)',e:'fall',g:1},{b:'眠る',r:'ねむる',m:'睡觉',e:'sleep',g:1},
+  {b:'喋る',r:'しゃべる',m:'说话',e:'chat',g:1},{b:'怒る',r:'おこる',m:'生气',e:'get angry',g:1},{b:'頑張る',r:'がんばる',m:'加油',e:'do best',g:1},
+  {b:'止まる',r:'とまる',m:'停止',e:'stop',g:1},{b:'集まる',r:'あつまる',m:'聚集',e:'gather',g:1},{b:'終わる',r:'おわる',m:'结束',e:'finish',g:1},
+  {b:'変わる',r:'かわる',m:'变化',e:'change',g:1},{b:'始まる',r:'はじまる',m:'开始',e:'begin',g:1},{b:'曲がる',r:'まがる',m:'转弯',e:'turn',g:1},
+  {b:'測る',r:'はかる',m:'测量',e:'measure',g:1},{b:'太る',r:'ふとる',m:'变胖',e:'get fat',g:1},{b:'散る',r:'ちる',m:'飘落',e:'scatter',g:1},
+  {b:'戻る',r:'もどる',m:'返回',e:'return',g:1},{b:'踊る',r:'おどる',m:'跳舞',e:'dance',g:1},{b:'送る',r:'おくる',m:'发送',e:'send',g:1},
+  {b:'語る',r:'かたる',m:'讲述',e:'narrate',g:1},{b:'折る',r:'おる',m:'折叠',e:'fold',g:1},{b:'黙る',r:'だまる',m:'沉默',e:'be silent',g:1},
+  {b:'泊まる',r:'とまる',m:'住宿',e:'stay over',g:1},{b:'頼る',r:'たよる',m:'依靠',e:'rely on',g:1},{b:'縛る',r:'しばる',m:'捆绑',e:'tie up',g:1},
+  {b:'当たる',r:'あたる',m:'正确;碰到',e:'hit;correct',g:1},{b:'張る',r:'はる',m:'张贴',e:'paste',g:1},{b:'彫る',r:'ほる',m:'雕刻',e:'carve',g:1},
+  {b:'縫う',r:'ぬう',m:'缝',e:'sew',g:1},{b:'違う',r:'ちがう',m:'不同',e:'differ',g:1},{b:'拾う',r:'ひろう',m:'捡起',e:'pick up',g:1},{b:'祝う',r:'いわう',m:'庆祝',e:'celebrate',g:1},
+  {b:'咲く',r:'さく',m:'开花',e:'bloom',g:1},{b:'焼く',r:'やく',m:'烤;烧',e:'bake',g:1},{b:'届く',r:'とどく',m:'到达',e:'reach',g:1},{b:'叩く',r:'たたく',m:'敲打',e:'knock',g:1},{b:'解く',r:'とく',m:'解开',e:'solve',g:1},
+  {b:'落とす',r:'おとす',m:'丢落',e:'drop',g:1},{b:'壊す',r:'こわす',m:'弄坏',e:'break',g:1},{b:'隠す',r:'かくす',m:'隐藏',e:'hide',g:1},{b:'増やす',r:'ふやす',m:'增加',e:'increase',g:1},
+  {b:'包む',r:'つつむ',m:'包裹',e:'wrap',g:1},{b:'踏む',r:'ふむ',m:'踩',e:'step on',g:1},{b:'組む',r:'くむ',m:'组合',e:'combine',g:1},{b:'育つ',r:'そだつ',m:'成长',e:'grow up',g:1},
+  // 二类
+  {b:'食べる',r:'たべる',m:'吃',e:'eat',g:2},{b:'見る',r:'みる',m:'看',e:'see',g:2},{b:'起きる',r:'おきる',m:'起床',e:'wake up',g:2},
+  {b:'寝る',r:'ねる',m:'睡觉',e:'sleep',g:2},{b:'着る',r:'きる',m:'穿',e:'wear',g:2},{b:'教える',r:'おしえる',m:'教',e:'teach',g:2},
+  {b:'考える',r:'かんがえる',m:'思考',e:'think',g:2},{b:'答える',r:'こたえる',m:'回答',e:'answer',g:2},{b:'覚える',r:'おぼえる',m:'记住',e:'remember',g:2},
+  {b:'受ける',r:'うける',m:'接受',e:'receive',g:2},{b:'続ける',r:'つづける',m:'继续',e:'continue',g:2},{b:'助ける',r:'たすける',m:'帮助',e:'help',g:2},
+  {b:'調べる',r:'しらべる',m:'调查',e:'investigate',g:2},{b:'決める',r:'きめる',m:'决定',e:'decide',g:2},{b:'並べる',r:'ならべる',m:'排列',e:'arrange',g:2},
+  {b:'集める',r:'あつめる',m:'收集',e:'collect',g:2},{b:'開ける',r:'あける',m:'打开',e:'open',g:2},{b:'閉める',r:'しめる',m:'关闭',e:'close',g:2},
+  {b:'止める',r:'とめる',m:'停止',e:'stop',g:2},{b:'見せる',r:'みせる',m:'给看',e:'show',g:2},{b:'入れる',r:'いれる',m:'放入',e:'put in',g:2},
+  {b:'出る',r:'でる',m:'出去',e:'go out',g:2},{b:'上げる',r:'あげる',m:'给予',e:'give',g:2},{b:'下げる',r:'さげる',m:'降低',e:'lower',g:2},
+  {b:'変える',r:'かえる',m:'改变',e:'change',g:2},{b:'借りる',r:'かりる',m:'借入',e:'borrow',g:2},{b:'降りる',r:'おりる',m:'下来',e:'get off',g:2},
+  {b:'感じる',r:'かんじる',m:'感觉',e:'feel',g:2},{b:'生きる',r:'いきる',m:'生活',e:'live',g:2},{b:'信じる',r:'しんじる',m:'相信',e:'believe',g:2},
+  {b:'落ちる',r:'おちる',m:'落下',e:'fall',g:2},{b:'始める',r:'はじめる',m:'开始',e:'begin',g:2},{b:'辞める',r:'やめる',m:'辞职',e:'quit',g:2},
+  {b:'認める',r:'みとめる',m:'承认',e:'admit',g:2},{b:'伝える',r:'つたえる',m:'传达',e:'convey',g:2},{b:'増える',r:'ふえる',m:'增加',e:'increase',g:2},
+  {b:'疲れる',r:'つかれる',m:'疲惫',e:'get tired',g:2},{b:'忘れる',r:'わすれる',m:'忘记',e:'forget',g:2},{b:'出かける',r:'でかける',m:'出门',e:'go out',g:2},
+  {b:'捨てる',r:'すてる',m:'丢弃',e:'discard',g:2},{b:'育てる',r:'そだてる',m:'培育',e:'nurture',g:2},{b:'数える',r:'かぞえる',m:'数数',e:'count',g:2},
+  {b:'比べる',r:'くらべる',m:'比较',e:'compare',g:2},{b:'与える',r:'あたえる',m:'给予',e:'give',g:2},{b:'求める',r:'もとめる',m:'要求',e:'seek',g:2},
+  {b:'見える',r:'みえる',m:'看得见',e:'be visible',g:2},{b:'聞こえる',r:'きこえる',m:'听得见',e:'be audible',g:2},{b:'浴びる',r:'あびる',m:'淋浴',e:'shower',g:2},
+  {b:'消える',r:'きえる',m:'消失',e:'disappear',g:2},{b:'溶ける',r:'とける',m:'融化',e:'melt',g:2},{b:'負ける',r:'まける',m:'输',e:'lose',g:2},
+  {b:'触れる',r:'ふれる',m:'触碰',e:'touch',g:2},{b:'生まれる',r:'うまれる',m:'出生',e:'be born',g:2},{b:'別れる',r:'わかれる',m:'分别',e:'separate',g:2},
+  {b:'倒れる',r:'たおれる',m:'倒下',e:'fall over',g:2},
+  {b:'見つける',r:'みつける',m:'找到',e:'find',g:2},{b:'付ける',r:'つける',m:'附加;打开',e:'attach',g:2},{b:'分ける',r:'わける',m:'分开',e:'divide',g:2},
+  {b:'慣れる',r:'なれる',m:'习惯',e:'get used to',g:2},{b:'晴れる',r:'はれる',m:'放晴',e:'clear up',g:2},{b:'流れる',r:'ながれる',m:'流动',e:'flow',g:2},
+  {b:'眺める',r:'ながめる',m:'眺望',e:'gaze',g:2},{b:'諦める',r:'あきらめる',m:'放弃',e:'give up',g:2},{b:'褒める',r:'ほめる',m:'夸奖',e:'praise',g:2},
+  {b:'温める',r:'あたためる',m:'加热',e:'warm up',g:2},{b:'逃げる',r:'にげる',m:'逃跑',e:'escape',g:2},{b:'投げる',r:'なげる',m:'投掷',e:'throw',g:2},
+  {b:'支える',r:'ささえる',m:'支撑',e:'support',g:2},{b:'迎える',r:'むかえる',m:'迎接',e:'welcome',g:2},{b:'建てる',r:'たてる',m:'建造',e:'build',g:2},
+  {b:'混ぜる',r:'まぜる',m:'混合',e:'mix',g:2},{b:'燃える',r:'もえる',m:'燃烧',e:'burn',g:2},{b:'離れる',r:'はなれる',m:'分离',e:'separate',g:2},
+  {b:'冷える',r:'ひえる',m:'变冷',e:'get cold',g:2},{b:'壊れる',r:'こわれる',m:'损坏',e:'break down',g:2},{b:'揺れる',r:'ゆれる',m:'摇晃',e:'shake',g:2},
+  {b:'攻める',r:'せめる',m:'进攻',e:'attack',g:2},{b:'慰める',r:'なぐさめる',m:'安慰',e:'comfort',g:2},{b:'怠ける',r:'なまける',m:'偷懒',e:'be lazy',g:2},
+  {b:'折れる',r:'おれる',m:'折断',e:'snap',g:2},{b:'揃える',r:'そろえる',m:'整齐排列',e:'align',g:2},{b:'鍛える',r:'きたえる',m:'锻炼',e:'train',g:2},
+  {b:'生える',r:'はえる',m:'生长',e:'grow',g:2},{b:'越える',r:'こえる',m:'超过',e:'exceed',g:2},{b:'過ごす',r:'すごす',m:'度过',e:'spend time',g:1},
+  // 三类
+  {b:'する',r:'する',m:'做',e:'do',g:3},{b:'来る',r:'くる',m:'来',e:'come',g:3},
+  {b:'勉強する',r:'べんきょうする',m:'学习',e:'study',g:3},{b:'運動する',r:'うんどうする',m:'运动',e:'exercise',g:3},
+  {b:'料理する',r:'りょうりする',m:'做饭',e:'cook',g:3},{b:'旅行する',r:'りょこうする',m:'旅行',e:'travel',g:3},
+  {b:'結婚する',r:'けっこんする',m:'结婚',e:'marry',g:3},{b:'卒業する',r:'そつぎょうする',m:'毕业',e:'graduate',g:3},
+  {b:'説明する',r:'せつめいする',m:'说明',e:'explain',g:3},{b:'準備する',r:'じゅんびする',m:'准备',e:'prepare',g:3}
+];
+
+const MP={
+  'う':{i:'い',a:'わ',e:'え',o:'お',te:'って',ta:'った'},
+  'く':{i:'き',a:'か',e:'け',o:'こ',te:'いて',ta:'いた'},
+  'ぐ':{i:'ぎ',a:'が',e:'げ',o:'ご',te:'いで',ta:'いだ'},
+  'す':{i:'し',a:'さ',e:'せ',o:'そ',te:'して',ta:'した'},
+  'つ':{i:'ち',a:'た',e:'て',o:'と',te:'って',ta:'った'},
+  'ぬ':{i:'に',a:'な',e:'ね',o:'の',te:'んで',ta:'んだ'},
+  'ぶ':{i:'び',a:'ば',e:'べ',o:'ぼ',te:'んで',ta:'んだ'},
+  'む':{i:'み',a:'ま',e:'め',o:'も',te:'んで',ta:'んだ'},
+  'る':{i:'り',a:'ら',e:'れ',o:'ろ',te:'って',ta:'った'}
+};
+
+function cj(v){
+  const{b,g,sp}=v;
+  if(g===3){
+    if(b==='来る'||b==='くる') return{masu:'きます',te:'きて',nai:'こない',ta:'きた',vol:'こよう',ba:'くれば',imp:'こい',pot:'こられる',pass:'こられる',caus:'こさせる'};
+    const st=b.endsWith('する')?b.slice(0,-2):'';
+    return{masu:st+'します',te:st+'して',nai:st+'しない',ta:st+'した',vol:st+'しよう',ba:st+'すれば',imp:st+'しろ',pot:st+'できる',pass:st+'される',caus:st+'させる'};
+  }
+  if(g===2){
+    const s=b.slice(0,-1);
+    return{masu:s+'ます',te:s+'て',nai:s+'ない',ta:s+'た',vol:s+'よう',ba:s+'れば',imp:s+'ろ',pot:s+'られる',pass:s+'られる',caus:s+'させる'};
+  }
+  const e=b.slice(-1),s=b.slice(0,-1),m=MP[e];
+  return{
+    masu:s+m.i+'ます',
+    te:s+(sp?'って':m.te),
+    nai:s+m.a+'ない',
+    ta:s+(sp?'った':m.ta),
+    vol:s+m.o+'う',
+    ba:s+m.e+'ば',
+    imp:s+m.e,
+    pot:s+m.e+'る',
+    pass:s+m.a+'れる',
+    caus:s+m.a+'せる'
+  };
+}
+
+let mode=false,grp=1;
+
+function tc(t){
+  return mode?`<td class="px-2 py-1.5 jp c" onclick="this.classList.toggle('open')">${t}</td>`
+             :`<td class="px-2 py-1.5 jp text-gray-700">${t}</td>`;
+}
+
+function render(){
+  const list=grp===0?V:V.filter(v=>v.g===grp);
+  const bg={1:'bg-blue-50',2:'bg-green-50',3:'bg-purple-50'};
+  document.getElementById('tbody').innerHTML=list.map((v,i)=>{
+    const c=cj(v);
+    return`<tr class="${bg[v.g]} border-b border-gray-100 hover:brightness-95">
+      <td class="px-2 py-1.5 text-gray-400">${i+1}</td>
+      <td class="px-2 py-1.5 jp font-medium text-gray-800 whitespace-nowrap">${v.b}<span class="text-gray-400 font-normal ml-1">(${v.r})</span></td>
+      <td class="px-2 py-1.5 text-gray-600 whitespace-nowrap">${v.m}</td>
+      <td class="px-2 py-1.5 text-gray-400 whitespace-nowrap">${v.e||''}</td>
+      ${tc(c.masu)}${tc(c.te)}${tc(c.nai)}${tc(c.ta)}${tc(c.vol)}${tc(c.ba)}${tc(c.imp)}${tc(c.pot)}${tc(c.pass)}${tc(c.caus)}
+    </tr>`;
+  }).join('');
+}
+
+function setG(g){
+  grp=g;
+  document.querySelectorAll('[data-g]').forEach(b=>b.classList.remove('tab-on'));
+  document.querySelector(`[data-g="${g}"]`).classList.add('tab-on');
+  render();
+}
+
+function togglePractice(){
+  mode=!mode;
+  const b=document.getElementById('practBtn');
+  b.textContent=mode?'显示全部':'遮盖练习';
+  b.style.background=mode?'#4f46e5':'';
+  b.style.color=mode?'#fff':'';
+  b.style.borderColor=mode?'#4f46e5':'';
+  render();
+}
+
+render();
+
+const FKEY=['masu','te','nai','ta','vol','ba','imp','pot','pass','caus'];
+const FNAME={masu:'ます形',te:'て形',nai:'ない形',ta:'た形',vol:'意志形',ba:'ば形',imp:'命令形',pot:'可能形',pass:'被动形',caus:'使役形'};
+let quizQ=[],quizIdx=0,quizScore=0;
+
+function startQuiz(){
+  const pool=grp===0?V:V.filter(v=>v.g===grp);
+  const sh=[...pool].sort(()=>Math.random()-.5).slice(0,20);
+  quizQ=sh.map(v=>{
+    const f=FKEY[Math.floor(Math.random()*FKEY.length)];
+    const cor=cj(v)[f];
+    const allF=cj(v);
+    const wrongs=[...new Set(FKEY.filter(k=>k!==f&&allF[k]!==cor).sort(()=>Math.random()-.5).map(k=>allF[k]))].slice(0,3);
+    return{v,f,fname:FNAME[f],cor,opts:[cor,...wrongs].sort(()=>Math.random()-.5)};
+  });
+  quizIdx=0;quizScore=0;
+  document.getElementById('quizBox').style.display='flex';
+  document.getElementById('qResult').style.display='none';
+  document.getElementById('qOpts').style.display='grid';
+  showQ();
+}
+
+function showQ(){
+  const q=quizQ[quizIdx];
+  document.getElementById('qNum').textContent=`${quizIdx+1}/20`;
+  document.getElementById('qBar').style.width=`${((quizIdx)/20)*100+5}%`;
+  document.getElementById('qVerb').textContent=`${q.v.b}（${q.v.r}）`;
+  document.getElementById('qMean').textContent=`${q.v.m}${q.v.e?' / '+q.v.e:''}`;
+  document.getElementById('qForm').textContent=q.fname;
+  document.getElementById('qOpts').innerHTML=q.opts.map(o=>`<button type="button" class="qopt jp" onclick="pickAns(this,'${o}','${q.cor}')">${o}</button>`).join('');
+}
+
+function pickAns(el,ans,cor){
+  document.querySelectorAll('.qopt').forEach(b=>{b.onclick=null;if(b.textContent.trim()===cor)b.classList.add('ok');});
+  if(ans!==cor)el.classList.add('ng');
+  if(ans===cor)quizScore++;
+  setTimeout(()=>{quizIdx++;if(quizIdx>=quizQ.length)showResult();else showQ();},900);
+}
+
+function showResult(){
+  document.getElementById('qOpts').style.display='none';
+  document.getElementById('qResult').style.display='block';
+  document.getElementById('qNum').textContent='';
+  document.getElementById('qVerb').textContent='';
+  document.getElementById('qMean').textContent='';
+  document.getElementById('qForm').textContent='';
+  document.getElementById('qBar').style.width='100%';
+  let emoji,msg;
+  if(quizScore>15){emoji='🎉';msg='太厉害了！恭喜通关！'}
+  else if(quizScore>=10){emoji='💪';msg='仍需努力，继续加油！'}
+  else{emoji='😅';msg='你有认真学习吗……'}
+  document.getElementById('qEmoji').textContent=emoji;
+  document.getElementById('qScore').textContent=`${quizScore} / 20 题正确`;
+  document.getElementById('qMsg').textContent=msg;
+}
+</script>
 
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail }
-    from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-
-  const app = initializeApp({
-    apiKey:            'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',
-    authDomain:        'senridfauthentication.firebaseapp.com',
-    projectId:         'senridfauthentication',
-    storageBucket:     'senridfauthentication.firebasestorage.app',
-    messagingSenderId: '86494932585',
-    appId:             '1:86494932585:web:185b8ed922cd491a63fcf8'
-  });
-  const auth = getAuth(app);
-
-  function showGate()  { document.getElementById('auth-gate').style.display = 'flex'; }
-  function hideGate()  { document.getElementById('auth-gate').style.display = 'none'; }
-  function showUser(u) {
-    document.getElementById('user-area').style.display = 'flex';
-    document.getElementById('user-email').textContent = u.email;
-  }
-  function hideUser()  { document.getElementById('user-area').style.display = 'none'; }
-
-  onAuthStateChanged(auth, user => {
-    if (user) { hideGate(); showUser(user); }
-    else { showGate(); hideUser(); }
-  });
-
-  function setMsg(text, type) {
-    const el = document.getElementById('gate-msg');
-    el.textContent = text;
-    el.className = 'auth-msg' + (type ? ' ' + type : '');
-  }
-
-  document.getElementById('gate-login-btn').addEventListener('click', async () => {
-    const email = document.getElementById('gate-email').value.trim();
-    const password = document.getElementById('gate-password').value;
-    setMsg('');
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch {
-      setMsg('邮箱或密码错误，请重试。', 'err');
-    }
-  });
-
-  document.getElementById('gate-forgot-btn').addEventListener('click', async () => {
-    const email = document.getElementById('gate-email').value.trim();
-    if (!email) { setMsg('请先填写邮箱地址。', 'err'); return; }
-    try {
-      await sendPasswordResetEmail(auth, email);
-      setMsg('重置密码邮件已发送，请查收。', 'ok');
-    } catch {
-      setMsg('发送失败，请检查邮箱地址。', 'err');
-    }
-  });
-
-  document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+const app=initializeApp({apiKey:'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',authDomain:'senridfauthentication.firebaseapp.com',projectId:'senridfauthentication',storageBucket:'senridfauthentication.firebasestorage.app',messagingSenderId:'86494932585',appId:'1:86494932585:web:185b8ed922cd491a63fcf8'});
+const auth=getAuth(app);
+const gate=document.getElementById('gate');
+onAuthStateChanged(auth,u=>{
+  if(u){gate.style.display='none';const a=document.getElementById('uarea');a.style.display='flex';document.getElementById('uemail').textContent=u.email;}
+  else{gate.style.display='flex';}
+});
+function msg(t,ok){const e=document.getElementById('gm');e.textContent=t;e.style.color=ok?'#10b981':'#ef4444';}
+document.getElementById('glogin').onclick=async()=>{
+  try{await signInWithEmailAndPassword(auth,document.getElementById('ge').value.trim(),document.getElementById('gp').value);}
+  catch{msg('邮箱或密码错误，请重试。');}
+};
+document.getElementById('gforgot').onclick=async()=>{
+  const e=document.getElementById('ge').value.trim();
+  if(!e){msg('请先填写邮箱地址。');return;}
+  try{await sendPasswordResetEmail(auth,e);msg('重置邮件已发送，请查收。',true);}catch{msg('发送失败，请检查邮箱。');}
+};
+document.getElementById('logoutBtn').onclick=()=>signOut(auth);
 </script>
 </body>
 </html>

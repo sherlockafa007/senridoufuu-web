@@ -138,33 +138,42 @@
       margin-bottom: 32px;
     }
 
-    /* Language direction */
-    .voice-lang-row {
+    /* Speaker setup */
+    .voice-setup-row {
       display: flex;
       align-items: center;
       gap: 16px;
-      margin-bottom: 48px;
+      margin-bottom: 32px;
     }
-    .voice-lang-btn {
+    .voice-spk-cfg {
       flex: 1;
-      padding: 14px 16px;
-      border: 1px solid var(--c-border);
-      background: none;
-      font-family: var(--f-mono);
-      font-size: 0.5625rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--c-text-3);
-      cursor: pointer;
-      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .voice-spk-id {
+      font-family: var(--f-serif);
+      font-size: 1rem;
+      color: var(--c-text-2);
+      flex-shrink: 0;
+      width: 1.5em;
       text-align: center;
     }
-    .voice-lang-btn:hover { border-color: var(--c-text-2); color: var(--c-text-2); }
-    .voice-lang-btn.is-active {
-      border-color: var(--c-accent);
-      color: var(--c-accent);
-      background: var(--c-accent-light);
+    .voice-lang-sel {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--c-border);
+      background: var(--c-surface);
+      font-family: var(--f-mono);
+      font-size: 0.5625rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--c-text-2);
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
     }
+    .voice-lang-sel:focus { outline: none; border-color: var(--c-accent); }
     .voice-lang-sep {
       font-size: 1.25rem;
       color: var(--c-border);
@@ -172,6 +181,29 @@
       -webkit-user-select: none;
       user-select: none;
     }
+    /* CI speaker buttons */
+    .ci-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 12px;
+      border: 2px solid var(--c-border);
+      background: var(--c-surface);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      gap: 3px;
+      min-width: 0;
+    }
+    .ci-btn:hover:not(:disabled) { border-color: var(--c-accent); background: var(--c-accent-light); }
+    .ci-btn.is-active { border-color: #dc2626; background: #fff5f5; }
+    .ci-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .ci-spk { font-family: var(--f-serif); font-size: 1.125rem; color: var(--c-text-1); line-height: 1; }
+    .ci-btn.is-active .ci-spk { color: #dc2626; }
+    .ci-lang { font-family: var(--f-mono); font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--c-text-3); }
+    .ci-status { font-family: var(--f-mono); font-size: 0.5625rem; letter-spacing: 0.1em; color: var(--c-text-3); margin-top: 4px; }
+    .ci-btn.is-active .ci-status { color: #dc2626; }
+    .ci-side-btns { display: flex; flex-direction: column; gap: 6px; margin-left: auto; flex-shrink: 0; }
 
     /* Feed */
     .voice-feed { min-height: 200px; margin-bottom: 8px; }
@@ -220,12 +252,17 @@
     }
     .cue-tl {
       font-family: var(--f-sans);
-      font-size: 1.0625rem;
-      font-weight: 400;
-      color: var(--c-text);
-      line-height: 1.8;
-      letter-spacing: 0.03em;
+      font-size: 1.375rem;
+      font-weight: 500;
+      color: #111;
+      line-height: 1.75;
+      letter-spacing: 0.02em;
       white-space: pre-wrap;
+    }
+    .cue-avatar--en {
+      background: #f0fdf4;
+      border-color: #6ee7b7;
+      color: #059669;
     }
     .cue-tl--pending {
       display: flex; align-items: center; gap: 10px;
@@ -515,11 +552,25 @@
             <strong>您的浏览器不支持语音输入，请使用 Chrome 或 Edge。</strong>
           </div>
 
-          <!-- Language direction -->
-          <div class="voice-lang-row">
-            <button class="voice-lang-btn is-active" id="dirJaZh">日本語 → 中文</button>
+          <!-- Speaker setup -->
+          <div class="voice-setup-row">
+            <div class="voice-spk-cfg">
+              <span class="voice-spk-id">甲</span>
+              <select class="voice-lang-sel" id="selA">
+                <option value="ja">日本語</option>
+                <option value="zh">中文</option>
+                <option value="en">English</option>
+              </select>
+            </div>
             <span class="voice-lang-sep">⇄</span>
-            <button class="voice-lang-btn" id="dirZhJa">中文 → 日本語</button>
+            <div class="voice-spk-cfg">
+              <span class="voice-spk-id">乙</span>
+              <select class="voice-lang-sel" id="selB">
+                <option value="zh">中文</option>
+                <option value="ja">日本語</option>
+                <option value="en">English</option>
+              </select>
+            </div>
           </div>
 
           <!-- Transcript feed -->
@@ -529,9 +580,21 @@
           <div class="voice-session-bar">
             <div class="voice-interim-line" id="voiceInterim"></div>
             <div class="voice-btn-row">
-              <button class="tl-action-btn tl-action-btn--primary" id="micBtn">開始 / 开始</button>
-              <button class="tl-action-btn tl-action-btn--primary" id="voiceSummary" disabled>まとめ / 摘要</button>
-              <button class="tl-action-btn tl-action-btn--ghost" id="voiceClear">クリア / 清空</button>
+              <button type="button" class="ci-btn" id="btnA" disabled>
+                <span class="ci-spk">甲</span>
+                <span class="ci-lang" id="ci-lang-A">日本語</span>
+                <span class="ci-status" id="ci-status-A">発言する</span>
+              </button>
+              <button type="button" class="ci-btn" id="btnB" disabled>
+                <span class="ci-spk">乙</span>
+                <span class="ci-lang" id="ci-lang-B">中文</span>
+                <span class="ci-status" id="ci-status-B">发言</span>
+              </button>
+              <div class="ci-side-btns">
+                <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceTts" title="朗读 / 朗読">🔊</button>
+                <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceSummary" disabled>摘要</button>
+                <button type="button" class="tl-action-btn tl-action-btn--ghost" id="voiceClear">クリア</button>
+              </div>
             </div>
           </div>
 
@@ -626,9 +689,8 @@
     }
 
     /* ════════════════════════════════════════════════════════
-       VOICE MODE — Deepgram
+       VOICE MODE — Deepgram + Consecutive Interpretation
     ════════════════════════════════════════════════════════ */
-    const elMicBtn          = document.getElementById('micBtn');
     const elInterim         = document.getElementById('voiceInterim');
     const elVoiceStream     = document.getElementById('voiceStream');
     const elVoiceSummary    = document.getElementById('voiceSummary');
@@ -636,19 +698,25 @@
     const elVoiceCount      = document.getElementById('voiceCount');
     const elVoiceStatusDot  = document.getElementById('voiceStatusDot');
     const elVoiceStatusText = document.getElementById('voiceStatusText');
+    const elBtnA            = document.getElementById('btnA');
+    const elBtnB            = document.getElementById('btnB');
+    const elSelA            = document.getElementById('selA');
+    const elSelB            = document.getElementById('selB');
 
-    let currentDir        = 'ja-zh';
-    let isRecording       = false;
-    let isStopping        = false;
-    let dgSocket          = null;
-    let mediaRecorder     = null;
-    let audioStream       = null;
-    let pendingBuffer     = '';
-    let tokenRefreshTimer = null;
-    let stopCleanupTimer  = null;
-    let cachedToken       = null;
-    let voiceHistory      = [];
-    let voiceItemCounter  = 0;
+    const speakerLang      = { A: 'ja', B: 'zh' };
+    let ttsOn              = true;
+    let activeSpeaker      = null;
+    let pendingNextSpeaker = null;
+    let isRecording        = false;
+    let isStopping         = false;
+    let dgSocket           = null;
+    let mediaRecorder      = null;
+    let audioStream        = null;
+    let pendingBuffer      = '';
+    let tokenRefreshTimer  = null;
+    let stopCleanupTimer   = null;
+    let cachedToken        = null;
+    let voiceHistory       = [];
 
     function prewarmToken() {
       if (isLocal || cachedToken) return;
@@ -662,34 +730,101 @@
     const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
     if (!hasGetUserMedia) {
       document.getElementById('voiceBrowserWarn').style.display = '';
-      elMicBtn.disabled = true;
+    } else {
+      elBtnA.disabled = false;
+      elBtnB.disabled = false;
     }
 
-    document.getElementById('dirJaZh').addEventListener('click', () => setDir('ja-zh'));
-    document.getElementById('dirZhJa').addEventListener('click', () => setDir('zh-ja'));
+    const LANG_LABEL  = { ja: '日本語', zh: '中文', en: 'English' };
+    const LANG_IDLE   = { ja: '発言する', zh: '发言', en: 'Speak' };
+    const LANG_DG     = { ja: 'ja', zh: 'zh-CN', en: 'en-US' };
+    const LANG_ENDPT  = { ja: '600', zh: '800', en: '500' };
+    const LANG_TTS    = { ja: 'ja-JP', zh: 'zh-CN', en: 'en-US' };
+    const DIR_LABEL   = {
+      'ja-zh':'日本語 → 中文','zh-ja':'中文 → 日本語',
+      'ja-en':'日本語 → English','en-ja':'English → 日本語',
+      'zh-en':'中文 → English','en-zh':'English → 中文',
+    };
 
-    function setDir(dir) {
-      currentDir = dir;
-      document.getElementById('dirJaZh').classList.toggle('is-active', dir === 'ja-zh');
-      document.getElementById('dirZhJa').classList.toggle('is-active', dir === 'zh-ja');
-      if (isRecording) { stopRecording(); startRecording(); }
-    }
-
-    elMicBtn.addEventListener('click', () => {
-      if (!hasGetUserMedia) return;
-      if (isLocal) {
-        elInterim.textContent = 'ローカル環境では音声機能を使用できません / 本地环境不支持语音功能';
-        return;
+    // Language selectors: A and B must differ; auto-fix conflicts
+    function syncFromA() {
+      speakerLang.A = elSelA.value;
+      if (speakerLang.A === speakerLang.B) {
+        speakerLang.B = ['ja','zh','en'].find(l => l !== speakerLang.A);
+        elSelB.value = speakerLang.B;
       }
-      isRecording ? stopRecording() : startRecording();
+      updateBtnLabels();
+    }
+    function syncFromB() {
+      speakerLang.B = elSelB.value;
+      if (speakerLang.A === speakerLang.B) {
+        speakerLang.A = ['ja','zh','en'].find(l => l !== speakerLang.B);
+        elSelA.value = speakerLang.A;
+      }
+      updateBtnLabels();
+    }
+    elSelA.addEventListener('change', syncFromA);
+    elSelB.addEventListener('change', syncFromB);
+
+    function updateBtnLabels() {
+      document.getElementById('ci-lang-A').textContent = LANG_LABEL[speakerLang.A];
+      document.getElementById('ci-lang-B').textContent = LANG_LABEL[speakerLang.B];
+      if (!isRecording) {
+        document.getElementById('ci-status-A').textContent = LANG_IDLE[speakerLang.A];
+        document.getElementById('ci-status-B').textContent = LANG_IDLE[speakerLang.B];
+      }
+    }
+
+    function speakText(text, lang) {
+      if (!window.speechSynthesis || !ttsOn) return;
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = LANG_TTS[lang] || 'zh-CN';
+      utt.rate = 0.95;
+      window.speechSynthesis.speak(utt);
+    }
+
+    document.getElementById('voiceTts').addEventListener('click', () => {
+      ttsOn = !ttsOn;
+      document.getElementById('voiceTts').textContent = ttsOn ? '🔊' : '🔇';
+      if (!ttsOn) window.speechSynthesis?.cancel();
     });
 
-    async function startRecording() {
-      setMicState(true);
+    // Keyboard shortcuts: A / B key to toggle respective speaker
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('tabVoice').style.display === 'none') return;
+      if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+      if (e.key === 'a' || e.key === 'A') { e.preventDefault(); toggleSpeaker('A'); }
+      if (e.key === 'b' || e.key === 'B') { e.preventDefault(); toggleSpeaker('B'); }
+    });
+
+    function toggleSpeaker(spk) {
+      if (!hasGetUserMedia) return;
+      if (isLocal) {
+        elInterim.textContent = '本地环境不支持语音功能 / ローカル環境では音声機能を使用できません';
+        return;
+      }
+      if (activeSpeaker === spk) {
+        // Same speaker: stop and translate
+        stopRecording();
+      } else if (activeSpeaker !== null) {
+        // Other speaker: stop current, then start new speaker
+        pendingNextSpeaker = spk;
+        stopRecording();
+      } else {
+        startRecording(spk);
+      }
+    }
+
+    elBtnA.addEventListener('click', () => toggleSpeaker('A'));
+    elBtnB.addEventListener('click', () => toggleSpeaker('B'));
+
+    async function startRecording(spk) {
+      activeSpeaker = spk;
+      setMicState(spk, true);
       isStopping = false;
       elInterim.textContent = '接続中… / 连接中…';
       try {
-        // Use cached token if available, otherwise fetch; get mic in parallel
         const tokenPromise = cachedToken
           ? Promise.resolve({ key: cachedToken })
           : fetch('/.netlify/functions/deepgram-token').then(r => r.json());
@@ -697,13 +832,22 @@
 
         const [tokenData, stream] = await Promise.all([
           tokenPromise,
-          navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+          navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+              sampleRate: 48000,
+              channelCount: 1
+            },
+            video: false
+          })
         ]);
         if (tokenData.error) throw new Error(tokenData.error);
         audioStream = stream;
 
-        const lang = currentDir === 'ja-zh' ? 'ja' : 'zh-CN';
-        const endpointing = lang === 'ja' ? '600' : '800';
+        const lang = LANG_DG[speakerLang[spk]] || 'ja';
+        const endpointing = LANG_ENDPT[speakerLang[spk]] || '600';
         const params = new URLSearchParams({
           model: 'nova-2', language: lang,
           punctuate: 'true', smart_format: 'true',
@@ -716,7 +860,7 @@
         );
 
         dgSocket.onopen = () => {
-          elInterim.textContent = '聴いています… / 正在听…';
+          elInterim.textContent = { ja:'聴いています…', zh:'正在听…', en:'Listening…' }[speakerLang[spk]] || '聴いています…';
           const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
             ? 'audio/webm;codecs=opus' : 'audio/webm';
           mediaRecorder = new MediaRecorder(audioStream, { mimeType: mime });
@@ -734,20 +878,11 @@
           if (data.type !== 'Results') return;
           const transcript = data.channel?.alternatives?.[0]?.transcript;
           if (!transcript) return;
-
+          // Accumulate all recognized text; translate only on manual stop
           if (data.is_final) {
             pendingBuffer += transcript + ' ';
-            elInterim.textContent = pendingBuffer.trim();
-            if (data.speech_final) {
-              const text = pendingBuffer.trim();
-              pendingBuffer = '';
-              elInterim.textContent = isStopping ? '' : '聴いています… / 正在听…';
-              if (text) sendToTranslate(text);
-              if (isStopping) finishStop();
-            }
-          } else {
-            elInterim.textContent = (pendingBuffer + transcript).trim();
           }
+          elInterim.textContent = (pendingBuffer + (data.is_final ? '' : transcript)).trim();
         };
 
         dgSocket.onerror = () => {
@@ -756,9 +891,9 @@
 
         dgSocket.onclose = () => {
           if (isStopping) {
-            finishStop();
+            flushAndStop();
           } else if (isRecording) {
-            setTimeout(() => { if (isRecording) startRecording(); }, 1000);
+            setTimeout(() => { if (isRecording) startRecording(activeSpeaker); }, 1000);
           }
         };
 
@@ -767,12 +902,13 @@
             if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
             if (dgSocket) { dgSocket.onclose = null; dgSocket.close(); dgSocket = null; }
             if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
-            startRecording();
+            startRecording(activeSpeaker);
           }
         }, 250000);
 
       } catch (err) {
-        setMicState(false);
+        activeSpeaker = null;
+        setMicState(null, false);
         elInterim.textContent = `エラー: ${err.message}`;
       }
     }
@@ -781,60 +917,97 @@
       if (isStopping) return;
       isStopping = true;
       clearTimeout(tokenRefreshTimer);
-      setMicState(false);
-
+      setMicState(null, false);
       if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-
       if (dgSocket && dgSocket.readyState === WebSocket.OPEN) {
         dgSocket.send(JSON.stringify({ type: 'CloseStream' }));
-        stopCleanupTimer = setTimeout(finishStop, 1500);
+        stopCleanupTimer = setTimeout(flushAndStop, 1500);
       } else {
-        finishStop();
+        flushAndStop();
       }
+    }
+
+    function flushAndStop() {
+      clearTimeout(stopCleanupTimer);
+      const text = pendingBuffer.trim();
+      const spk  = activeSpeaker;
+      pendingBuffer = '';
+      if (text) sendToTranslate(text, spk);
+      finishStop();
     }
 
     function finishStop() {
-      clearTimeout(stopCleanupTimer);
       if (dgSocket) { dgSocket.onclose = null; dgSocket.close(); dgSocket = null; }
       if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
-      const remaining = pendingBuffer.trim();
-      pendingBuffer = '';
+      activeSpeaker = null;
       isStopping = false;
-      if (remaining) sendToTranslate(remaining);
       prewarmToken();
-    }
-
-    function setMicState(recording) {
-      isRecording = recording;
-      if (recording) {
-        elMicBtn.textContent = '● 停止 / 停止';
-        elMicBtn.classList.remove('tl-action-btn--primary');
-        elMicBtn.classList.add('tl-action-btn--ghost');
-      } else {
-        elMicBtn.textContent = '開始 / 开始';
-        elMicBtn.classList.add('tl-action-btn--primary');
-        elMicBtn.classList.remove('tl-action-btn--ghost');
-        elInterim.textContent = '';
+      if (pendingNextSpeaker) {
+        const next = pendingNextSpeaker;
+        pendingNextSpeaker = null;
+        setTimeout(() => startRecording(next), 300);
       }
     }
 
-    async function sendToTranslate(text) {
-      const item = appendStreamItem(text);
+    function setMicState(spk, recording) {
+      isRecording = recording;
+      elBtnA.classList.toggle('is-active', spk === 'A');
+      elBtnB.classList.toggle('is-active', spk === 'B');
+      document.getElementById('ci-status-A').textContent =
+        spk === 'A' ? '● 録音中' : LANG_IDLE[speakerLang.A];
+      document.getElementById('ci-status-B').textContent =
+        spk === 'B' ? '● 録音中' : LANG_IDLE[speakerLang.B];
+      if (!recording) elInterim.textContent = '';
+    }
+
+    async function sendToTranslate(text, spk) {
+      const tgtSpk = spk === 'A' ? 'B' : 'A';
+      const dir  = `${speakerLang[spk]}-${speakerLang[tgtSpk]}`;
+      const item = appendStreamItem(text, spk, dir);
       setVoiceStatusBusy(true);
       try {
-        const res = await fetch(API_ENDPOINT, {
+        const res = await fetch('/api/translate-stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [{ role: 'user', content: text }],
-            mode: 'interpret',
-            direction: currentDir
+            direction: dir
           })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'API error');
-        resolveStreamItem(item, data.content);
-        voiceHistory.push({ src: text, tl: data.content, dir: currentDir });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'API error');
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+        const tlEl = item.querySelector('.cue-tl');
+        tlEl.classList.remove('cue-tl--pending');
+        tlEl.textContent = '';
+        let buf = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const raw = line.slice(6).trim();
+            if (raw === '[DONE]') continue;
+            try {
+              const chunk = JSON.parse(raw);
+              const token = chunk.choices?.[0]?.delta?.content || '';
+              if (token) {
+                fullText += token;
+                tlEl.textContent = fullText;
+                item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }
+            } catch { /* skip malformed chunk */ }
+          }
+        }
+        speakText(fullText, speakerLang[tgtSpk]);
+        voiceHistory.push({ src: text, tl: fullText, dir, spk });
         elVoiceCount.textContent = `${voiceHistory.length} 件`;
         elVoiceSummary.disabled = false;
       } catch (err) {
@@ -849,14 +1022,16 @@
       elVoiceStatusText.textContent = busy ? '翻訳中 / 翻译中…' : 'Deepgram · Qwen-Plus · 準備完了';
     }
 
-    function appendStreamItem(src) {
-      const isJaZh = currentDir === 'ja-zh';
+    function appendStreamItem(src, spk, dir) {
+      const srcLang = speakerLang[spk];
+      const avatarCls = { ja: '', zh: ' cue-avatar--zh', en: ' cue-avatar--en' }[srcLang] || '';
+      const dirLabel  = DIR_LABEL[dir] || dir;
       const el = document.createElement('div');
       el.className = 'cue-entry';
       el.innerHTML = `
-        <div class="cue-avatar${isJaZh ? '' : ' cue-avatar--zh'}">${isJaZh ? '日' : '中'}</div>
+        <div class="cue-avatar${avatarCls}">${escapeHtml(spk)}</div>
         <div class="cue-body">
-          <div class="cue-name">${isJaZh ? '日本語' : '中文'}</div>
+          <div class="cue-name">${escapeHtml(dirLabel)}</div>
           <div class="cue-src">${escapeHtml(src)}</div>
           <div class="cue-tl cue-tl--pending">
             <div class="tl-spinner"></div>
@@ -885,8 +1060,7 @@
       elVoiceSummary.disabled = true;
       setVoiceStatusBusy(true);
       const transcript = voiceHistory.map(h => {
-        const d = h.dir === 'ja-zh' ? '日→中' : '中→日';
-        return `[${d}] ${h.src} → ${h.tl}`;
+        return `[${DIR_LABEL[h.dir] || h.dir}] ${h.src} → ${h.tl}`;
       }).join('\n');
       const prompt = `以下の音声通訳記録の会議まとめを生成してください / 请为以下口译记录生成会议摘要：\n\n${transcript}`;
       try {
@@ -919,7 +1093,6 @@
       if (voiceHistory.length > 0 && !confirm('記録をクリアしますか？ / 确认清空记录？')) return;
       if (isRecording) stopRecording();
       voiceHistory = [];
-      voiceItemCounter = 0;
       pendingBuffer = '';
       elVoiceStream.innerHTML = '';
       elInterim.textContent = '';

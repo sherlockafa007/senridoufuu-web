@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文件对比分析工具</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #fafaf8;
+      --surface:  #ffffff;
+      --border:   #e8e6e0;
+      --text-1:   #1a1a18;
+      --text-2:   #4a4a46;
+      --text-3:   #9a9a94;
+      --accent:   #2d5a3d;
+      --accent-l: #f0f5f1;
+      --red:      #b91c1c;
+      --red-l:    #fef2f2;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      font-weight: 300;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+    }
+
+    .page { max-width: 860px; margin: 0 auto; padding: 60px 24px 96px; }
+
+    h1 {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 1.75rem;
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 0.875rem;
+      color: var(--text-3);
+      line-height: 1.8;
+      margin-bottom: 48px;
+    }
+
+    /* ── API Key ── */
+    .section-label {
+      font-size: 0.5625rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      font-family: monospace;
+      margin-bottom: 10px;
+    }
+    .key-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 36px;
+      align-items: center;
+    }
+    .key-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-family: monospace;
+      font-size: 0.875rem;
+      color: var(--text-1);
+    }
+    .key-input:focus { outline: none; border-color: var(--accent); }
+    .key-save {
+      padding: 12px 20px;
+      background: none;
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-3);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .key-save:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      border: 1px dashed var(--border);
+      padding: 48px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 20px;
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: var(--accent-l); }
+    .drop-zone.compact { padding: 18px 32px; }
+    .drop-icon { font-size: 2rem; color: var(--border); margin-bottom: 14px; line-height: 1; }
+    .drop-zone.compact .drop-icon { display: none; }
+    .drop-main { font-size: 1rem; color: var(--text-2); margin-bottom: 6px; }
+    .drop-sub { font-size: 0.6875rem; color: var(--text-3); letter-spacing: 0.15em; text-transform: uppercase; }
+
+    /* ── File list ── */
+    .file-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 28px; }
+    .file-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border: 1px solid var(--border); background: var(--surface);
+    }
+    .badge {
+      font-size: 0.45rem; letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 3px 6px; font-weight: 500; flex-shrink: 0; font-family: monospace;
+    }
+    .badge-pdf  { background: #fee2e2; color: #b91c1c; }
+    .badge-docx { background: #dbeafe; color: #1d4ed8; }
+    .badge-xlsx, .badge-xls { background: #dcfce7; color: #15803d; }
+    .badge-csv  { background: #fef3c7; color: #b45309; }
+    .fname { flex: 1; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fsize { font-size: 0.5625rem; color: var(--text-3); letter-spacing: 0.1em; flex-shrink: 0; font-family: monospace; }
+    .fsize.warn { color: #b45309; }
+    .fremove { background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 1rem; padding: 0 4px; line-height: 1; }
+    .fremove:hover { color: var(--text-1); }
+
+    /* ── Prompt ── */
+    .prompt-wrap { margin-bottom: 20px; }
+    .prompt-input {
+      width: 100%; min-height: 80px; padding: 14px;
+      border: 1px solid var(--border); background: var(--surface);
+      font-family: 'Noto Sans SC', sans-serif; font-size: 0.9375rem;
+      font-weight: 300; color: var(--text-1); line-height: 1.7; resize: vertical;
+    }
+    .prompt-input:focus { outline: none; border-color: var(--accent); }
+    .prompt-input::placeholder { color: var(--text-3); }
+
+    /* ── Buttons ── */
+    .actions { display: flex; gap: 12px; margin-bottom: 48px; }
+    .btn-primary {
+      padding: 12px 32px; background: var(--accent); color: #fff;
+      border: none; font-size: 0.8125rem; letter-spacing: 0.1em; cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-ghost {
+      padding: 12px 24px; background: none; color: var(--text-3);
+      border: 1px solid var(--border); font-size: 0.8125rem; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Result ── */
+    .result { border-top: 1px solid var(--border); padding-top: 36px; display: none; }
+    .result-label { font-size: 0.5625rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-3); font-family: monospace; margin-bottom: 20px; }
+
+    .loading { display: flex; align-items: center; gap: 10px; font-size: 0.8125rem; color: var(--text-3); }
+    .spinner { width: 14px; height: 14px; border: 1.5px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box { padding: 16px 18px; background: var(--red-l); border: 1px solid #fecaca; color: var(--red); font-size: 0.875rem; line-height: 1.7; white-space: pre-wrap; }
+
+    /* ── Report ── */
+    .report { font-size: 0.9375rem; line-height: 1.9; color: var(--text-1); }
+    .report h2, .report h3 {
+      font-family: 'Noto Serif SC', serif; font-weight: 400;
+      border-bottom: 1px solid var(--border); padding-bottom: 0.4em; margin: 1.8em 0 0.7em;
+    }
+    .report h2 { font-size: 1.125rem; }
+    .report h3 { font-size: 1rem; }
+    .report h2:first-child, .report h3:first-child { margin-top: 0; }
+    .report h4 { font-weight: 500; font-size: 0.9375rem; margin: 1.2em 0 0.4em; }
+    .report p { margin-bottom: 0.9em; }
+    .report ul, .report ol { padding-left: 1.5em; margin-bottom: 0.9em; }
+    .report li { margin-bottom: 0.3em; }
+    .report strong { font-weight: 500; }
+
+    .log-box { margin-top: 32px; border-top: 1px solid var(--border); padding-top: 20px; }
+    .log-toggle { font-size: 0.6875rem; color: var(--text-3); cursor: pointer; letter-spacing: 0.1em; background: none; border: none; text-transform: uppercase; font-family: monospace; }
+    .log-toggle:hover { color: var(--text-2); }
+    .log-text { display: none; font-family: monospace; font-size: 0.75rem; color: var(--text-3); white-space: pre-wrap; line-height: 1.7; margin-top: 12px; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <h1>文件对比分析工具</h1>
+  <p class="subtitle">
+    本地运行，无超时限制。支持年报、招股书、研究报告等大型文件。<br>
+    处理流程：本地提取文字 → 分段送 Qwen 提炼要点 → 生成综合对比报告。
+  </p>
+
+
+  <!-- Drop zone -->
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.xlsx,.xls,.csv" hidden>
+    <div class="drop-icon">↑</div>
+    <div class="drop-main">拖放文件，或点击选择</div>
+    <div class="drop-sub">PDF · Word · Excel · CSV &nbsp;|&nbsp; 可同时上传多份，每份支持数百页</div>
+  </div>
+
+  <!-- File list -->
+  <div class="file-list" id="fileList"></div>
+
+  <!-- Prompt -->
+  <div class="prompt-wrap" id="promptWrap" style="display:none">
+    <div class="section-label" style="margin-bottom:10px">分析问题 <span style="opacity:.6">（可留空，留空则综合对比）</span></div>
+    <textarea class="prompt-input" id="promptInput"
+      placeholder="例：比较三条地铁的盈利模式、客流量趋势和未来扩张策略"></textarea>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions" id="actions" style="display:none">
+    <button class="btn-primary" id="analyzeBtn">开始分析</button>
+    <button class="btn-ghost" id="clearBtn">清空</button>
+  </div>
+
+  <!-- Result -->
+  <div class="result" id="result">
+    <div class="result-label">分析报告</div>
+    <div class="loading" id="loading" style="display:none">
+      <div class="spinner"></div>
+      <span id="loadingMsg">正在处理，请稍候（可能需要数分钟）…</span>
+    </div>
+    <div class="error-box" id="errorBox" style="display:none"></div>
+    <div class="report" id="report"></div>
+    <div class="log-box" id="logBox" style="display:none">
+      <button class="log-toggle" id="logToggle">▶ 显示处理日志</button>
+      <pre class="log-text" id="logText"></pre>
+    </div>
+  </div>
+
+</div>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- mammoth (Word) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<!-- SheetJS (Excel) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+  /* ── PDF.js worker ── */
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+
+  /* ── State ── */
+  const uploadedFiles = []; // { name, content, chars, ext }
+
+  /* ── DOM ── */
+  const elDrop       = document.getElementById('dropZone');
+  const elFileInput  = document.getElementById('fileInput');
+  const elFileList   = document.getElementById('fileList');
+  const elPromptWrap = document.getElementById('promptWrap');
+  const elActions    = document.getElementById('actions');
+  const elAnalyze    = document.getElementById('analyzeBtn');
+  const elClear      = document.getElementById('clearBtn');
+  const elResult     = document.getElementById('result');
+  const elLoading    = document.getElementById('loading');
+  const elLoadingMsg = document.getElementById('loadingMsg');
+  const elError      = document.getElementById('errorBox');
+  const elReport     = document.getElementById('report');
+  const elLogBox     = document.getElementById('logBox');
+  const elLogToggle  = document.getElementById('logToggle');
+  const elLogText    = document.getElementById('logText');
+
+  /* ── Drag & drop ── */
+  elDrop.addEventListener('dragover', e => { e.preventDefault(); elDrop.classList.add('over'); });
+  elDrop.addEventListener('dragleave', () => elDrop.classList.remove('over'));
+  elDrop.addEventListener('drop', e => { e.preventDefault(); elDrop.classList.remove('over'); handleFiles(Array.from(e.dataTransfer.files)); });
+  elDrop.addEventListener('click', () => elFileInput.click());
+  elFileInput.addEventListener('change', e => { handleFiles(Array.from(e.target.files)); elFileInput.value = ''; });
+
+  /* ── File handling ── */
+  async function handleFiles(list) {
+    const ALLOWED = ['pdf', 'docx', 'xlsx', 'xls', 'csv'];
+    for (const file of list) {
+      if (uploadedFiles.length >= 10) break;
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (!ALLOWED.includes(ext)) continue;
+      if (uploadedFiles.find(f => f.name === file.name)) continue;
+
+      const entry = { name: file.name, content: null, chars: null, ext, loading: true };
+      uploadedFiles.push(entry);
+      renderList();
+
+      try {
+        entry.content = await extractText(file, ext);
+        entry.chars   = entry.content.length;
+      } catch (e) {
+        entry.content = '';
+        entry.chars   = 0;
+        entry.err     = e.message;
+      }
+      entry.loading = false;
+      renderList();
+    }
+    updateUI();
+  }
+
+  async function extractText(file, ext) {
+    const buf = await file.arrayBuffer();
+    if (ext === 'pdf')  return extractPDF(buf);
+    if (ext === 'docx') return extractWord(buf);
+    if (ext === 'csv')  return new TextDecoder().decode(buf);
+    return extractExcel(buf);
+  }
+
+  async function extractPDF(buf) {
+    if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js 未加载，请检查网络连接');
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    const pages = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page    = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      pages.push(content.items.map(x => x.str).join(' '));
+    }
+    return pages.join('\n');
+  }
+
+  async function extractWord(buf) {
+    if (typeof mammoth === 'undefined') throw new Error('mammoth.js 未加载，请检查网络连接');
+    const r = await mammoth.extractRawText({ arrayBuffer: buf });
+    return r.value;
+  }
+
+  function extractExcel(buf) {
+    if (typeof XLSX === 'undefined') throw new Error('SheetJS 未加载，请检查网络连接');
+    const wb = XLSX.read(buf, { type: 'array' });
+    return wb.SheetNames.map(n => {
+      const csv = XLSX.utils.sheet_to_csv(wb.Sheets[n]);
+      return `[Sheet: ${n}]\n${csv}`;
+    }).join('\n\n');
+  }
+
+  /* ── Render file list ── */
+  function renderList() {
+    elFileList.innerHTML = uploadedFiles.map((f, idx) => {
+      const badge = `<span class="badge badge-${f.ext}">${f.ext.toUpperCase()}</span>`;
+      const name  = `<span class="fname" title="${h(f.name)}">${h(f.name)}</span>`;
+      let size;
+      if (f.loading) {
+        size = `<span class="fsize">读取中…</span>`;
+      } else if (f.err) {
+        size = `<span class="fsize warn">错误</span>`;
+      } else if (f.chars === 0) {
+        size = `<span class="fsize warn">0 字符 — 扫描版？</span>`;
+      } else {
+        size = `<span class="fsize">${f.chars.toLocaleString()} 字符</span>`;
+      }
+      const rm = `<button class="fremove" data-i="${idx}">×</button>`;
+      return `<div class="file-item">${badge}${name}${size}${rm}</div>`;
+    }).join('');
+
+    elFileList.querySelectorAll('.fremove').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        uploadedFiles.splice(Number(btn.dataset.i), 1);
+        renderList(); updateUI();
+      });
+    });
+
+    const has = uploadedFiles.length > 0;
+    elDrop.classList.toggle('compact', has);
+    elDrop.querySelector('.drop-main').textContent = has
+      ? '点击继续添加文件'
+      : '拖放文件，或点击选择';
+  }
+
+  function updateUI() {
+    const ready = uploadedFiles.length > 0 && uploadedFiles.every(f => !f.loading);
+    elPromptWrap.style.display = ready ? '' : 'none';
+    elActions.style.display    = ready ? '' : 'none';
+  }
+
+  /* ── Analysis ── */
+  elAnalyze.addEventListener('click', async () => {
+    const ready = uploadedFiles.filter(f => !f.loading && f.content !== null);
+    if (!ready.length) return;
+
+    elAnalyze.disabled = true;
+    elResult.style.display = '';
+    elLoading.style.display = 'flex';
+    elError.style.display   = 'none';
+    elReport.innerHTML      = '';
+    elLogBox.style.display  = 'none';
+
+    const n = ready.length;
+    let done = 0;
+    const tick = setInterval(() => {
+      done = (done + 1) % 4;
+      elLoadingMsg.textContent = `正在处理（${n} 份文件）${'…'.repeat(done + 1)}`;
+    }, 800);
+
+    try {
+      const res = await fetch('/analyze', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          files:  ready.map(f => ({ name: f.name, content: f.content })),
+          prompt: document.getElementById('promptInput').value.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.log) {
+        elLogText.textContent  = data.log;
+        elLogBox.style.display = '';
+      }
+
+      if (!res.ok || data.error) {
+        elError.textContent     = data.error || `HTTP ${res.status}`;
+        elError.style.display   = '';
+      } else {
+        elReport.innerHTML = renderMd(data.content || '');
+      }
+    } catch (err) {
+      elError.textContent   = err.message;
+      elError.style.display = '';
+    } finally {
+      clearInterval(tick);
+      elLoading.style.display = 'none';
+      elAnalyze.disabled      = false;
+    }
+  });
+
+  /* ── Clear ── */
+  elClear.addEventListener('click', () => {
+    uploadedFiles.length    = 0;
+    renderList(); updateUI();
+    elResult.style.display  = 'none';
+    elReport.innerHTML      = '';
+    elError.style.display   = 'none';
+    document.getElementById('promptInput').value = '';
+  });
+
+  /* ── Log toggle ── */
+  elLogToggle.addEventListener('click', () => {
+    const open = elLogText.style.display !== 'none' && elLogText.style.display !== '';
+    if (open) { elLogText.style.display = 'none'; elLogToggle.textContent = '▶ 显示处理日志'; }
+    else       { elLogText.style.display = '';     elLogToggle.textContent = '▼ 隐藏处理日志'; }
+  });
+
+  /* ── Helpers ── */
+  function h(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderMd(text) {
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+
+    return text.split(/\n{2,}/).map(block => {
+      const lines = block.split('\n').map(l => l.trimEnd()).filter(Boolean);
+      if (!lines.length) return '';
+      const f = lines[0];
+      if (/^##\s/.test(f))   return `<h2>${inl(f.replace(/^##\s+/,''))}</h2>`;
+      if (/^###\s/.test(f))  return `<h3>${inl(f.replace(/^###\s+/,''))}</h3>`;
+      if (/^####\s/.test(f)) return `<h4>${inl(f.replace(/^####\s+/,''))}</h4>`;
+      if (lines.every(l => /^[-*•]\s/.test(l) || /^\d+\.\s/.test(l))) {
+        return '<ul>' + lines.map(l =>
+          `<li>${inl(l.replace(/^[-*•]\s/,'').replace(/^\d+\.\s/,''))}</li>`
+        ).join('') + '</ul>';
+      }
+      return `<p>${lines.map(inl).join('<br>')}</p>`;
+    }).join('');
+  }
+</script>
+</body>
+</html>
