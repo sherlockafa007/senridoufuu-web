@@ -7,6 +7,10 @@
 [edge_functions]
   directory = "netlify/edge-functions"
 
+[[edge_functions]]
+  path = "/api/translate-stream"
+  function = "translate-stream"
+
 [[headers]]
   for = "/*"
   [headers.values]

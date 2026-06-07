@@ -975,8 +975,9 @@
           })
         });
         if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'API error');
+          let errMsg = `HTTP ${res.status}`;
+          try { const d = await res.json(); errMsg = d.error || errMsg; } catch { /* HTML error page */ }
+          throw new Error(errMsg);
         }
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
