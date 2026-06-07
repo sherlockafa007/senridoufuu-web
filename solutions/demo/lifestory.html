@@ -137,7 +137,7 @@
     <span class="hdr-title">生平故事</span>
     <span class="hdr-prog" id="hdr-prog"></span>
   </div>
-  <button type="button" class="btn-gen" id="btn-gen" onclick="genStory()" disabled>生成我的故事</button>
+  <button type="button" class="btn-gen" id="btn-gen" onclick="confirmGenStory()" disabled>生成我的故事</button>
 </header>
 <div class="prog-bar"><div class="prog-fill prog-fill-init" id="prog-fill"></div></div>
 
@@ -230,8 +230,10 @@
 
 <div class="action-btns">
   <button type="button" class="action-btn" onclick="exportData()" title="导出所有数据为 JSON">导出</button>
+  <button type="button" class="action-btn" onclick="document.getElementById('import-file').click()" title="从 JSON 文件恢复数据">导入</button>
   <button type="button" class="action-btn" onclick="resetAll()" title="清除所有数据，无法恢复">重置</button>
 </div>
+<input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════════
@@ -463,6 +465,20 @@ async function callBridge(lastAnswer, nextQuestion) {
   return data.bridge || '';
 }
 
+async function confirmGenStory() {
+  const n = state.answers.length;
+  const privateN = state.answers.filter(a => a.privacy).length;
+  const cats = new Set(state.answers.map(a => a.cat)).size;
+
+  const summary = `即将基于 ${n} 条回答生成故事` +
+    `${privateN > 0 ? `（其中 ${privateN} 条标记为隐私，不会被分析）` : ``}` +
+    `，涉及 ${cats} 个主题。`;
+
+  if (confirm(summary + '\n\n确定生成吗？')) {
+    await genStory();
+  }
+}
+
 async function genStory() {
   if (!state.answers.length) return;
   prevSec = document.querySelector('.sec.on')?.id || 'sec-welcome';
@@ -676,12 +692,12 @@ function showBetween(desc, allDone) {
       btnMore.textContent = '清除筛选，继续';
       btnMore.onclick = () => { state.themeFilter = null; saveState(); nextTurn(null); };
       btnRest.textContent = '生成故事';
-      btnRest.onclick = () => genStory();
+      btnRest.onclick = () => confirmGenStory();
     } else {
       // 全部答完
       btnMore.style.display = 'none';
       btnRest.textContent = '生成故事';
-      btnRest.onclick = () => genStory();
+      btnRest.onclick = () => confirmGenStory();
     }
   } else {
     btnMore.textContent = '继续回答';
@@ -749,6 +765,53 @@ function exportData() {
   a.click();
   URL.revokeObjectURL(url);
   alert('✓ 数据已下载');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+
+      // 数据验证：检查必要字段
+      if (!imported.answers || !Array.isArray(imported.answers)) {
+        throw new Error('数据格式错误：缺少 answers 数组');
+      }
+
+      if (!confirm(`即将导入 ${imported.answers.length} 条回答。现有数据将被覆盖。确定吗？`)) {
+        return;
+      }
+
+      // 合并或覆盖：若当前有数据，提示选择
+      if (state.answers.length > 0) {
+        if (!confirm('当前已有 ' + state.answers.length + ' 条回答。覆盖还是合并？（取消=取消导入）')) {
+          return;
+        }
+        // 如果用户点击确定，则覆盖
+      }
+
+      // 覆盖状态
+      state = imported;
+      // 确保必要字段存在
+      if (!state.draft) state.draft = { qId: null, text: '', privacy: false };
+      if (!state.themeFilter) state.themeFilter = null;
+      saveState();
+      updateHdr();
+
+      // 刷新页面以更新 UI
+      alert(`✓ 已导入 ${state.answers.length} 条回答。页面将刷新。`);
+      location.reload();
+    } catch (err) {
+      alert(`导入失败：${err.message}`);
+    }
+  };
+  reader.readAsText(file);
+
+  // 重置文件输入，以便下次可以导入同一文件
+  event.target.value = '';
 }
 
 function resetAll() {
@@ -875,7 +938,22 @@ function show(id) {
 
 function updateHdr() {
   const n = state.answers.length;
-  document.getElementById('hdr-prog').textContent = n ? `已回答 ${n} 题` : '';
+  let remaining = 0;
+
+  // 计算剩余题目数
+  if (state.themeFilter) {
+    remaining = [...ANCHORS, ...BRANCHES, ...HISTORICAL]
+      .filter(q => !state.usedIds.includes(q.id) && q.cat === state.themeFilter)
+      .length;
+  } else {
+    remaining = [...ANCHORS, ...BRANCHES, ...HISTORICAL]
+      .filter(q => !state.usedIds.includes(q.id))
+      .length;
+  }
+
+  const progText = n ? `已回答 ${n} 题` : '';
+  const remText = remaining > 0 ? ` · 还剩 ${remaining} 题` : '';
+  document.getElementById('hdr-prog').textContent = progText + remText;
   document.getElementById('btn-gen').disabled = n === 0;
   document.getElementById('prog-fill').style.width = `${Math.min(n / 15 * 100, 100)}%`;
 }
@@ -888,9 +966,14 @@ state = loadState();
 updateHdr();
 
 if (state.answers.length > 0) {
+  const cats = new Set(state.answers.map(a => a.cat)).size;
+  const chars = state.answers.reduce((sum, a) => sum + a.answer.length, 0);
+
   document.getElementById('w-title').textContent = '欢迎回来';
   document.getElementById('w-desc').innerHTML =
-    `你已经分享了 ${state.answers.length} 个故事片段。<br>准备好继续了吗？`;
+    `你已经分享了 <strong>${state.answers.length}</strong> 个故事片段<br>` +
+    `涉及 <strong>${cats}</strong> 个主题，共约 <strong>${Math.round(chars/1000)*1000 || chars}</strong> 字。<br>` +
+    `准备好继续了吗？`;
   document.getElementById('btn-start').textContent = '继续 →';
   if (state.lastStory) document.getElementById('btn-prev-story').classList.remove('hidden');
 }
