@@ -820,6 +820,7 @@
     elBtnB.addEventListener('click', () => toggleSpeaker('B'));
 
     async function startRecording(spk) {
+      window.speechSynthesis?.cancel();
       activeSpeaker = spk;
       setMicState(spk, true);
       isStopping = false;
@@ -837,7 +838,6 @@
               echoCancellation: true,
               noiseSuppression: true,
               autoGainControl: true,
-              sampleRate: 48000,
               channelCount: 1
             },
             video: false
@@ -1002,11 +1002,11 @@
               if (token) {
                 fullText += token;
                 tlEl.textContent = fullText;
-                item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
               }
             } catch { /* skip malformed chunk */ }
           }
         }
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         speakText(fullText, speakerLang[tgtSpk]);
         voiceHistory.push({ src: text, tl: fullText, dir, spk });
         elVoiceCount.textContent = `${voiceHistory.length} 件`;
@@ -1042,12 +1042,6 @@
       elVoiceStream.appendChild(el);
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       return el;
-    }
-
-    function resolveStreamItem(el, translation) {
-      const tl = el.querySelector('.cue-tl');
-      tl.classList.remove('cue-tl--pending');
-      tl.textContent = translation;
     }
 
     function errorStreamItem(el, msg) {
@@ -1219,7 +1213,7 @@
         const w = document.createElement('div');
         w.className = `tl-block tl-block--${block.type}`;
         w.innerHTML = `
-          <div class="tl-block__label">${block.label}</div>
+          <div class="tl-block__label">${escapeHtml(block.label)}</div>
           <div class="tl-block__text">${escapeHtml(block.text)}</div>`;
         elOutputContent.appendChild(w);
       });

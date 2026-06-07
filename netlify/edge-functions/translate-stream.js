@@ -40,6 +40,7 @@ export default async function(request) {
 
   const qwenResp = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
     method: 'POST',
+    signal: AbortSignal.timeout(15000),
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
