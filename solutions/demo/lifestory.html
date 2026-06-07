@@ -113,9 +113,10 @@
     .story-body h2:first-child { margin-top: 0; }
     .story-body p { margin-bottom: 16px; }
 
-    /* ── Reset ── */
-    .reset-btn { position: fixed; bottom: 18px; right: 18px; background: none; border: 1px solid var(--border); color: var(--text2); padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; font-family: inherit; opacity: .4; }
-    .reset-btn:hover { opacity: 1; }
+    /* ── Actions ── */
+    .action-btns { position: fixed; bottom: 18px; right: 18px; display: flex; gap: 8px; flex-direction: column; }
+    .action-btn { background: none; border: 1px solid var(--border); color: var(--text2); padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; font-family: inherit; opacity: .4; transition: opacity .2s; }
+    .action-btn:hover { opacity: 1; }
 
     .hidden { display: none !important; }
     .prog-fill-init { width: 0%; }
@@ -227,7 +228,10 @@
 
 </main>
 
-<button type="button" class="reset-btn" onclick="resetAll()">重置数据</button>
+<div class="action-btns">
+  <button type="button" class="action-btn" onclick="exportData()" title="导出所有数据为 JSON">导出</button>
+  <button type="button" class="action-btn" onclick="resetAll()" title="清除所有数据，无法恢复">重置</button>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════════
@@ -361,7 +365,8 @@ function defState() {
     historicalUsed: 0,  // 历史时空题使用次数（上限 2）
     lastAnalysis:  null,
     lastStory:     null,
-    draft:         { qId: null, text: '', privacy: false },  // 当前未提交的草稿
+    draft:         { qId: null, text: '', privacy: false },
+    themeFilter:   null,  // 主题筛选（null = 不筛选，或 category 名称）
   };
 }
 
@@ -382,7 +387,13 @@ function saveState()  { localStorage.setItem(SK, JSON.stringify(state)); }
 // ══════════════════════════════════════════════════════════════════════════════
 
 function pickNext(analysis) {
-  const { usedIds, tags, historicalUsed } = state;
+  const { usedIds, tags, historicalUsed, themeFilter } = state;
+
+  // 主题筛选函数
+  const matchesTheme = (q) => {
+    if (!themeFilter) return true;
+    return q.cat === themeFilter;
+  };
 
   // 优先级 1：历史时空催化（满足年份+地点，且全程 < 2 次）
   if (analysis && !analysis.isEvasion && historicalUsed < 2 && analysis.year) {
@@ -393,7 +404,7 @@ function pickNext(analysis) {
       if (!h.locations) return true;
       return !analysis.location || h.locations.some(l => analysis.location.includes(l));
     });
-    if (hist) {
+    if (hist && matchesTheme(hist)) {
       state.historicalUsed++;
       const text = hist.text
         .replace('{location}', analysis.location || '那里')
@@ -405,7 +416,7 @@ function pickNext(analysis) {
   // 优先级 2：衍生追问（标签匹配，且对话已有足够信息 ≥ 3 轮）
   if (analysis && !analysis.isEvasion && state.answers.length >= 3 && tags.length > 0) {
     const best = BRANCHES
-      .filter(b => !usedIds.includes(b.id))
+      .filter(b => !usedIds.includes(b.id) && matchesTheme(b))
       .map(b => ({ b, score: b.triggerTags.filter(t => tags.includes(t)).length }))
       .filter(x => x.score > 0)
       .sort((a, b) => b.score - a.score)[0];
@@ -413,11 +424,11 @@ function pickNext(analysis) {
   }
 
   // 优先级 3：下一道锚点题
-  const anchor = ANCHORS.find(q => !usedIds.includes(q.id));
+  const anchor = ANCHORS.find(q => !usedIds.includes(q.id) && matchesTheme(q));
   if (anchor) return { ...anchor, type: 'anchor' };
 
   // 优先级 4：剩余衍生题（锚点全部答完后）
-  const anyBranch = BRANCHES.find(q => !usedIds.includes(q.id));
+  const anyBranch = BRANCHES.find(q => !usedIds.includes(q.id) && matchesTheme(q));
   return anyBranch ? { ...anyBranch, type: 'branch' } : null;
 }
 
@@ -456,22 +467,47 @@ async function genStory() {
   if (!state.answers.length) return;
   prevSec = document.querySelector('.sec.on')?.id || 'sec-welcome';
   show('sec-story');
-  document.getElementById('story-wrap').innerHTML =
-    '<div class="loading"><div class="spinner"></div><span>正在撰写你的故事，请稍候…</span></div>';
+
+  let progressEl = document.getElementById('story-wrap');
+  progressEl.innerHTML = '<div class="loading"><div class="spinner"></div><span>正在撰写你的故事</span><div style="font-size:12px; color:var(--text2); margin-top:8px;">这可能需要 30-60 秒…</div></div>';
+
+  let progressTimer = setInterval(() => {
+    const dots = progressEl.querySelector('span');
+    if (dots) {
+      const text = dots.textContent;
+      if (text.endsWith('…')) {
+        dots.textContent = '正在撰写你的故事';
+      } else {
+        dots.textContent += '…';
+      }
+    }
+  }, 1000);
+
   try {
+    const ctrl = new AbortController();
+    const timeoutId = setTimeout(() => ctrl.abort(), 90000);  // 90 秒超时
+
     const res = await fetch('/.netlify/functions/lifestory', {
       method: 'POST',
+      signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'story', answers: state.answers }),
     });
+
+    clearTimeout(timeoutId);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     state.lastStory = data.story;
     saveState();
+    clearInterval(progressTimer);
     renderStory(data.story);
   } catch (e) {
+    clearInterval(progressTimer);
+    const errMsg = e.name === 'AbortError'
+      ? '生成超时（服务器响应过慢）。请稍后重试。'
+      : `生成失败：${e.message}`;
     document.getElementById('story-wrap').innerHTML =
-      `<div class="err">生成失败：${e.message}<br>（若超时，可稍后重试）</div>`;
+      `<div class="err">${errMsg}<br><button onclick="genStory()" style="margin-top:10px; padding:6px 16px; background:var(--accent); color:#fff; border:none; border-radius:16px; cursor:pointer; font-size:13px;">重新生成</button></div>`;
   }
 }
 
@@ -487,7 +523,10 @@ async function nextTurn(analysis, lastAnswer) {
 
   const next = pickNext(analysis);
   if (!next) {
-    showBetween('你已经回答了所有问题！', true);
+    const msg = state.themeFilter
+      ? `"${state.themeFilter}" 主题的问题都答完了！要继续回答其他主题，还是生成故事？`
+      : '你已经回答了所有问题！';
+    showBetween(msg, true);
     return;
   }
 
@@ -628,10 +667,28 @@ function showBetween(desc, allDone) {
       <div>${a.answer.length > 60 ? a.answer.slice(0, 60) + '…' : a.answer}</div>
     </div>`).join('');
 
+  const btnMore = document.querySelector('.btn-more');
+  const btnRest = document.querySelector('.btn-rest');
+
   if (allDone) {
-    document.querySelector('.btn-more').style.display = 'none';
+    if (state.themeFilter) {
+      // 主题筛选完成：显示清除筛选或生成故事
+      btnMore.textContent = '清除筛选，继续';
+      btnMore.onclick = () => { state.themeFilter = null; saveState(); nextTurn(null); };
+      btnRest.textContent = '生成故事';
+      btnRest.onclick = () => genStory();
+    } else {
+      // 全部答完
+      btnMore.style.display = 'none';
+      btnRest.textContent = '生成故事';
+      btnRest.onclick = () => genStory();
+    }
   } else {
-    document.querySelector('.btn-more').style.display = '';
+    btnMore.textContent = '继续回答';
+    btnMore.onclick = () => nextTurn(null);
+    btnMore.style.display = '';
+    btnRest.textContent = '先到这里';
+    btnRest.onclick = () => restForNow();
   }
   show('sec-between');
 }
@@ -639,10 +696,32 @@ function showBetween(desc, allDone) {
 function restForNow() {
   const n = state.answers.length;
   document.getElementById('w-title').textContent = '今天到这里吧';
-  document.getElementById('w-desc').innerHTML =
-    `你已经分享了 ${n} 个故事片段。<br>随时回来继续，你的答案都保存好了。`;
-  document.getElementById('btn-start').textContent = '继续 →';
+
+  // 收集已答过的主题，建议用户选择不同的主题继续
+  const answeredCats = new Set(state.answers.map(a => a.cat));
+  const availableCats = [...new Set([...ANCHORS, ...BRANCHES].map(q => q.cat))]
+    .filter(cat => !answeredCats.has(cat));
+
+  let descHtml = `你已经分享了 ${n} 个故事片段。<br>随时回来继续，你的答案都保存好了。`;
+  let btnHtml = '<button type="button" class="btn-start" onclick="nextTurn(null)" style="margin-top:12px;">继续 →</button>';
+
+  if (availableCats.length > 0 && availableCats.length <= 5) {
+    descHtml += `<br><br><strong style="display:block; margin-top:12px; font-size:14px; color:var(--text);">或选择只回答关于某个主题的问题：</strong>`;
+    const catBtns = availableCats.map(cat =>
+      `<button type="button" class="btn-start" onclick="setThemeFilter('${cat}'); nextTurn(null);" style="margin:8px 6px 0 0; padding:8px 16px; font-size:13px; background:var(--accentl); color:var(--accent);">仅 ${cat}</button>`
+    ).join('');
+    btnHtml = `<div style="margin-top:16px;">${catBtns}<br>${btnHtml}</div>`;
+  }
+
+  document.getElementById('w-desc').innerHTML = descHtml + btnHtml;
+  document.getElementById('btn-start').textContent = '全部继续 →';
   show('sec-welcome');
+}
+
+function setThemeFilter(theme) {
+  state.themeFilter = theme;
+  saveState();
+  document.getElementById('w-desc').innerHTML = `<div style="font-size:14px; color:var(--text2);">已筛选：仅回答关于 <strong>${theme}</strong> 的问题<br><button type="button" style="margin-top:8px; padding:6px 12px; background:none; border:1px solid var(--border); border-radius:16px; font-size:12px; cursor:pointer; color:var(--text2);" onclick="state.themeFilter=null; saveState(); restForNow();">清除筛选</button></div>`;
 }
 
 function backFromStory() { show(prevSec); }
@@ -654,6 +733,22 @@ function showPrevStory() {
 function renderStory(md) {
   document.getElementById('story-wrap').innerHTML =
     `<div class="story-body">${marked.parse(md)}</div>`;
+}
+
+function exportData() {
+  if (!state.answers.length) {
+    alert('没有数据可导出。');
+    return;
+  }
+  const dataStr = JSON.stringify(state, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `lifestory-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert('✓ 数据已下载');
 }
 
 function resetAll() {
