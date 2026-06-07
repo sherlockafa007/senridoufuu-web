@@ -5,6 +5,7 @@ async function qwen(system, user, maxTokens = 800, temp = 0.7) {
   if (!key) throw new Error('未配置 API Key');
   const res = await fetch(QWEN_URL, {
     method: 'POST',
+    signal: AbortSignal.timeout(15000),
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
     body: JSON.stringify({
       model: 'qwen-plus',
@@ -147,9 +148,14 @@ exports.handler = async (event) => {
       if (!answers?.length) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: '缺少 answers' }) };
       }
-      const qaText = answers.map(a => `问：${a.question}\n答：${a.answer}`).join('\n\n');
+      const qaText = answers.map(a => {
+        if (a.privacy) {
+          return `问：${a.question}\n答：[用户选择不分享]`;
+        }
+        return `问：${a.question}\n答：${a.answer}`;
+      }).join('\n\n');
       const userPrompt =
-        `以下是受访者亲口说出的所有信息。请严格基于这些内容撰写，禁止添加任何未提及的细节。\n\n${qaText}`;
+        `以下是受访者亲口说出的所有信息。请严格基于这些内容撰写，禁止添加任何未提及的细节。\n标记为 [用户选择不分享] 的部分保持空白，不要推断内容。\n\n${qaText}`;
       const story = await qwen(SYS_STORY, userPrompt, 3000, 0.5);
       return { statusCode: 200, headers, body: JSON.stringify({ story }) };
     }

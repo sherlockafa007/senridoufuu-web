@@ -71,6 +71,11 @@
     @keyframes pulse { 50% { opacity: .7; } }
     .mic-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
     .char-ct { font-size: 12px; color: var(--text2); }
+    .char-hint { font-size: 12px; margin-top: 8px; padding: 6px 10px; border-radius: 6px; }
+    .char-hint.short { background: #fef3f2; color: #d14040; }
+    .char-hint.good { background: #f0fef0; color: #2e7d2e; }
+    .char-hint.long { background: #fffbef; color: #b87e0b; }
+    .char-hint.toolong { background: #fef2f2; color: #c0392b; }
     .q-foot { display: flex; align-items: center; justify-content: space-between; }
     .btn-skip { background: none; border: none; color: var(--text2); font-size: 14px; cursor: pointer; font-family: inherit; padding: 8px 0; }
     .btn-skip:hover { color: var(--text); }
@@ -170,6 +175,7 @@
     <p class="q-text" id="q-text"></p>
     <div class="answer-box">
       <textarea class="answer-ta" id="q-ta" placeholder="在这里写下你的回答…" rows="5"></textarea>
+      <div class="char-hint" id="char-hint" style="display:none;"></div>
       <div class="answer-foot">
         <button type="button" class="btn-mic" id="btn-mic" onclick="toggleVoice()">
           <span class="mic-dot"></span>
@@ -177,6 +183,9 @@
         </button>
         <span class="char-ct" id="char-ct">0 字</span>
       </div>
+      <label style="display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px; color:var(--text2); cursor:pointer;">
+        <input type="checkbox" id="privacy-chk" style="cursor:pointer;"> 🔒 标记为隐私，不分析
+      </label>
     </div>
     <div id="q-err"></div>
     <div class="q-foot">
@@ -345,13 +354,14 @@ const SK = 'lifestory_v2';
 
 function defState() {
   return {
-    answers:       [],  // [{id, type, cat, question, answer, analysis, timestamp}]
+    answers:       [],  // [{id, type, cat, question, answer, analysis, timestamp, privacy}]
     usedIds:       [],  // 所有已出现的题目 ID（含跳过）
     anchorsDone:   [],  // 已答完的锚点 ID
     tags:          [],  // 累积的用户标签
     historicalUsed: 0,  // 历史时空题使用次数（上限 2）
     lastAnalysis:  null,
     lastStory:     null,
+    draft:         { qId: null, text: '', privacy: false },  // 当前未提交的草稿
   };
 }
 
@@ -362,6 +372,7 @@ let recognition = null;
 let isRec      = false;
 let recTimer   = null;
 let recSeconds = 0;
+let recRetries = 0;  // 语音识别重试次数
 
 function loadState()  { try { return JSON.parse(localStorage.getItem(SK)) || defState(); } catch { return defState(); } }
 function saveState()  { localStorage.setItem(SK, JSON.stringify(state)); }
@@ -500,8 +511,21 @@ function showQ(q, transition) {
   document.getElementById('q-transition').textContent = transition || '';
   document.getElementById('q-text').textContent = q.text;
   document.getElementById('q-ta').value = '';
+  document.getElementById('privacy-chk').checked = false;
   document.getElementById('char-ct').textContent = '0 字';
+  document.getElementById('char-hint').style.display = 'none';
   document.getElementById('q-err').innerHTML = '';
+
+  // 检查是否有未提交的草稿
+  if (state.draft.qId === q.id && state.draft.text) {
+    const msg = document.getElementById('q-err');
+    msg.innerHTML = `<div class="err">✓ 检测到未提交的回答，已为你恢复。</div>`;
+    document.getElementById('q-ta').value = state.draft.text;
+    document.getElementById('privacy-chk').checked = state.draft.privacy;
+    state.draft = { qId: null, text: '', privacy: false };
+    updateCount();
+  }
+
   show('sec-q');
   document.getElementById('q-ta').focus();
 }
@@ -514,15 +538,27 @@ async function submitAnswer() {
     return;
   }
 
+  const privacy = document.getElementById('privacy-chk').checked;
+  state.draft = { qId: currentQ.id, text: answer, privacy };
+  saveState();
+
   show('sec-loading');
   document.getElementById('loading-msg').textContent = '正在理解你的回答…';
 
   let analysis;
   try {
-    analysis = await callAnalyze(currentQ.text, answer);
-  } catch {
-    // API 失败时退化处理，继续流程
-    analysis = { tags:[], year:null, location:null, isEvasion:false, softLanding:null };
+    // 如果标记为隐私，只保存不分析
+    if (privacy) {
+      analysis = { tags:[], year:null, location:null, isEvasion:false, softLanding:null };
+    } else {
+      analysis = await callAnalyze(currentQ.text, answer);
+    }
+  } catch (err) {
+    // 网络失败：显示重试对话框
+    show('sec-q');
+    const msg = document.getElementById('q-err');
+    msg.innerHTML = `<div class="err">提交失败：${err.message}<br><button onclick="submitAnswer()" style="margin-top:10px; padding:6px 16px; background:var(--accent); color:#fff; border:none; border-radius:16px; cursor:pointer; font-size:13px;">重试</button></div>`;
+    return;
   }
 
   // 累积标签
@@ -534,6 +570,7 @@ async function submitAnswer() {
   if (analysis.isEvasion) {
     // 软着陆：记录跳过，不保存到 answers
     if (!state.usedIds.includes(currentQ.id)) state.usedIds.push(currentQ.id);
+    state.draft = { qId: null, text: '', privacy: false };
     saveState();
     showSoftLanding(analysis.softLanding);
     return;
@@ -548,10 +585,12 @@ async function submitAnswer() {
     answer,
     analysis,
     timestamp: new Date().toISOString(),
+    privacy,
   });
   if (currentQ.type === 'anchor') {
     if (!state.anchorsDone.includes(currentQ.id)) state.anchorsDone.push(currentQ.id);
   }
+  state.draft = { qId: null, text: '', privacy: false };
   saveState();
   updateHdr();
 
@@ -656,13 +695,15 @@ function toggleVoice() {
 
   const ta  = document.getElementById('q-ta');
   const btn = document.getElementById('btn-mic');
-  const accumulated = ta.value;   // 手动录音前已有的文字
-  let finalBuffer = '';           // 本次录音中已确定的文字
+  const accumulated = ta.value;
+  let finalBuffer = '';
+  let shouldRetry = false;
 
   recognition.onstart = () => {
     isRec = true;
     btn.classList.add('rec');
     startRecTimer();
+    shouldRetry = false;
   };
   recognition.onresult = (e) => {
     let interim = '';
@@ -672,6 +713,7 @@ function toggleVoice() {
     }
     ta.value = accumulated + finalBuffer + interim;
     updateCount();
+    if (finalBuffer) shouldRetry = false;  // 有结果就不重试
   };
   recognition.onend = () => {
     isRec = false;
@@ -679,19 +721,52 @@ function toggleVoice() {
     stopRecTimer();
     ta.value = accumulated + finalBuffer;
     updateCount();
+    // 如果应该重试且次数未超限，自动重新启动
+    if (shouldRetry && recRetries < 2) {
+      recRetries++;
+      document.getElementById('mic-lbl').textContent = `重新连接中… (${recRetries}/2)`;
+      setTimeout(() => toggleVoice(), 500);
+    } else {
+      recRetries = 0;
+    }
   };
   recognition.onerror = (e) => {
-    isRec = false;
-    btn.classList.remove('rec');
     stopRecTimer();
-    if (e.error !== 'aborted') console.warn('语音错误:', e.error);
+    const retryableErrors = ['network', 'no-speech', 'audio-capture'];
+    shouldRetry = retryableErrors.includes(e.error);
+    if (e.error === 'aborted') {
+      isRec = false;
+      btn.classList.remove('rec');
+    }
+    // 不立即显示错误，等 onend 触发后决定是否重试
   };
   recognition.start();
 }
 
 function updateCount() {
-  document.getElementById('char-ct').textContent =
-    `${document.getElementById('q-ta').value.length} 字`;
+  const len = document.getElementById('q-ta').value.length;
+  document.getElementById('char-ct').textContent = `${len} 字`;
+
+  const hint = document.getElementById('char-hint');
+  if (len === 0) {
+    hint.style.display = 'none';
+  } else if (len < 20) {
+    hint.className = 'char-hint short';
+    hint.textContent = '太短了，AI 可能理解不了。试试说得详细一点？';
+    hint.style.display = 'block';
+  } else if (len < 100) {
+    hint.className = 'char-hint good';
+    hint.textContent = '✓ 长度适中';
+    hint.style.display = 'block';
+  } else if (len < 500) {
+    hint.className = 'char-hint long';
+    hint.textContent = '⚠ 有点长，可以精简';
+    hint.style.display = 'block';
+  } else {
+    hint.className = 'char-hint toolong';
+    hint.textContent = '太长了，建议 200-400 字';
+    hint.style.display = 'block';
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
