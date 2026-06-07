@@ -717,6 +717,7 @@
     let stopCleanupTimer   = null;
     let cachedToken        = null;
     let voiceHistory       = [];
+    let activeFetchCtrl    = null;
 
     function prewarmToken() {
       if (isLocal || cachedToken) return;
@@ -909,7 +910,10 @@
       } catch (err) {
         activeSpeaker = null;
         setMicState(null, false);
-        elInterim.textContent = `エラー: ${err.message}`;
+        const msg = err.name === 'NotAllowedError'
+          ? 'マイクへのアクセスが拒否されました。ブラウザの設定で許可してください。/ 麦克风权限被拒绝，请在浏览器设置中允许访问。'
+          : `エラー: ${err.message}`;
+        elInterim.textContent = msg;
       }
     }
 
@@ -961,6 +965,8 @@
     }
 
     async function sendToTranslate(text, spk) {
+      activeFetchCtrl?.abort();
+      activeFetchCtrl = new AbortController();
       const tgtSpk = spk === 'A' ? 'B' : 'A';
       const dir  = `${speakerLang[spk]}-${speakerLang[tgtSpk]}`;
       const item = appendStreamItem(text, spk, dir);
@@ -968,6 +974,7 @@
       try {
         const res = await fetch('/api/translate-stream', {
           method: 'POST',
+          signal: activeFetchCtrl.signal,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [{ role: 'user', content: text }],
@@ -1009,6 +1016,10 @@
         item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         speakText(fullText, speakerLang[tgtSpk]);
         voiceHistory.push({ src: text, tl: fullText, dir, spk });
+        if (voiceHistory.length > 100) {
+          voiceHistory.shift();
+          elVoiceStream.firstElementChild?.remove();
+        }
         elVoiceCount.textContent = `${voiceHistory.length} 件`;
         elVoiceSummary.disabled = false;
       } catch (err) {

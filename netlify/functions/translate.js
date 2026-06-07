@@ -19,36 +19,14 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON' }) };
   }
 
-  const { messages, mode = 'translate', direction = 'auto' } = body;
+  const { messages } = body;
   if (!Array.isArray(messages) || messages.length === 0) {
     return { statusCode: 400, body: JSON.stringify({ error: 'messages array is required' }) };
   }
 
-  let systemPrompt, maxTokens, temperature;
-
-  if (mode === 'interpret') {
-    maxTokens = 600;
-    temperature = 0.1;
-    const ciBase = 'You are a professional consecutive interpreter. The following is one complete speaking turn. Translate naturally and fluently, preserving the speaker\'s register and intent. Output ONLY the translation — no labels, no original text, no explanations. For Japanese output, use polite ます/です form unless the source is clearly casual speech.';
-    if (direction === 'ja-zh') {
-      systemPrompt = ciBase + ' Input language: Japanese. Target language: Simplified Chinese.';
-    } else if (direction === 'zh-ja') {
-      systemPrompt = ciBase + ' Input language: Simplified Chinese. Target language: Japanese.';
-    } else if (direction === 'en-zh') {
-      systemPrompt = ciBase + ' Input language: English. Target language: Simplified Chinese.';
-    } else if (direction === 'en-ja') {
-      systemPrompt = ciBase + ' Input language: English. Target language: Japanese.';
-    } else if (direction === 'zh-en') {
-      systemPrompt = ciBase + ' Input language: Simplified Chinese. Target language: English.';
-    } else if (direction === 'ja-en') {
-      systemPrompt = ciBase + ' Input language: Japanese. Target language: English.';
-    } else {
-      systemPrompt = ciBase + ' Detect the input language and translate to the most appropriate target language among Japanese, Simplified Chinese, and English.';
-    }
-  } else {
-    maxTokens = 2000;
-    temperature = 0.2;
-    systemPrompt = `You are a professional interpreter specializing in Japanese, Chinese, and English. Follow these rules for every user message:
+  const maxTokens = 2000;
+  const temperature = 0.2;
+  const systemPrompt = `You are a professional interpreter specializing in Japanese, Chinese, and English. Follow these rules for every user message:
 
 1. If the input is Chinese:
    【原文】(original Chinese)
@@ -69,7 +47,6 @@ exports.handler = async (event) => {
    Generate a structured multilingual summary covering key points in bullet form.
 
 Use formal, precise language appropriate to the context. Never skip the back-translation step for rules 1 and 2.`;
-  }
 
   try {
     const response = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
