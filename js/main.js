@@ -117,6 +117,18 @@ const T = {
     demo4_desc:           '表情や音声から感情を認識するAIモデルのデモです。',
     demo_coming:          '近日公開',
 
+    analysis_title: '文書分析 · 比較レポート',
+    analysis_desc:  '複数のPDF・Word・Excelをアップロードし、AIが内容を横断分析してレポートを生成。事業モデルの比較・調査分析に。',
+    analysis_cta:   '分析ツールを開く',
+
+    lifestory_title: '生平故事 · 人生インタビュー',
+    lifestory_desc:  '約100問のインタビューに答えると、AIがあなたの生涯を一冊の物語に。毎回数問ずつ、約一ヶ月で完成。',
+    lifestory_cta:   '記録を始める',
+
+    japanese_title: '日本語基礎学習ツール',
+    japanese_desc:  '214語の常用動詞を内蔵。五段・一段・不規則動詞の活用を自動生成し、中英双解付き。一覧・フラッシュカード・小テストの3モード対応。',
+    japanese_cta:   '学習を始める',
+
     /* Blog page */
     blog_page_title:      '千里同風株式会社 — ブログ',
     blog_eyebrow:         'ブログ',
@@ -235,6 +247,18 @@ const T = {
     demo4_desc:           '演示从面部表情与声音中识别情感的AI模型。',
     demo_coming:          '即将发布',
 
+    analysis_title: '文件分析 · 对比报告',
+    analysis_desc:  '上传多份 PDF、Word、Excel，AI 跨文件交叉分析，自动生成对比报告。适合商业模型比较与调研分析。',
+    analysis_cta:   '打开分析工具',
+
+    lifestory_title: '生平故事 · 人生访谈',
+    lifestory_desc:  '约 100 个精心设计的问题，以文字或语音作答，AI 为你撰写完整的人生传记。每次几题，大约一个月完成。',
+    lifestory_cta:   '开始记录',
+
+    japanese_title: '日语基础学习工具',
+    japanese_desc:  '内置 214 个常用动词词库，自动生成五段・一段・不规则动词变形，含中英双语释义。支持查表、翻牌练习、随机小测试三种模式。',
+    japanese_cta:   '开始学习',
+
     blog_page_title:      '千里同風株式会社 — 博客',
     blog_eyebrow:         '博客',
     blog_title:           '洞察',
@@ -350,6 +374,18 @@ const T = {
     demo4_title:          'Emotion Recognition Demo',
     demo4_desc:           'Demo of an AI model that recognizes emotions from facial expressions and voice.',
     demo_coming:          'Coming Soon',
+
+    analysis_title: 'Document Analysis · Comparison Report',
+    analysis_desc:  'Upload multiple PDFs, Word docs, or Excel files. AI cross-references content and generates a structured comparison report.',
+    analysis_cta:   'Open Analysis Tool',
+
+    lifestory_title: 'Life Story · Personal Interview',
+    lifestory_desc:  'Answer around 100 thoughtfully designed questions by text or voice. AI compiles your answers into a complete life memoir — a few questions at a time, finished in about a month.',
+    lifestory_cta:   'Start Recording',
+
+    japanese_title: 'Japanese Verb Learning Tool',
+    japanese_desc:  'Built-in library of 214 common verbs. Auto-generates conjugations for godan, ichidan, and irregular verbs with bilingual (Chinese/English) definitions. Three modes: reference table, flashcards, and quiz.',
+    japanese_cta:   'Start Learning',
 
     blog_page_title:      'Senridoufuu — Blog',
     blog_eyebrow:         'Blog',
