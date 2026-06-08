@@ -1016,7 +1016,14 @@
         }
         item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         speakText(fullText, speakerLang[tgtSpk]);
-        voiceHistory.push({ src: text, tl: fullText, dir, spk, marker: currentMarker });  // 新增：自动关联当前的发言人标记
+        voiceHistory.push({
+          marker: currentMarker,  // 发言人标记（"我说"或"对方说"）
+          zh: text,              // 中文转录（当前的 src）
+          ja: fullText,          // 日文翻译（当前的 tl）
+          // 保留 dir 和 spk 作为内部使用的元数据
+          _dir: dir,
+          _spk: spk
+        });
         if (voiceHistory.length > 100) {
           voiceHistory.shift();
           elVoiceStream.firstElementChild?.remove();
@@ -1067,7 +1074,7 @@
       elVoiceSummary.disabled = true;
       setVoiceStatusBusy(true);
       const transcript = voiceHistory.map(h => {
-        return `[${DIR_LABEL[h.dir] || h.dir}] ${h.src} → ${h.tl}`;
+        return `[${DIR_LABEL[h._dir] || h._dir}] ${h.zh} → ${h.ja}`;
       }).join('\n');
       const prompt = `以下の音声通訳記録の会議まとめを生成してください / 请为以下口译记录生成会议摘要：\n\n${transcript}`;
       try {
