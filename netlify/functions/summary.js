@@ -208,10 +208,25 @@ exports.handler = async (event) => {
     };
 
   } catch (err) {
+    let statusCode = 500;
+    let errorMsg = err.message;
+
+    if (err.message.includes('API') || err.message.includes('401')) {
+      statusCode = 503;
+      errorMsg = 'Qwen API 调用失败，请稍后重试';
+    } else if (err.message.includes('timeout')) {
+      statusCode = 504;
+      errorMsg = '生成超时，请检查网络后重试';
+    } else if (err.message.includes('缺少')) {
+      statusCode = 400;
+    }
+
+    console.error('[summary.js]', err);
+
     return {
-      statusCode: 500,
+      statusCode,
       headers,
-      body: JSON.stringify({ error: err.message })
+      body: JSON.stringify({ error: errorMsg })
     };
   }
 };
