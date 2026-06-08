@@ -1,5 +1,23 @@
 const QWEN_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
+const SYS_SUMMARY =
+  '你是会议纪要专家，擅长从双语对话（中文和日文）中提取关键信息。\n\n' +
+  '任务：分析以下中日双语对话，生成结构化的会议纪要。\n\n' +
+  '请按以下 JSON 格式输出（不要代码块，直接输出）：\n' +
+  '{\n' +
+  '  "topics": [...],           // 列表：识别的主要议题（3-5 个）\n' +
+  '  "feedback": [...],         // 列表：客户的反馈和顾虑（3-5 条）\n' +
+  '  "actions": [...]           // 列表：行动项，包含谁、做什么、到什么时间\n' +
+  '}\n\n' +
+  '要求：\n' +
+  '· topics：从对话中归纳主要讨论主题，用简洁的名词短语\n' +
+  '· feedback：提取客户（"对方说"部分）明确表达的兴趣点、问题、顾虑\n' +
+  '· actions：识别对话中双方的承诺或计划\n' +
+  '  - 格式：{ "actor": "我们" 或 "客户", "task": "具体任务", "deadline": "时间" }\n' +
+  '  - 如果没有明确的时间，可写 "待定"\n' +
+  '· 禁止编造、推断或猜测。只提取对话中明确说出的内容\n' +
+  '· 如果对话中没有相关内容，返回空数组 []';
+
 async function qwen(system, user, maxTokens = 1500, temp = 0.5) {
   const key = process.env.QWEN_API_KEY;
   if (!key) throw new Error('未配置 API Key');
@@ -27,6 +45,15 @@ async function qwen(system, user, maxTokens = 1500, temp = 0.5) {
   return data.choices[0].message.content.trim();
 }
 
+function formatDialoguesForAnalysis(dialogues) {
+  return dialogues
+    .map(d => {
+      const speaker = d.marker === "我说" ? "我们" : "客户";
+      return `【${speaker}】\n中文：${d.zh}\n日文：${d.ja}`;
+    })
+    .join('\n\n');
+}
+
 // ── HTTP 处理器 ──
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -52,11 +79,33 @@ exports.handler = async (event) => {
       };
     }
 
-    // 后续任务会实现具体逻辑
-    // TODO: 调用 Qwen 生成纪要
+    // 格式化对话
+    const dialogueText = formatDialoguesForAnalysis(dialogues);
+    const userPrompt = `以下是会议对话：\n\n${dialogueText}`;
+
+    // 调用 Qwen 生成纪要
+    const rawSummary = await qwen(SYS_SUMMARY, userPrompt, 1500, 0.5);
+
+    // 解析 JSON
+    let summary;
+    try {
+      const cleaned = rawSummary
+        .replace(/```(?:json)?\n?/g, '')
+        .replace(/```/g, '')
+        .trim();
+      summary = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error('JSON parse error:', parseErr.message);
+      summary = {
+        topics: [],
+        feedback: [],
+        actions: []
+      };
+    }
+
     // TODO: 生成 DOCX 文件
 
-    return { statusCode: 200, headers, body: JSON.stringify({ message: 'OK' }) };
+    return { statusCode: 200, headers, body: JSON.stringify({ summary }) };
 
   } catch (err) {
     return {
