@@ -824,6 +824,8 @@
     async function startRecording(spk) {
       window.speechSynthesis?.cancel();
       activeSpeaker = spk;
+      // 根据发言人更新 marker
+      currentMarker = (spk === 'A') ? "我说" : "对方说";
       setMicState(spk, true);
       isStopping = false;
       elInterim.textContent = '接続中… / 连接中…';
