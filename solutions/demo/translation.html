@@ -826,6 +826,9 @@
       elBtnMarkerThem.disabled = false;
     }
 
+    // 初始化按钮状态
+    updateMarkerButtonUI();
+
     const LANG_LABEL  = { ja: '日本語', zh: '中文', en: 'English' };
     const LANG_IDLE   = { ja: '発言する', zh: '发言', en: 'Speak' };
     const LANG_DG     = { ja: 'ja', zh: 'zh-CN', en: 'en-US' };
@@ -862,6 +865,21 @@
       if (!isRecording) {
         elMarkerMeStatus.textContent = currentMarker === "我说" ? '选中' : '未选中';
         elMarkerThemStatus.textContent = currentMarker === "对方说" ? '选中' : '未选中';
+      }
+    }
+
+    function updateMarkerButtonUI() {
+      // 根据 currentMarker 更新按钮视觉状态
+      if (currentMarker === "我说") {
+        elBtnMarkerMe.classList.add('is-active');
+        elBtnMarkerThem.classList.remove('is-active');
+        elMarkerMeStatus.textContent = "选中";
+        elMarkerThemStatus.textContent = "未选中";
+      } else {
+        elBtnMarkerMe.classList.remove('is-active');
+        elBtnMarkerThem.classList.add('is-active');
+        elMarkerMeStatus.textContent = "未选中";
+        elMarkerThemStatus.textContent = "选中";
       }
     }
 
@@ -906,8 +924,17 @@
       }
     }
 
-    elBtnMarkerMe.addEventListener('click', () => toggleSpeaker('A'));
-    elBtnMarkerThem.addEventListener('click', () => toggleSpeaker('B'));
+    elBtnMarkerMe.addEventListener('click', () => {
+      currentMarker = "我说";
+      updateMarkerButtonUI();
+      toggleSpeaker('A');
+    });
+
+    elBtnMarkerThem.addEventListener('click', () => {
+      currentMarker = "对方说";
+      updateMarkerButtonUI();
+      toggleSpeaker('B');
+    });
 
     async function startRecording(spk) {
       window.speechSynthesis?.cancel();
