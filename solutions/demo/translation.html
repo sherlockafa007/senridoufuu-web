@@ -838,6 +838,21 @@
 
         </div><!-- /tabText -->
 
+        <!-- Summary Result Panel -->
+        <div id="summaryResultPanel" style="display: none; margin-top: 32px; padding: 20px; background: var(--c-bg-alt); border: 1px solid var(--c-border);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 500;">生成的会议纪要</h3>
+            <button type="button" class="tl-action-btn tl-action-btn--ghost" id="summaryClosePanelBtn">✕ 关闭</button>
+          </div>
+
+          <div id="summaryContent" style="margin-bottom: 20px;"></div>
+
+          <div style="display: flex; gap: 12px;">
+            <button type="button" class="tl-action-btn tl-action-btn--primary" id="summaryDownloadBtn">💾 下载纪要（Word）</button>
+            <button type="button" class="tl-action-btn tl-action-btn--ghost" id="summaryNewMeetingBtn">➕ 新建会议</button>
+          </div>
+        </div>
+
       </div>
     </section>
   </main>
@@ -1646,6 +1661,62 @@
       }
     }
 
+    function formatSummaryHtml(summary) {
+      const topics = (summary.topics || []).length > 0
+        ? summary.topics.map(t => `<li>${escapeHtml(t)}</li>`).join('')
+        : '<li style="color: var(--c-text-3);">（无）</li>';
+
+      const feedback = (summary.feedback || []).length > 0
+        ? summary.feedback.map(f => `<li>${escapeHtml(f)}</li>`).join('')
+        : '<li style="color: var(--c-text-3);">（无）</li>';
+
+      const actions = (summary.actions || []).length > 0
+        ? summary.actions
+            .map(a => `<li><strong>${escapeHtml(a.actor)}</strong>: ${escapeHtml(a.task)}${a.deadline ? `（${escapeHtml(a.deadline)}）` : ''}</li>`)
+            .join('')
+        : '<li style="color: var(--c-text-3);">（无）</li>';
+
+      return `
+        <div style="margin-bottom: 16px;">
+          <h4 style="margin: 0 0 8px; font-size: 0.95rem; font-weight: 500;">【议题】</h4>
+          <ul style="margin: 0; padding-left: 20px;">${topics}</ul>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <h4 style="margin: 0 0 8px; font-size: 0.95rem; font-weight: 500;">【客户反馈】</h4>
+          <ul style="margin: 0; padding-left: 20px;">${feedback}</ul>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 8px; font-size: 0.95rem; font-weight: 500;">【行动项】</h4>
+          <ul style="margin: 0; padding-left: 20px;">${actions}</ul>
+        </div>
+      `;
+    }
+
+    function downloadDocx(base64, filename) {
+      try {
+        const binaryString = atob(base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Download error:', err);
+        alert('下载文件失败，请重试');
+      }
+    }
+
     async function generateSummary() {
       if (!voiceHistory || voiceHistory.length === 0) {
         alert('没有转录记录，无法生成纪要');
@@ -1684,54 +1755,19 @@
     }
 
     function showSummaryResult(result) {
-      // Display summary in a new entry
-      const el = document.createElement('div');
-      el.className = 'cue-entry cue-entry--summary';
-      el.innerHTML = `
-        <div class="cue-avatar">📄</div>
-        <div class="cue-body">
-          <div class="cue-name">会议纪要 / 会議まとめ</div>
-          <div class="cue-tl">${escapeHtml(result.summary)}</div>
-          ${result.docxBase64 ? `
-            <div style="margin-top: 16px;">
-              <button type="button" class="tl-action-btn tl-action-btn--primary" id="downloadDocxBtn" style="display: inline-block;">
-                📥 下载纪要文件
-              </button>
-            </div>
-          ` : ''}
-        </div>`;
-      elVoiceStream.appendChild(el);
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const elPanel = document.getElementById('summaryResultPanel');
+      const elContent = document.getElementById('summaryContent');
 
-      // Bind download button if exists
-      if (result.docxBase64) {
-        const downloadBtn = document.getElementById('downloadDocxBtn');
-        downloadBtn.addEventListener('click', () => {
-          downloadDocxFile(result.docxBase64, result.docxFilename);
-        });
+      // If result has structured summary with topics/feedback/actions, format it
+      if (result.summary && typeof result.summary === 'object' && (result.summary.topics || result.summary.feedback || result.summary.actions)) {
+        elContent.innerHTML = formatSummaryHtml(result.summary);
+      } else {
+        // Otherwise, use plain text summary
+        elContent.innerHTML = `<div style="font-family: var(--f-sans); font-size: 0.95rem; line-height: 1.8; color: var(--c-text);">${escapeHtml(String(result.summary || ''))}</div>`;
       }
-    }
 
-    function downloadDocxFile(base64, filename) {
-      try {
-        const binaryString = atob(base64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename || '会议纪要.docx';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch (err) {
-        console.error('Download error:', err);
-        alert('下载文件失败，请重试');
-      }
+      elPanel.style.display = 'block';
+      elPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     // Bind button events
@@ -1751,6 +1787,34 @@
     summaryDialog.addEventListener('click', (e) => {
       if (e.target === summaryDialog) {
         closeSummaryDialog();
+      }
+    });
+
+    // Bind result panel button events
+    const summaryDownloadBtn = document.getElementById('summaryDownloadBtn');
+    const summaryClosePanelBtn = document.getElementById('summaryClosePanelBtn');
+    const summaryNewMeetingBtn = document.getElementById('summaryNewMeetingBtn');
+
+    summaryDownloadBtn.addEventListener('click', () => {
+      if (state.docxData && state.docxData.base64) {
+        downloadDocx(state.docxData.base64, state.docxData.filename || '会议纪要.docx');
+      }
+    });
+
+    summaryClosePanelBtn.addEventListener('click', () => {
+      document.getElementById('summaryResultPanel').style.display = 'none';
+    });
+
+    summaryNewMeetingBtn.addEventListener('click', () => {
+      if (confirm('确定要清空转录记录吗？')) {
+        voiceHistory = [];
+        state.currentSummary = null;
+        state.docxData = { base64: null, filename: null };
+        document.getElementById('voiceStream').innerHTML = '';
+        document.getElementById('summaryResultPanel').style.display = 'none';
+        elVoiceCount.textContent = '0 件';
+        elVoiceSummary.disabled = true;
+        btnGenSummary.disabled = false;
       }
     });
 
