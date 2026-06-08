@@ -1,3 +1,7 @@
+const { Document, Packer, Paragraph, TextRun, HeadingLevel } = require('docx');
+const fs = require('fs');
+const path = require('path');
+
 const QWEN_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
 const SYS_SUMMARY =
@@ -54,6 +58,93 @@ function formatDialoguesForAnalysis(dialogues) {
     .join('\n\n');
 }
 
+// ── DOCX 生成函数 ──
+async function generateDocxBase64(summary, dialogues) {
+  const doc = new Document({
+    sections: [{
+      children: [
+        new Paragraph({
+          text: '会议纪要',
+          heading: HeadingLevel.HEADING_1,
+          bold: true,
+          spacing: { after: 400 }
+        }),
+
+        new Paragraph({
+          text: `日期：${new Date().toLocaleDateString('zh-CN')}`,
+          spacing: { after: 100 }
+        }),
+        new Paragraph({
+          text: `参与者：中国团队、日本客户`,
+          spacing: { after: 100 }
+        }),
+        new Paragraph({
+          text: `时长：约 ${Math.ceil(dialogues.length / 10)} 分钟`,
+          spacing: { after: 400 }
+        }),
+
+        new Paragraph({
+          text: '【议题】',
+          heading: HeadingLevel.HEADING_2,
+          bold: true,
+          spacing: { after: 200 }
+        }),
+        ...(summary.topics || []).map(topic =>
+          new Paragraph({
+            text: `• ${topic}`,
+            spacing: { after: 100 }
+          })
+        ),
+        ...(summary.topics && summary.topics.length === 0 ? [
+          new Paragraph({
+            text: '（无）',
+            spacing: { after: 200 }
+          })
+        ] : [new Paragraph({ text: '', spacing: { after: 200 } })]),
+
+        new Paragraph({
+          text: '【客户反馈】',
+          heading: HeadingLevel.HEADING_2,
+          bold: true,
+          spacing: { after: 200 }
+        }),
+        ...(summary.feedback || []).map(fb =>
+          new Paragraph({
+            text: `• ${fb}`,
+            spacing: { after: 100 }
+          })
+        ),
+        ...(summary.feedback && summary.feedback.length === 0 ? [
+          new Paragraph({
+            text: '（无）',
+            spacing: { after: 200 }
+          })
+        ] : [new Paragraph({ text: '', spacing: { after: 200 } })]),
+
+        new Paragraph({
+          text: '【行动项】',
+          heading: HeadingLevel.HEADING_2,
+          bold: true,
+          spacing: { after: 200 }
+        }),
+
+        ...(summary.actions && summary.actions.length > 0
+          ? summary.actions.map(action =>
+              new Paragraph({
+                text: `${action.actor}: ☐ ${action.task}${action.deadline ? `（${action.deadline}）` : ''}`,
+                spacing: { after: 100 }
+              })
+            )
+          : [new Paragraph({ text: '（无）', spacing: { after: 200 } })]
+        ),
+      ]
+    }]
+  });
+
+  const bytes = await Packer.toBuffer(doc);
+  return bytes.toString('base64');
+}
+
 // ── HTTP 处理器 ──
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -103,9 +194,18 @@ exports.handler = async (event) => {
       };
     }
 
-    // TODO: 生成 DOCX 文件
+    // 生成 DOCX 的 Base64 编码
+    const docxBase64 = await generateDocxBase64(summary, dialogues);
 
-    return { statusCode: 200, headers, body: JSON.stringify({ summary }) };
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        summary,
+        docxBase64,
+        docxFilename: `summary_${Date.now()}.docx`
+      })
+    };
 
   } catch (err) {
     return {
