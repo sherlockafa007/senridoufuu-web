@@ -909,6 +909,12 @@
     const elSelA            = document.getElementById('selA');
     const elSelB            = document.getElementById('selB');
 
+    // Summary generation dialog elements
+    const btnGenSummary       = document.getElementById('voiceGenSummary');
+    const summaryDialog       = document.getElementById('summaryConfirmDialog');
+    const summaryConfirmOk    = document.getElementById('summaryConfirmOk');
+    const summaryConfirmCancel = document.getElementById('summaryConfirmCancel');
+
     const speakerLang      = { A: 'ja', B: 'zh' };
     let ttsOn              = true;
     let activeSpeaker      = null;
@@ -925,6 +931,15 @@
     let voiceHistory       = [];
     let activeFetchCtrl    = null;
     let currentMarker      = "我说";  // 新增：默认从"我说"开始
+
+    // State management for summary generation
+    const state = {
+      currentSummary: null,
+      docxData: {
+        base64: null,
+        filename: null
+      }
+    };
 
     function prewarmToken() {
       if (isLocal || cachedToken) return;
@@ -1594,9 +1609,157 @@
       elError.classList.remove('is-visible');
       elPlaceholder.style.display = '';
       elSummary.disabled = true;
-      elLangBadge.textContent = '— 自動検出 / 自动检测 —';
+      elLangBadge.textContent = '— 自動検出 / 自动検测 —';
       elLangBadge.className = 'tl-lang-badge';
     });
+
+    /* ════════════════════════════════════════════════════════
+       SUMMARY GENERATION — Dialog and API Integration
+    ════════════════════════════════════════════════════════ */
+
+    function showSummaryDialog() {
+      summaryDialog.classList.add('is-visible');
+    }
+
+    function closeSummaryDialog() {
+      summaryDialog.classList.remove('is-visible');
+    }
+
+    async function callSummaryApi(dialogues) {
+      try {
+        const response = await fetch('/.netlify/functions/summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dialogues })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || `API 错误: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result;
+      } catch (err) {
+        console.error('Summary API error:', err);
+        throw err;
+      }
+    }
+
+    async function generateSummary() {
+      if (!voiceHistory || voiceHistory.length === 0) {
+        alert('没有转录记录，无法生成纪要');
+        return;
+      }
+
+      closeSummaryDialog();
+
+      // Show loading state
+      btnGenSummary.disabled = true;
+      const originalText = btnGenSummary.textContent;
+      btnGenSummary.innerHTML = '<div class="tl-spinner" style="display: inline-block; margin-right: 8px;"></div>生成中...';
+
+      try {
+        // Call backend API
+        const result = await callSummaryApi(voiceHistory);
+
+        // Save summary to state
+        state.currentSummary = result.summary;
+        state.docxData = {
+          base64: result.docxBase64,
+          filename: result.docxFilename
+        };
+
+        // Display result panel
+        showSummaryResult(result);
+
+      } catch (err) {
+        alert('生成纪要失败：' + err.message + '，请稍后重试');
+        console.error(err);
+      } finally {
+        // Restore button state
+        btnGenSummary.disabled = false;
+        btnGenSummary.innerHTML = originalText;
+      }
+    }
+
+    function showSummaryResult(result) {
+      // Display summary in a new entry
+      const el = document.createElement('div');
+      el.className = 'cue-entry cue-entry--summary';
+      el.innerHTML = `
+        <div class="cue-avatar">📄</div>
+        <div class="cue-body">
+          <div class="cue-name">会议纪要 / 会議まとめ</div>
+          <div class="cue-tl">${escapeHtml(result.summary)}</div>
+          ${result.docxBase64 ? `
+            <div style="margin-top: 16px;">
+              <button type="button" class="tl-action-btn tl-action-btn--primary" id="downloadDocxBtn" style="display: inline-block;">
+                📥 下载纪要文件
+              </button>
+            </div>
+          ` : ''}
+        </div>`;
+      elVoiceStream.appendChild(el);
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Bind download button if exists
+      if (result.docxBase64) {
+        const downloadBtn = document.getElementById('downloadDocxBtn');
+        downloadBtn.addEventListener('click', () => {
+          downloadDocxFile(result.docxBase64, result.docxFilename);
+        });
+      }
+    }
+
+    function downloadDocxFile(base64, filename) {
+      try {
+        const binaryString = atob(base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename || '会议纪要.docx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Download error:', err);
+        alert('下载文件失败，请重试');
+      }
+    }
+
+    // Bind button events
+    btnGenSummary.addEventListener('click', () => {
+      showSummaryDialog();
+    });
+
+    summaryConfirmOk.addEventListener('click', () => {
+      generateSummary();
+    });
+
+    summaryConfirmCancel.addEventListener('click', () => {
+      closeSummaryDialog();
+    });
+
+    // Click outside dialog to close
+    summaryDialog.addEventListener('click', (e) => {
+      if (e.target === summaryDialog) {
+        closeSummaryDialog();
+      }
+    });
+
+    // Enable "Generate Summary" button when audio is successfully connected
+    // This is done when Deepgram connection is successful
+    // Find where browser support is checked and enable the button
+    if (hasGetUserMedia) {
+      btnGenSummary.disabled = false;
+    }
   </script>
 </body>
 </html>
