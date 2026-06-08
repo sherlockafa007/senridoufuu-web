@@ -205,6 +205,51 @@
     .ci-btn.is-active .ci-status { color: #dc2626; }
     .ci-side-btns { display: flex; flex-direction: column; gap: 6px; margin-left: auto; flex-shrink: 0; }
 
+    /* Marker buttons */
+    .ci-btn--marker {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 12px;
+      border: 2px solid var(--c-border);
+      background: var(--c-surface);
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 0;
+    }
+    .ci-btn--marker:hover:not(:disabled) {
+      border-color: var(--c-accent);
+      background: var(--c-accent-light);
+    }
+    .ci-btn--marker.is-active {
+      border-color: var(--c-accent);
+      background: var(--c-accent-light);
+      font-weight: 500;
+    }
+    .ci-btn--marker:disabled { opacity: 0.4; cursor: not-allowed; }
+    .ci-marker-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .ci-marker-label {
+      font-family: var(--f-sans);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--c-text-1);
+      line-height: 1;
+    }
+    .ci-marker-status {
+      font-family: var(--f-mono);
+      font-size: 0.625rem;
+      letter-spacing: 0.1em;
+      color: var(--c-text-3);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
     /* Feed */
     .voice-feed { min-height: 200px; margin-bottom: 8px; }
 
@@ -622,15 +667,15 @@
           <div class="voice-session-bar">
             <div class="voice-interim-line" id="voiceInterim"></div>
             <div class="voice-btn-row">
-              <button type="button" class="ci-btn" id="btnA" disabled>
-                <span class="ci-spk">甲</span>
-                <span class="ci-lang" id="ci-lang-A">日本語</span>
-                <span class="ci-status" id="ci-status-A">発言する</span>
+              <button type="button" class="ci-btn ci-btn--marker" id="btnMarkerMe" disabled title="我说话时按此按钮">
+                <span class="ci-marker-icon">🟢</span>
+                <span class="ci-marker-label">我说</span>
+                <span class="ci-marker-status" id="markerMeStatus">未选中</span>
               </button>
-              <button type="button" class="ci-btn" id="btnB" disabled>
-                <span class="ci-spk">乙</span>
-                <span class="ci-lang" id="ci-lang-B">中文</span>
-                <span class="ci-status" id="ci-status-B">发言</span>
+              <button type="button" class="ci-btn ci-btn--marker" id="btnMarkerThem" disabled title="对方说话时按此按钮">
+                <span class="ci-marker-icon">🔵</span>
+                <span class="ci-marker-label">对方说</span>
+                <span class="ci-marker-status" id="markerThemStatus">未选中</span>
               </button>
               <div class="ci-side-btns">
                 <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceTts" title="朗读 / 朗読">🔊</button>
@@ -740,8 +785,10 @@
     const elVoiceCount      = document.getElementById('voiceCount');
     const elVoiceStatusDot  = document.getElementById('voiceStatusDot');
     const elVoiceStatusText = document.getElementById('voiceStatusText');
-    const elBtnA            = document.getElementById('btnA');
-    const elBtnB            = document.getElementById('btnB');
+    const elBtnMarkerMe     = document.getElementById('btnMarkerMe');
+    const elBtnMarkerThem   = document.getElementById('btnMarkerThem');
+    const elMarkerMeStatus  = document.getElementById('markerMeStatus');
+    const elMarkerThemStatus = document.getElementById('markerThemStatus');
     const elSelA            = document.getElementById('selA');
     const elSelB            = document.getElementById('selB');
 
@@ -775,8 +822,8 @@
     if (!hasGetUserMedia) {
       document.getElementById('voiceBrowserWarn').style.display = '';
     } else {
-      elBtnA.disabled = false;
-      elBtnB.disabled = false;
+      elBtnMarkerMe.disabled = false;
+      elBtnMarkerThem.disabled = false;
     }
 
     const LANG_LABEL  = { ja: '日本語', zh: '中文', en: 'English' };
@@ -811,11 +858,10 @@
     elSelB.addEventListener('change', syncFromB);
 
     function updateBtnLabels() {
-      document.getElementById('ci-lang-A').textContent = LANG_LABEL[speakerLang.A];
-      document.getElementById('ci-lang-B').textContent = LANG_LABEL[speakerLang.B];
+      // Marker buttons display status based on current marker state
       if (!isRecording) {
-        document.getElementById('ci-status-A').textContent = LANG_IDLE[speakerLang.A];
-        document.getElementById('ci-status-B').textContent = LANG_IDLE[speakerLang.B];
+        elMarkerMeStatus.textContent = currentMarker === "我说" ? '选中' : '未选中';
+        elMarkerThemStatus.textContent = currentMarker === "对方说" ? '选中' : '未选中';
       }
     }
 
@@ -860,8 +906,8 @@
       }
     }
 
-    elBtnA.addEventListener('click', () => toggleSpeaker('A'));
-    elBtnB.addEventListener('click', () => toggleSpeaker('B'));
+    elBtnMarkerMe.addEventListener('click', () => toggleSpeaker('A'));
+    elBtnMarkerThem.addEventListener('click', () => toggleSpeaker('B'));
 
     async function startRecording(spk) {
       window.speechSynthesis?.cancel();
@@ -1000,12 +1046,15 @@
 
     function setMicState(spk, recording) {
       isRecording = recording;
-      elBtnA.classList.toggle('is-active', spk === 'A');
-      elBtnB.classList.toggle('is-active', spk === 'B');
-      document.getElementById('ci-status-A').textContent =
-        spk === 'A' ? '● 録音中' : LANG_IDLE[speakerLang.A];
-      document.getElementById('ci-status-B').textContent =
-        spk === 'B' ? '● 録音中' : LANG_IDLE[speakerLang.B];
+      elBtnMarkerMe.classList.toggle('is-active', spk === 'A');
+      elBtnMarkerThem.classList.toggle('is-active', spk === 'B');
+      if (recording) {
+        elMarkerMeStatus.textContent = spk === 'A' ? '● 录音中' : '未选中';
+        elMarkerThemStatus.textContent = spk === 'B' ? '● 录音中' : '未选中';
+      } else {
+        elMarkerMeStatus.textContent = currentMarker === "我说" ? '选中' : '未选中';
+        elMarkerThemStatus.textContent = currentMarker === "对方说" ? '选中' : '未选中';
+      }
       if (!recording) elInterim.textContent = '';
     }
 
