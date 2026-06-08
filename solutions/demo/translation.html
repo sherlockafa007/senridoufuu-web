@@ -718,6 +718,7 @@
     let cachedToken        = null;
     let voiceHistory       = [];
     let activeFetchCtrl    = null;
+    let currentMarker      = "我说";  // 新增：默认从"我说"开始
 
     function prewarmToken() {
       if (isLocal || cachedToken) return;
@@ -1015,7 +1016,7 @@
         }
         item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         speakText(fullText, speakerLang[tgtSpk]);
-        voiceHistory.push({ src: text, tl: fullText, dir, spk });
+        voiceHistory.push({ src: text, tl: fullText, dir, spk, marker: currentMarker });  // 新增：自动关联当前的发言人标记
         if (voiceHistory.length > 100) {
           voiceHistory.shift();
           elVoiceStream.firstElementChild?.remove();
