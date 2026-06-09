@@ -831,9 +831,9 @@
               </button>
               <div class="ci-side-btns">
                 <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceTts" title="朗读 / 朗読">🔊</button>
-                <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceGenSummary" disabled title="生成会议纪要">📝 生成纪要</button>
-                <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceSummary" disabled>摘要</button>
-                <button type="button" class="tl-action-btn tl-action-btn--ghost" id="voiceClear">クリア</button>
+                <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceGenSummary" disabled>📝 <span data-i18n="tl_btn_gen_summary">生成纪要</span></button>
+                <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceSummary" disabled data-i18n="tl_btn_abstract">摘要</button>
+                <button type="button" class="tl-action-btn tl-action-btn--ghost" id="voiceClear" data-i18n="tl_btn_clear">クリア</button>
               </div>
             </div>
           </div>
@@ -883,11 +883,11 @@
           </div>
 
           <div class="tl-actions">
-            <button class="tl-action-btn tl-action-btn--primary" id="tlSummary" disabled>
-              会議まとめを生成 / 生成会议摘要
+            <button class="tl-action-btn tl-action-btn--primary" id="tlSummary" disabled data-i18n="tl_text_summary_btn">
+              会議まとめを生成
             </button>
-            <button class="tl-action-btn tl-action-btn--ghost" id="tlClear">
-              クリア / 清空
+            <button class="tl-action-btn tl-action-btn--ghost" id="tlClear" data-i18n="tl_btn_clear">
+              クリア
             </button>
           </div>
 
@@ -896,15 +896,15 @@
         <!-- Summary Result Panel -->
         <div id="summaryResultPanel" style="display: none; margin-top: 32px; padding: 20px; background: var(--c-bg-alt); border: 1px solid var(--c-border);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 1rem; font-weight: 500;">生成的会议纪要</h3>
-            <button type="button" class="tl-action-btn tl-action-btn--ghost" id="summaryClosePanelBtn">✕ 关闭</button>
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 500;" data-i18n="tl_summary_title">生成的会议纪要</h3>
+            <button type="button" class="tl-action-btn tl-action-btn--ghost" id="summaryClosePanelBtn" data-i18n="tl_summary_close">✕ 关闭</button>
           </div>
 
           <div id="summaryContent" style="margin-bottom: 20px;"></div>
 
           <div style="display: flex; gap: 12px;">
-            <button type="button" class="tl-action-btn tl-action-btn--primary" id="summaryDownloadBtn">💾 下载纪要（Word）</button>
-            <button type="button" class="tl-action-btn tl-action-btn--ghost" id="summaryNewMeetingBtn">➕ 新建会议</button>
+            <button type="button" class="tl-action-btn tl-action-btn--primary" id="summaryDownloadBtn" data-i18n="tl_summary_download">💾 下载纪要（Word）</button>
+            <button type="button" class="tl-action-btn tl-action-btn--ghost" id="summaryNewMeetingBtn" data-i18n="tl_summary_new">➕ 新建会议</button>
           </div>
         </div>
 
@@ -916,17 +916,17 @@
   <div id="summaryConfirmDialog" class="dialog-overlay">
     <div class="dialog-box">
       <div class="dialog-header">
-        <h3>生成会议纪要</h3>
+        <h3 data-i18n="tl_dialog_title">生成会议纪要</h3>
       </div>
       <div class="dialog-body">
-        <p>确定要生成纪要吗？生成后，当前转录将被保存。</p>
-        <p class="dialog-body__note">
+        <p data-i18n="tl_dialog_body">确定要生成纪要吗？生成后，当前转录将被保存。</p>
+        <p class="dialog-body__note" data-i18n="tl_dialog_note">
           生成纪要需要 30-60 秒，期间请勿关闭页面。
         </p>
       </div>
       <div class="dialog-footer">
-        <button type="button" class="btn-cancel" id="summaryConfirmCancel">取消</button>
-        <button type="button" class="btn-confirm" id="summaryConfirmOk">确定</button>
+        <button type="button" class="btn-cancel" id="summaryConfirmCancel" data-i18n="tl_dialog_cancel">取消</button>
+        <button type="button" class="btn-confirm" id="summaryConfirmOk" data-i18n="tl_dialog_confirm">确定</button>
       </div>
     </div>
   </div>
