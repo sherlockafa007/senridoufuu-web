@@ -302,6 +302,24 @@
     }
     .an-report li { margin-bottom: 0.4em; }
     .an-report strong { font-weight: 500; }
+
+    /* ════════════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .an-drop-zone { padding: 36px 20px; }
+      .an-drop-zone.has-files { padding: 14px 20px; }
+      .an-notice { padding: 14px 20px; }
+      .an-actions { flex-direction: column; }
+      .an-actions .an-action-btn { width: 100%; text-align: center; }
+    }
+
+    @media (max-width: 480px) {
+      .an-drop-zone { padding: 28px 16px; }
+      .an-file-item { gap: 8px; padding: 10px 12px; }
+      .an-file-chars { display: none; }
+      .an-result { padding-top: 28px; }
+    }
   </style>
 </head>
 <body>
@@ -363,10 +381,10 @@
 
         <!-- Actions -->
         <div class="an-actions" id="anActions" style="display:none">
-          <button class="an-action-btn an-action-btn--primary" id="anSubmit">
+          <button type="button" class="an-action-btn an-action-btn--primary" id="anSubmit">
             分析する / 开始分析
           </button>
-          <button class="an-action-btn an-action-btn--ghost" id="anClear">
+          <button type="button" class="an-action-btn an-action-btn--ghost" id="anClear">
             クリア / 清空
           </button>
         </div>
