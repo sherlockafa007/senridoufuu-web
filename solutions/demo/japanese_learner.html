@@ -19,6 +19,12 @@ td,th{border:1px solid #e5e7eb}
 .qopt:hover{background:#eff6ff;border-color:#93c5fd}
 .qopt.ok{border-color:#10b981!important;background:#d1fae5!important;pointer-events:none}
 .qopt.ng{border-color:#ef4444!important;background:#fee2e2!important;pointer-events:none}
+.scroll-hint{display:none;text-align:center;font-size:11px;color:#9ca3af;padding:4px 0;background:#f9fafb;border-bottom:1px solid #e5e7eb}
+@media (max-width: 640px) {
+  .scroll-hint{display:block}
+  td,th{padding:4px 6px!important}
+  .text-xs{font-size:11px}
+}
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -42,6 +48,7 @@ td,th{border:1px solid #e5e7eb}
   </div>
 </header>
 
+<div class="scroll-hint">← 左右滑动查看所有活用形 →</div>
 <div style="height:calc(100vh - 56px);overflow:auto">
 <table class="text-xs border-collapse w-full">
 <thead>
