@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -10,87 +10,105 @@
 body{font-family:'Noto Sans SC',sans-serif}
 .jp{font-family:'Noto Sans JP',sans-serif}
 thead th{position:sticky;top:0;background:#fff;z-index:5;border-bottom:2px solid #e5e7eb;white-space:nowrap}
-.c{cursor:pointer;color:transparent!important;background:#e5e7eb;border-radius:3px;-webkit-user-select:none;user-select:none}
-.c:hover{background:#d1d5db}
-.c.open{color:#065f46!important;background:#d1fae5;cursor:default}
+.c{cursor:pointer;color:transparent!important;background:#1e293b;border-radius:3px;-webkit-user-select:none;user-select:none;transition:background .15s}
+.c:hover{background:#334155}
+.c.open{color:#065f46!important;background:#d1fae5;cursor:pointer}
 .tab-on{background:#2563eb!important;color:#fff!important}
+.lang-on{background:#1D3D2D!important;color:#fff!important}
 td,th{border:1px solid #e5e7eb}
 .qopt{padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;background:#fff;transition:all .15s;width:100%}
 .qopt:hover{background:#eff6ff;border-color:#93c5fd}
 .qopt.ok{border-color:#10b981!important;background:#d1fae5!important;pointer-events:none}
 .qopt.ng{border-color:#ef4444!important;background:#fee2e2!important;pointer-events:none}
 .scroll-hint{display:none;text-align:center;font-size:11px;color:#9ca3af;padding:4px 0;background:#f9fafb;border-bottom:1px solid #e5e7eb}
-@media (max-width: 640px) {
+.speak-btn{display:inline-block;font-size:10px;opacity:0.35;cursor:pointer;padding:0 3px;border:none;background:none;vertical-align:middle;transition:opacity .15s;line-height:1}
+.speak-btn:hover{opacity:1}
+.fcheck-label{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;border:1.5px solid #e5e7eb;transition:all .15s;user-select:none;font-family:'Noto Sans JP',sans-serif}
+.fcheck-label.active{border-color:#7c3aed;background:#f5f3ff;color:#5b21b6;font-weight:500}
+.col-label{display:inline-flex;align-items:center;font-size:11px;padding:4px 9px;border-radius:5px;cursor:pointer;border:1.5px solid #e5e7eb;transition:all .15s;user-select:none;font-family:'Noto Sans JP',sans-serif;color:#6b7280}
+.col-label.active{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
+@media (max-width:640px){
   .scroll-hint{display:block}
   td,th{padding:4px 6px!important}
-  .text-xs{font-size:11px}
+  .speak-btn{display:none}
 }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
 <header class="bg-white border-b border-gray-200 sticky top-0 z-20 h-14">
-  <div class="px-3 h-full flex items-center gap-2 flex-wrap">
-    <a href="../demo.html" class="text-gray-400 hover:text-gray-600 text-sm shrink-0">← 返回</a>
-    <span class="jp font-semibold text-gray-800 shrink-0 text-sm">日本語動詞活用</span>
+  <div class="px-3 h-full flex items-center gap-1.5 flex-wrap overflow-hidden">
+    <a href="../demo.html" id="backBtn" class="text-gray-400 hover:text-gray-600 text-sm shrink-0">← 返回</a>
+    <span id="pageTitle" class="jp font-semibold text-gray-800 shrink-0 text-sm">日本語動詞活用</span>
     <div class="flex gap-1 ml-1 shrink-0">
-      <button type="button" data-g="1" onclick="setG(1)" class="tab-on px-3 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors">一类</button>
-      <button type="button" data-g="2" onclick="setG(2)" class="px-3 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors">二类</button>
-      <button type="button" data-g="3" onclick="setG(3)" class="px-3 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors">三类</button>
-      <button type="button" data-g="0" onclick="setG(0)" class="px-3 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors">全部</button>
+      <button type="button" data-g="1" onclick="setG(1)" id="gBtn1" class="tab-on px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
+      <button type="button" data-g="2" onclick="setG(2)" id="gBtn2" class="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
+      <button type="button" data-g="3" onclick="setG(3)" id="gBtn3" class="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
+      <button type="button" data-g="0" onclick="setG(0)" id="gBtnAll" class="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
     </div>
-    <button type="button" id="practBtn" onclick="togglePractice()" class="ml-auto px-3 py-1 rounded border border-gray-300 text-xs text-gray-600 hover:bg-gray-100 shrink-0 transition-colors">遮盖练习</button>
-    <button type="button" onclick="startQuiz()" class="px-3 py-1 rounded border border-purple-300 text-xs text-purple-600 hover:bg-purple-50 shrink-0 transition-colors">小测试</button>
+    <button type="button" id="practBtn" onclick="togglePractice()" class="px-2.5 py-1 rounded border border-gray-300 text-xs text-gray-600 hover:bg-gray-100 shrink-0 transition-colors"></button>
+    <button type="button" onclick="openQuizSet()" id="quizBtn" class="px-2.5 py-1 rounded border border-purple-300 text-xs text-purple-600 hover:bg-purple-50 shrink-0 transition-colors"></button>
+    <button type="button" onclick="toggleColPanel()" id="colSettingsBtn" class="px-2.5 py-1 rounded border border-gray-300 text-xs text-gray-600 hover:bg-gray-100 shrink-0 transition-colors"></button>
+    <div class="flex gap-0.5 ml-auto shrink-0">
+      <button type="button" onclick="setLang('ja')" id="lbja" class="px-2 py-1 rounded text-xs bg-gray-100 text-gray-500 transition-colors">日</button>
+      <button type="button" onclick="setLang('zh')" id="lbzh" class="lang-on px-2 py-1 rounded text-xs bg-gray-100 text-gray-500 transition-colors">中</button>
+      <button type="button" onclick="setLang('en')" id="lben" class="px-2 py-1 rounded text-xs bg-gray-100 text-gray-500 transition-colors">EN</button>
+    </div>
     <div id="uarea" class="hidden items-center gap-2 shrink-0">
-      <span id="uemail" class="text-xs text-gray-400 max-w-xs truncate hidden sm:block"></span>
-      <button type="button" id="logoutBtn" class="text-xs px-2 py-1 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors">退出</button>
+      <span id="uemail" class="text-xs text-gray-400 max-w-[120px] truncate hidden sm:block"></span>
+      <button type="button" id="logoutBtn" class="text-xs px-2 py-1 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"></button>
     </div>
   </div>
 </header>
 
-<div class="scroll-hint">← 左右滑动查看所有活用形 →</div>
-<div style="height:calc(100vh - 56px);overflow:auto">
-<table class="text-xs border-collapse w-full">
-<thead>
-<tr class="text-gray-500 font-medium">
-  <th class="px-2 py-2 text-left w-7">#</th>
-  <th class="px-2 py-2 text-left jp">基本形</th>
-  <th class="px-2 py-2 text-left">中文</th>
-  <th class="px-2 py-2 text-left">英文</th>
-  <th class="px-2 py-2 text-left jp">ます形</th>
-  <th class="px-2 py-2 text-left jp">て形</th>
-  <th class="px-2 py-2 text-left jp">ない形</th>
-  <th class="px-2 py-2 text-left jp">た形</th>
-  <th class="px-2 py-2 text-left jp">意志形</th>
-  <th class="px-2 py-2 text-left jp">ば形</th>
-  <th class="px-2 py-2 text-left jp">命令形</th>
-  <th class="px-2 py-2 text-left jp">可能形</th>
-  <th class="px-2 py-2 text-left jp">被动形</th>
-  <th class="px-2 py-2 text-left jp">使役形</th>
-</tr>
-</thead>
-<tbody id="tbody"></tbody>
-</table>
+<div id="scrollHint" class="scroll-hint"></div>
+
+<div id="colPanel" style="display:none" class="bg-white border-b border-gray-100 px-4 py-2.5">
+  <div class="flex flex-wrap gap-1.5" id="colChecks"></div>
+</div>
+
+<div id="tableWrap" style="height:calc(100vh - 56px);overflow:auto">
+  <table class="text-xs border-collapse w-full">
+    <thead id="thead"></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<!-- Quiz Setup Modal -->
+<div id="quizSetBox" style="display:none;position:fixed;inset:0;z-index:160;align-items:center;justify-content:center;background:rgba(0,0,0,.5)">
+  <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:420px;width:calc(100% - 32px)">
+    <h3 id="quizSetTitle" style="font-size:15px;font-weight:600;margin-bottom:14px;text-align:center;font-family:'Noto Sans JP',sans-serif"></h3>
+    <div id="fmChecks" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;justify-content:center">
+      <button onclick="selectAllForms(true)" id="selAllBtn" style="font-size:12px;color:#6b7280;border:none;background:none;cursor:pointer;text-decoration:underline"></button>
+      <span style="color:#d1d5db">|</span>
+      <button onclick="selectAllForms(false)" id="selNoneBtn" style="font-size:12px;color:#6b7280;border:none;background:none;cursor:pointer;text-decoration:underline"></button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="doStartQuiz()" id="quizStartBtn" style="flex:1;padding:10px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit"></button>
+      <button onclick="document.getElementById('quizSetBox').style.display='none'" id="quizCancelBtn" style="padding:10px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit"></button>
+    </div>
+  </div>
 </div>
 
 <!-- Quiz Modal -->
 <div id="quizBox" style="display:none;position:fixed;inset:0;z-index:150;align-items:center;justify-content:center;background:rgba(0,0,0,.5)">
   <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:480px;width:calc(100% - 32px);text-align:center">
     <div style="display:flex;align-items:center;margin-bottom:16px">
-      <span id="qNum" style="font-size:12px;color:#6b7280;white-space:nowrap">1/20</span>
+      <span id="qNum" style="font-size:12px;color:#6b7280;white-space:nowrap"></span>
       <div style="flex:1;height:4px;background:#f3f4f6;border-radius:2px;margin:0 10px"><div id="qBar" style="height:100%;background:#7c3aed;border-radius:2px;transition:width .3s;width:5%"></div></div>
       <button onclick="document.getElementById('quizBox').style.display='none'" style="font-size:20px;border:none;background:none;cursor:pointer;color:#9ca3af;line-height:1">×</button>
     </div>
     <div id="qVerb" class="jp" style="font-size:26px;font-weight:600;margin-bottom:6px"></div>
     <div id="qMean" style="font-size:13px;color:#6b7280;margin-bottom:4px"></div>
-    <div style="font-size:13px;color:#374151;margin-bottom:18px">请选择正确的 <b id="qForm" style="color:#7c3aed"></b></div>
+    <div id="qFormLine" style="font-size:13px;color:#374151;margin-bottom:18px"></div>
     <div id="qOpts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
     <div id="qResult" style="display:none;padding:16px 0">
       <div id="qEmoji" style="font-size:52px;margin-bottom:10px"></div>
       <div id="qScore" style="font-size:22px;font-weight:600;margin-bottom:6px"></div>
       <div id="qMsg" style="font-size:14px;color:#6b7280;margin-bottom:18px"></div>
-      <button onclick="startQuiz()" style="padding:10px 22px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px">再来一次</button>
-      <button onclick="document.getElementById('quizBox').style.display='none'" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer">关闭</button>
+      <button onclick="openQuizSet()" id="quizAgainBtn" style="padding:10px 22px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;font-family:inherit"></button>
+      <button onclick="document.getElementById('quizBox').style.display='none'" id="quizCloseBtn" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit"></button>
     </div>
   </div>
 </div>
@@ -99,51 +117,166 @@ td,th{border:1px solid #e5e7eb}
 <div id="gate" style="display:flex;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.75);backdrop-filter:blur(6px)">
   <div style="background:#fff;border-radius:16px;padding:44px 36px;max-width:360px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)">
     <div style="font-size:38px;margin-bottom:14px">🔑</div>
-    <h2 style="font-size:17px;font-weight:600;margin-bottom:8px;font-family:'Noto Sans SC',sans-serif">会员专属功能</h2>
-    <p style="font-size:13px;color:#78716c;line-height:1.8;margin-bottom:22px">此工具仅对受邀会员开放，请登录继续。</p>
-    <input id="ge" type="email" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none" placeholder="邮箱地址">
-    <input id="gp" type="password" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none" placeholder="密码">
+    <h2 id="authTitle" style="font-size:17px;font-weight:600;margin-bottom:8px;font-family:'Noto Sans SC',sans-serif"></h2>
+    <p id="authDesc" style="font-size:13px;color:#78716c;line-height:1.8;margin-bottom:22px"></p>
+    <input id="ge" type="email" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none">
+    <input id="gp" type="password" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none">
     <div id="gm" style="font-size:12px;min-height:16px;margin-bottom:8px;color:#ef4444"></div>
-    <button type="button" id="glogin" style="display:block;width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer;margin-bottom:8px">登录</button>
-    <button type="button" id="gforgot" style="display:block;background:none;border:none;font-size:12px;color:#9ca3af;cursor:pointer;font-family:inherit;margin-bottom:10px">忘记密码？</button>
-    <a href="../demo.html" style="font-size:12px;color:#9ca3af;text-decoration:none">← 返回演示页面</a>
+    <button type="button" id="glogin" style="display:block;width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer;margin-bottom:8px"></button>
+    <button type="button" id="gforgot" style="display:block;background:none;border:none;font-size:12px;color:#9ca3af;cursor:pointer;font-family:inherit;margin-bottom:10px"></button>
+    <a href="../demo.html" id="authBack" style="font-size:12px;color:#9ca3af;text-decoration:none"></a>
   </div>
 </div>
 
 <script>
+// ── i18n ─────────────────────────────────────────────────────────────────────
+const T = {
+  zh: {
+    back:'← 返回', title:'日本語動詞活用',
+    g1:'一类', g2:'二类', g3:'三类', gAll:'全部',
+    practOn:'遮盖练习', practOff:'显示全部',
+    quiz:'小测试', colSettings:'列设置', logout:'退出',
+    scrollHint:'← 左右滑动查看所有活用形 →',
+    quizSetTitle:'选择测试的变形',
+    selAll:'全选', selNone:'取消全选',
+    quizStart:'开始测试', quizCancel:'取消',
+    quizQ:'请选择正确的',
+    quizAgain:'再来一次', quizClose:'关闭',
+    quizGreat:'太厉害了！恭喜通关！',
+    quizGood:'仍需努力，继续加油！',
+    quizBad:'你有认真学习吗……',
+    authTitle:'会员专属功能',
+    authDesc:'此工具仅对受邀会员开放，请登录继续。',
+    authEmail:'邮箱地址', authPass:'密码',
+    authLogin:'登录', authForgot:'忘记密码？',
+    authBack:'← 返回演示页面',
+    authBadCred:'邮箱或密码错误，请重试。',
+    authFillEmail:'请先填写邮箱地址。',
+    authResetSent:'重置邮件已发送，请查收。',
+    authResetFail:'发送失败，请检查邮箱。',
+    FNAME:{masu:'ます形',te:'て形',nai:'ない形',ta:'た形',vol:'意志形',ba:'ば形',imp:'命令形',pot:'可能形',pass:'被动形',caus:'使役形'},
+    th:{num:'#',base:'基本形',zh:'中文',en:'英文',masu:'ます形',te:'て形',nai:'ない形',ta:'た形',vol:'意志形',ba:'ば形',imp:'命令形',pot:'可能形',pass:'被动形',caus:'使役形'}
+  },
+  ja: {
+    back:'← 戻る', title:'日本語動詞活用',
+    g1:'一グループ', g2:'二グループ', g3:'三グループ', gAll:'全部',
+    practOn:'隠して練習', practOff:'全て表示',
+    quiz:'クイズ', colSettings:'列設定', logout:'ログアウト',
+    scrollHint:'← 横にスクロールできます →',
+    quizSetTitle:'テストする活用形を選択',
+    selAll:'全選択', selNone:'全解除',
+    quizStart:'テスト開始', quizCancel:'キャンセル',
+    quizQ:'正しい活用形を選んでください：',
+    quizAgain:'もう一度', quizClose:'閉じる',
+    quizGreat:'すごい！満点です！',
+    quizGood:'まだ練習が必要です。頑張って！',
+    quizBad:'ちゃんと勉強しましたか？',
+    authTitle:'会員専用機能',
+    authDesc:'このツールは招待会員のみ利用できます。ログインしてください。',
+    authEmail:'メールアドレス', authPass:'パスワード',
+    authLogin:'ログイン', authForgot:'パスワードを忘れた方',
+    authBack:'← デモページに戻る',
+    authBadCred:'メールアドレスまたはパスワードが違います。',
+    authFillEmail:'メールアドレスを入力してください。',
+    authResetSent:'リセットメールを送信しました。',
+    authResetFail:'送信に失敗しました。',
+    FNAME:{masu:'ます形',te:'て形',nai:'ない形',ta:'た形',vol:'意志形',ba:'ば形',imp:'命令形',pot:'可能形',pass:'受動形',caus:'使役形'},
+    th:{num:'#',base:'基本形',zh:'中国語',en:'英語',masu:'ます形',te:'て形',nai:'ない形',ta:'た形',vol:'意志形',ba:'ば形',imp:'命令形',pot:'可能形',pass:'受動形',caus:'使役形'}
+  },
+  en: {
+    back:'← Back', title:'Japanese Verb Conjugation',
+    g1:'Group 1', g2:'Group 2', g3:'Group 3', gAll:'All',
+    practOn:'Cover Mode', practOff:'Show All',
+    quiz:'Quiz', colSettings:'Columns', logout:'Log out',
+    scrollHint:'← Scroll horizontally →',
+    quizSetTitle:'Select forms to test',
+    selAll:'Select all', selNone:'Deselect all',
+    quizStart:'Start Quiz', quizCancel:'Cancel',
+    quizQ:'Choose the correct form:',
+    quizAgain:'Again', quizClose:'Close',
+    quizGreat:'Excellent! Perfect score!',
+    quizGood:'Keep practicing!',
+    quizBad:'Did you study at all?',
+    authTitle:'Members Only',
+    authDesc:'This tool is for invited members only. Please log in.',
+    authEmail:'Email', authPass:'Password',
+    authLogin:'Log in', authForgot:'Forgot password?',
+    authBack:'← Back to demo',
+    authBadCred:'Wrong email or password. Please try again.',
+    authFillEmail:'Please enter your email address.',
+    authResetSent:'Reset email sent. Please check your inbox.',
+    authResetFail:'Failed to send. Please check your email.',
+    FNAME:{masu:'masu',te:'te-form',nai:'nai-form',ta:'ta-form',vol:'volitional',ba:'ba-form',imp:'imperative',pot:'potential',pass:'passive',caus:'causative'},
+    th:{num:'#',base:'Dictionary',zh:'Chinese',en:'English',masu:'masu',te:'te',nai:'nai',ta:'ta',vol:'volitional',ba:'ba',imp:'imperative',pot:'potential',pass:'passive',caus:'causative'}
+  }
+};
+
+let lang = localStorage.getItem('jl_lang') || 'zh';
+
+function applyLang() {
+  const t = T[lang];
+  document.getElementById('backBtn').textContent = t.back;
+  document.getElementById('pageTitle').textContent = t.title;
+  document.getElementById('gBtn1').textContent = t.g1;
+  document.getElementById('gBtn2').textContent = t.g2;
+  document.getElementById('gBtn3').textContent = t.g3;
+  document.getElementById('gBtnAll').textContent = t.gAll;
+  document.getElementById('practBtn').textContent = mode ? t.practOff : t.practOn;
+  document.getElementById('quizBtn').textContent = t.quiz;
+  document.getElementById('colSettingsBtn').textContent = t.colSettings;
+  document.getElementById('logoutBtn').textContent = t.logout;
+  document.getElementById('scrollHint').textContent = t.scrollHint;
+  document.getElementById('quizSetTitle').textContent = t.quizSetTitle;
+  document.getElementById('selAllBtn').textContent = t.selAll;
+  document.getElementById('selNoneBtn').textContent = t.selNone;
+  document.getElementById('quizStartBtn').textContent = t.quizStart;
+  document.getElementById('quizCancelBtn').textContent = t.quizCancel;
+  document.getElementById('quizAgainBtn').textContent = t.quizAgain;
+  document.getElementById('quizCloseBtn').textContent = t.quizClose;
+  document.getElementById('authTitle').textContent = t.authTitle;
+  document.getElementById('authDesc').textContent = t.authDesc;
+  document.getElementById('ge').placeholder = t.authEmail;
+  document.getElementById('gp').placeholder = t.authPass;
+  document.getElementById('glogin').textContent = t.authLogin;
+  document.getElementById('gforgot').textContent = t.authForgot;
+  document.getElementById('authBack').textContent = t.authBack;
+  ['ja','zh','en'].forEach(l => document.getElementById('lb'+l).classList.toggle('lang-on', l === lang));
+  buildColPanel();
+  buildThead();
+  render();
+}
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('jl_lang', l);
+  applyLang();
+}
+
+// ── Verb Data ─────────────────────────────────────────────────────────────────
 const V=[
-  // 一类 -う
   {b:'会う',r:'あう',m:'见面',e:'meet',g:1},{b:'買う',r:'かう',m:'买',e:'buy',g:1},{b:'歌う',r:'うたう',m:'唱歌',e:'sing',g:1},
   {b:'洗う',r:'あらう',m:'洗',e:'wash',g:1},{b:'使う',r:'つかう',m:'使用',e:'use',g:1},{b:'言う',r:'いう',m:'说',e:'say',g:1},
   {b:'笑う',r:'わらう',m:'笑',e:'laugh',g:1},{b:'習う',r:'ならう',m:'学习',e:'learn',g:1},{b:'払う',r:'はらう',m:'付款',e:'pay',g:1},
   {b:'思う',r:'おもう',m:'思考',e:'think',g:1},{b:'手伝う',r:'てつだう',m:'帮忙',e:'help',g:1},{b:'吸う',r:'すう',m:'吸',e:'inhale',g:1},
-  // 一类 -く
   {b:'書く',r:'かく',m:'写',e:'write',g:1},{b:'聞く',r:'きく',m:'听;问',e:'listen',g:1},{b:'歩く',r:'あるく',m:'走路',e:'walk',g:1},
   {b:'働く',r:'はたらく',m:'工作',e:'work',g:1},{b:'置く',r:'おく',m:'放置',e:'place',g:1},{b:'引く',r:'ひく',m:'拉',e:'pull',g:1},
   {b:'磨く',r:'みがく',m:'刷;磨',e:'polish',g:1},{b:'開く',r:'ひらく',m:'打开',e:'open',g:1},{b:'行く',r:'いく',m:'去',e:'go',g:1,sp:1},
   {b:'泣く',r:'なく',m:'哭',e:'cry',g:1},{b:'着く',r:'つく',m:'到达',e:'arrive',g:1},{b:'続く',r:'つづく',m:'持续',e:'continue',g:1},
   {b:'動く',r:'うごく',m:'移动',e:'move',g:1},{b:'抱く',r:'だく',m:'拥抱',e:'hug',g:1},
-  // 一类 -ぐ
   {b:'泳ぐ',r:'およぐ',m:'游泳',e:'swim',g:1},{b:'急ぐ',r:'いそぐ',m:'赶紧',e:'hurry',g:1},{b:'脱ぐ',r:'ぬぐ',m:'脱',e:'take off',g:1},
   {b:'防ぐ',r:'ふせぐ',m:'防止',e:'prevent',g:1},{b:'稼ぐ',r:'かせぐ',m:'赚钱',e:'earn',g:1},
-  // 一类 -す
   {b:'話す',r:'はなす',m:'说话',e:'speak',g:1},{b:'貸す',r:'かす',m:'借出',e:'lend',g:1},{b:'押す',r:'おす',m:'推',e:'push',g:1},
   {b:'出す',r:'だす',m:'拿出',e:'take out',g:1},{b:'直す',r:'なおす',m:'修复',e:'fix',g:1},{b:'渡す',r:'わたす',m:'交给',e:'hand over',g:1},
   {b:'返す',r:'かえす',m:'归还',e:'return',g:1},{b:'消す',r:'けす',m:'消除',e:'erase',g:1},{b:'起こす',r:'おこす',m:'叫醒',e:'wake up',g:1},
-  // 一类 -つ
   {b:'待つ',r:'まつ',m:'等待',e:'wait',g:1},{b:'持つ',r:'もつ',m:'持有',e:'hold',g:1},{b:'立つ',r:'たつ',m:'站立',e:'stand',g:1},
   {b:'勝つ',r:'かつ',m:'获胜',e:'win',g:1},{b:'打つ',r:'うつ',m:'打',e:'hit',g:1},{b:'保つ',r:'たもつ',m:'保持',e:'maintain',g:1},
-  // 一类 -ぬ
   {b:'死ぬ',r:'しぬ',m:'死',e:'die',g:1},
-  // 一类 -ぶ
   {b:'遊ぶ',r:'あそぶ',m:'玩',e:'play',g:1},{b:'飛ぶ',r:'とぶ',m:'飞',e:'fly',g:1},{b:'呼ぶ',r:'よぶ',m:'叫',e:'call',g:1},
   {b:'選ぶ',r:'えらぶ',m:'选择',e:'choose',g:1},{b:'学ぶ',r:'まなぶ',m:'学习',e:'study',g:1},{b:'並ぶ',r:'ならぶ',m:'排队',e:'line up',g:1},
   {b:'運ぶ',r:'はこぶ',m:'搬运',e:'carry',g:1},
-  // 一类 -む
   {b:'読む',r:'よむ',m:'读',e:'read',g:1},{b:'飲む',r:'のむ',m:'喝',e:'drink',g:1},{b:'休む',r:'やすむ',m:'休息',e:'rest',g:1},
   {b:'住む',r:'すむ',m:'居住',e:'live',g:1},{b:'頼む',r:'たのむ',m:'拜托',e:'request',g:1},{b:'楽しむ',r:'たのしむ',m:'享受',e:'enjoy',g:1},
   {b:'進む',r:'すすむ',m:'前进',e:'advance',g:1},{b:'望む',r:'のぞむ',m:'希望',e:'hope',g:1},{b:'盗む',r:'ぬすむ',m:'偷',e:'steal',g:1},
-  // 一类 -る
   {b:'帰る',r:'かえる',m:'回家',e:'return',g:1},{b:'分かる',r:'わかる',m:'明白',e:'understand',g:1},{b:'入る',r:'はいる',m:'进入',e:'enter',g:1},
   {b:'切る',r:'きる',m:'切',e:'cut',g:1},{b:'走る',r:'はしる',m:'跑',e:'run',g:1},{b:'知る',r:'しる',m:'知道',e:'know',g:1},
   {b:'売る',r:'うる',m:'卖',e:'sell',g:1},{b:'乗る',r:'のる',m:'乘坐',e:'ride',g:1},{b:'作る',r:'つくる',m:'制作',e:'make',g:1},
@@ -161,7 +294,6 @@ const V=[
   {b:'咲く',r:'さく',m:'开花',e:'bloom',g:1},{b:'焼く',r:'やく',m:'烤;烧',e:'bake',g:1},{b:'届く',r:'とどく',m:'到达',e:'reach',g:1},{b:'叩く',r:'たたく',m:'敲打',e:'knock',g:1},{b:'解く',r:'とく',m:'解开',e:'solve',g:1},
   {b:'落とす',r:'おとす',m:'丢落',e:'drop',g:1},{b:'壊す',r:'こわす',m:'弄坏',e:'break',g:1},{b:'隠す',r:'かくす',m:'隐藏',e:'hide',g:1},{b:'増やす',r:'ふやす',m:'增加',e:'increase',g:1},
   {b:'包む',r:'つつむ',m:'包裹',e:'wrap',g:1},{b:'踏む',r:'ふむ',m:'踩',e:'step on',g:1},{b:'組む',r:'くむ',m:'组合',e:'combine',g:1},{b:'育つ',r:'そだつ',m:'成长',e:'grow up',g:1},
-  // 二类
   {b:'食べる',r:'たべる',m:'吃',e:'eat',g:2},{b:'見る',r:'みる',m:'看',e:'see',g:2},{b:'起きる',r:'おきる',m:'起床',e:'wake up',g:2},
   {b:'寝る',r:'ねる',m:'睡觉',e:'sleep',g:2},{b:'着る',r:'きる',m:'穿',e:'wear',g:2},{b:'教える',r:'おしえる',m:'教',e:'teach',g:2},
   {b:'考える',r:'かんがえる',m:'思考',e:'think',g:2},{b:'答える',r:'こたえる',m:'回答',e:'answer',g:2},{b:'覚える',r:'おぼえる',m:'记住',e:'remember',g:2},
@@ -191,7 +323,6 @@ const V=[
   {b:'攻める',r:'せめる',m:'进攻',e:'attack',g:2},{b:'慰める',r:'なぐさめる',m:'安慰',e:'comfort',g:2},{b:'怠ける',r:'なまける',m:'偷懒',e:'be lazy',g:2},
   {b:'折れる',r:'おれる',m:'折断',e:'snap',g:2},{b:'揃える',r:'そろえる',m:'整齐排列',e:'align',g:2},{b:'鍛える',r:'きたえる',m:'锻炼',e:'train',g:2},
   {b:'生える',r:'はえる',m:'生长',e:'grow',g:2},{b:'越える',r:'こえる',m:'超过',e:'exceed',g:2},{b:'過ごす',r:'すごす',m:'度过',e:'spend time',g:1},
-  // 三类
   {b:'する',r:'する',m:'做',e:'do',g:3},{b:'来る',r:'くる',m:'来',e:'come',g:3},
   {b:'勉強する',r:'べんきょうする',m:'学习',e:'study',g:3},{b:'運動する',r:'うんどうする',m:'运动',e:'exercise',g:3},
   {b:'料理する',r:'りょうりする',m:'做饭',e:'cook',g:3},{b:'旅行する',r:'りょこうする',m:'旅行',e:'travel',g:3},
@@ -199,6 +330,7 @@ const V=[
   {b:'説明する',r:'せつめいする',m:'说明',e:'explain',g:3},{b:'準備する',r:'じゅんびする',m:'准备',e:'prepare',g:3}
 ];
 
+// ── Conjugation ───────────────────────────────────────────────────────────────
 const MP={
   'う':{i:'い',a:'わ',e:'え',o:'お',te:'って',ta:'った'},
   'く':{i:'き',a:'か',e:'け',o:'こ',te:'いて',ta:'いた'},
@@ -211,150 +343,293 @@ const MP={
   'る':{i:'り',a:'ら',e:'れ',o:'ろ',te:'って',ta:'った'}
 };
 
-function cj(v){
-  const{b,g,sp}=v;
-  if(g===3){
-    if(b==='来る'||b==='くる') return{masu:'きます',te:'きて',nai:'こない',ta:'きた',vol:'こよう',ba:'くれば',imp:'こい',pot:'こられる',pass:'こられる',caus:'こさせる'};
-    const st=b.endsWith('する')?b.slice(0,-2):'';
-    return{masu:st+'します',te:st+'して',nai:st+'しない',ta:st+'した',vol:st+'しよう',ba:st+'すれば',imp:st+'しろ',pot:st+'できる',pass:st+'される',caus:st+'させる'};
+function cj(v) {
+  const {b,g,sp} = v;
+  if (g===3) {
+    if (b==='来る'||b==='くる') return {masu:'きます',te:'きて',nai:'こない',ta:'きた',vol:'こよう',ba:'くれば',imp:'こい',pot:'こられる',pass:'こられる',caus:'こさせる'};
+    const st = b.endsWith('する') ? b.slice(0,-2) : '';
+    return {masu:st+'します',te:st+'して',nai:st+'しない',ta:st+'した',vol:st+'しよう',ba:st+'すれば',imp:st+'しろ',pot:st+'できる',pass:st+'される',caus:st+'させる'};
   }
-  if(g===2){
-    const s=b.slice(0,-1);
-    return{masu:s+'ます',te:s+'て',nai:s+'ない',ta:s+'た',vol:s+'よう',ba:s+'れば',imp:s+'ろ',pot:s+'られる',pass:s+'られる',caus:s+'させる'};
+  if (g===2) {
+    const s = b.slice(0,-1);
+    return {masu:s+'ます',te:s+'て',nai:s+'ない',ta:s+'た',vol:s+'よう',ba:s+'れば',imp:s+'ろ',pot:s+'られる',pass:s+'られる',caus:s+'させる'};
   }
-  const e=b.slice(-1),s=b.slice(0,-1),m=MP[e];
-  return{
-    masu:s+m.i+'ます',
-    te:s+(sp?'って':m.te),
-    nai:s+m.a+'ない',
-    ta:s+(sp?'った':m.ta),
-    vol:s+m.o+'う',
-    ba:s+m.e+'ば',
-    imp:s+m.e,
-    pot:s+m.e+'る',
-    pass:s+m.a+'れる',
-    caus:s+m.a+'せる'
+  const e = b.slice(-1), s = b.slice(0,-1), m = MP[e];
+  return {
+    masu:s+m.i+'ます', te:s+(sp?'って':m.te), nai:s+m.a+'ない', ta:s+(sp?'った':m.ta),
+    vol:s+m.o+'う', ba:s+m.e+'ば', imp:s+m.e, pot:s+m.e+'る', pass:s+m.a+'れる', caus:s+m.a+'せる'
   };
 }
 
-let mode=false,grp=1;
+// ── Column Visibility ─────────────────────────────────────────────────────────
+const FKEY = ['masu','te','nai','ta','vol','ba','imp','pot','pass','caus'];
+const COLS = ['zh','en',...FKEY];
+const JP_COLS = new Set(FKEY);
+let hiddenCols = new Set(JSON.parse(localStorage.getItem('jl_hidden_cols') || '[]'));
 
-function tc(t){
-  return mode?`<td class="px-2 py-1.5 jp c" onclick="this.classList.toggle('open')">${t}</td>`
-             :`<td class="px-2 py-1.5 jp text-gray-700">${t}</td>`;
+function toggleCol(key, visible) {
+  if (visible) hiddenCols.delete(key); else hiddenCols.add(key);
+  localStorage.setItem('jl_hidden_cols', JSON.stringify([...hiddenCols]));
+  buildColPanel();
+  buildThead();
+  render();
 }
 
-function render(){
-  const list=grp===0?V:V.filter(v=>v.g===grp);
-  const bg={1:'bg-blue-50',2:'bg-green-50',3:'bg-purple-50'};
-  document.getElementById('tbody').innerHTML=list.map((v,i)=>{
-    const c=cj(v);
-    return`<tr class="${bg[v.g]} border-b border-gray-100 hover:brightness-95">
+function buildColPanel() {
+  const th = T[lang].th;
+  document.getElementById('colChecks').innerHTML = COLS.map(key => {
+    const on = !hiddenCols.has(key);
+    return `<label class="col-label ${on ? 'active' : ''}">
+      <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleCol('${key}',this.checked)" style="display:none">
+      ${th[key]}
+    </label>`;
+  }).join('');
+}
+
+function toggleColPanel() {
+  const p = document.getElementById('colPanel');
+  const opening = p.style.display === 'none';
+  p.style.display = opening ? 'block' : 'none';
+  updateTableHeight();
+}
+
+function updateTableHeight() {
+  const p = document.getElementById('colPanel');
+  const ph = p.style.display !== 'none' ? p.offsetHeight : 0;
+  const sh = document.getElementById('scrollHint').offsetHeight;
+  document.getElementById('tableWrap').style.height = `calc(100vh - 56px - ${ph + sh}px)`;
+}
+
+// ── Pronunciation ─────────────────────────────────────────────────────────────
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+let mode = false, grp = 1;
+
+function tc(text) {
+  const safe = text.replace(/"/g, '&quot;');
+  if (mode) return `<td class="px-2 py-1.5 jp c" onclick="revealCell(this)" data-val="${safe}">${text}</td>`;
+  return `<td class="px-2 py-1.5 jp text-gray-700" onclick="speak('${safe}')" style="cursor:pointer" title="🔊">${text}</td>`;
+}
+
+function revealCell(el) {
+  el.classList.toggle('open');
+  if (el.classList.contains('open')) speak(el.dataset.val);
+}
+
+function tcol(key, text) {
+  if (hiddenCols.has(key)) return '';
+  if (key === 'zh') return `<td class="px-2 py-1.5 text-gray-600 whitespace-nowrap">${text}</td>`;
+  if (key === 'en') return `<td class="px-2 py-1.5 text-gray-400 whitespace-nowrap">${text}</td>`;
+  return tc(text);
+}
+
+function buildThead() {
+  const th = T[lang].th;
+  let html = `<tr class="text-gray-500 font-medium">
+    <th class="px-2 py-2 text-left w-7">${th.num}</th>
+    <th class="px-2 py-2 text-left jp">${th.base}</th>`;
+  for (const key of COLS) {
+    if (!hiddenCols.has(key)) html += `<th class="px-2 py-2 text-left${JP_COLS.has(key) ? ' jp' : ''}">${th[key]}</th>`;
+  }
+  html += '</tr>';
+  document.getElementById('thead').innerHTML = html;
+}
+
+function render() {
+  const list = grp === 0 ? V : V.filter(v => v.g === grp);
+  const bg = {1:'bg-blue-50', 2:'bg-green-50', 3:'bg-purple-50'};
+  document.getElementById('tbody').innerHTML = list.map((v, i) => {
+    const c = cj(v);
+    return `<tr class="${bg[v.g]} border-b border-gray-100 hover:brightness-95">
       <td class="px-2 py-1.5 text-gray-400">${i+1}</td>
-      <td class="px-2 py-1.5 jp font-medium text-gray-800 whitespace-nowrap">${v.b}<span class="text-gray-400 font-normal ml-1">(${v.r})</span></td>
-      <td class="px-2 py-1.5 text-gray-600 whitespace-nowrap">${v.m}</td>
-      <td class="px-2 py-1.5 text-gray-400 whitespace-nowrap">${v.e||''}</td>
-      ${tc(c.masu)}${tc(c.te)}${tc(c.nai)}${tc(c.ta)}${tc(c.vol)}${tc(c.ba)}${tc(c.imp)}${tc(c.pot)}${tc(c.pass)}${tc(c.caus)}
+      <td class="px-2 py-1.5 jp font-medium text-gray-800 whitespace-nowrap">
+        ${v.b}<span class="text-gray-400 font-normal ml-1">(${v.r})</span>
+        <button class="speak-btn" onclick="speak('${v.r.replace(/'/g,"\\'")}');event.stopPropagation()" tabindex="-1">🔊</button>
+      </td>
+      ${tcol('zh',v.m)}${tcol('en',v.e||'')}
+      ${tcol('masu',c.masu)}${tcol('te',c.te)}${tcol('nai',c.nai)}${tcol('ta',c.ta)}
+      ${tcol('vol',c.vol)}${tcol('ba',c.ba)}${tcol('imp',c.imp)}${tcol('pot',c.pot)}
+      ${tcol('pass',c.pass)}${tcol('caus',c.caus)}
     </tr>`;
   }).join('');
 }
 
-function setG(g){
-  grp=g;
-  document.querySelectorAll('[data-g]').forEach(b=>b.classList.remove('tab-on'));
+function setG(g) {
+  grp = g;
+  document.querySelectorAll('[data-g]').forEach(b => b.classList.remove('tab-on'));
   document.querySelector(`[data-g="${g}"]`).classList.add('tab-on');
   render();
 }
 
-function togglePractice(){
-  mode=!mode;
-  const b=document.getElementById('practBtn');
-  b.textContent=mode?'显示全部':'遮盖练习';
-  b.style.background=mode?'#4f46e5':'';
-  b.style.color=mode?'#fff':'';
-  b.style.borderColor=mode?'#4f46e5':'';
+function togglePractice() {
+  mode = !mode;
+  const b = document.getElementById('practBtn');
+  const t = T[lang];
+  b.textContent = mode ? t.practOff : t.practOn;
+  b.style.background = mode ? '#4f46e5' : '';
+  b.style.color = mode ? '#fff' : '';
+  b.style.borderColor = mode ? '#4f46e5' : '';
   render();
 }
 
-render();
+// ── Quiz ──────────────────────────────────────────────────────────────────────
+let selectedForms = JSON.parse(localStorage.getItem('jl_quiz_forms') || 'null') || [...FKEY];
+let quizQ = [], quizIdx = 0, quizScore = 0;
 
-const FKEY=['masu','te','nai','ta','vol','ba','imp','pot','pass','caus'];
-const FNAME={masu:'ます形',te:'て形',nai:'ない形',ta:'た形',vol:'意志形',ba:'ば形',imp:'命令形',pot:'可能形',pass:'被动形',caus:'使役形'};
-let quizQ=[],quizIdx=0,quizScore=0;
+function openQuizSet() {
+  document.getElementById('quizBox').style.display = 'none';
+  const t = T[lang];
+  document.getElementById('fmChecks').innerHTML = FKEY.map(key => {
+    const on = selectedForms.includes(key);
+    return `<label class="fcheck-label ${on ? 'active' : ''}">
+      <input type="checkbox" data-fkey="${key}" ${on ? 'checked' : ''} style="display:none"
+        onchange="toggleForm('${key}',this.checked,this.parentElement)">
+      ${t.FNAME[key]}
+    </label>`;
+  }).join('');
+  document.getElementById('quizSetBox').style.display = 'flex';
+}
 
-function startQuiz(){
-  const pool=grp===0?V:V.filter(v=>v.g===grp);
-  const sh=[...pool].sort(()=>Math.random()-.5).slice(0,20);
-  quizQ=sh.map(v=>{
-    const f=FKEY[Math.floor(Math.random()*FKEY.length)];
-    const cor=cj(v)[f];
-    const allF=cj(v);
-    const wrongs=[...new Set(FKEY.filter(k=>k!==f&&allF[k]!==cor).sort(()=>Math.random()-.5).map(k=>allF[k]))].slice(0,3);
-    return{v,f,fname:FNAME[f],cor,opts:[cor,...wrongs].sort(()=>Math.random()-.5)};
+function toggleForm(key, checked, label) {
+  if (checked) { if (!selectedForms.includes(key)) selectedForms.push(key); }
+  else { selectedForms = selectedForms.filter(k => k !== key); }
+  label.classList.toggle('active', checked);
+  localStorage.setItem('jl_quiz_forms', JSON.stringify(selectedForms));
+}
+
+function selectAllForms(all) {
+  selectedForms = all ? [...FKEY] : [];
+  localStorage.setItem('jl_quiz_forms', JSON.stringify(selectedForms));
+  document.querySelectorAll('#fmChecks input[type=checkbox]').forEach(cb => {
+    cb.checked = all;
+    cb.parentElement.classList.toggle('active', all);
   });
-  quizIdx=0;quizScore=0;
-  document.getElementById('quizBox').style.display='flex';
-  document.getElementById('qResult').style.display='none';
-  document.getElementById('qOpts').style.display='grid';
+}
+
+function doStartQuiz() {
+  if (selectedForms.length === 0) return;
+  document.getElementById('quizSetBox').style.display = 'none';
+  const fkeys = selectedForms;
+  const pool = grp === 0 ? V : V.filter(v => v.g === grp);
+  const sh = [...pool].sort(() => Math.random() - 0.5).slice(0, 20);
+  quizQ = sh.map(v => {
+    const f = fkeys[Math.floor(Math.random() * fkeys.length)];
+    const cor = cj(v)[f];
+    const allF = cj(v);
+    const wrongs = [...new Set(FKEY.filter(k => k !== f && allF[k] !== cor).sort(() => Math.random() - 0.5).map(k => allF[k]))].slice(0, 3);
+    return {v, f, fname: T[lang].FNAME[f], cor, opts: [cor, ...wrongs].sort(() => Math.random() - 0.5)};
+  });
+  quizIdx = 0; quizScore = 0;
+  document.getElementById('quizBox').style.display = 'flex';
+  document.getElementById('qResult').style.display = 'none';
+  document.getElementById('qOpts').style.display = 'grid';
   showQ();
 }
 
-function showQ(){
-  const q=quizQ[quizIdx];
-  document.getElementById('qNum').textContent=`${quizIdx+1}/20`;
-  document.getElementById('qBar').style.width=`${((quizIdx)/20)*100+5}%`;
-  document.getElementById('qVerb').textContent=`${q.v.b}（${q.v.r}）`;
-  document.getElementById('qMean').textContent=`${q.v.m}${q.v.e?' / '+q.v.e:''}`;
-  document.getElementById('qForm').textContent=q.fname;
-  document.getElementById('qOpts').innerHTML=q.opts.map(o=>`<button type="button" class="qopt jp" onclick="pickAns(this,'${o}','${q.cor}')">${o}</button>`).join('');
+function showQ() {
+  const q = quizQ[quizIdx];
+  const total = quizQ.length;
+  document.getElementById('qNum').textContent = `${quizIdx+1}/${total}`;
+  document.getElementById('qBar').style.width = `${(quizIdx/total)*100+5}%`;
+  document.getElementById('qVerb').textContent = `${q.v.b}（${q.v.r}）`;
+  document.getElementById('qMean').textContent = `${q.v.m}${q.v.e ? ' / '+q.v.e : ''}`;
+  const t = T[lang];
+  document.getElementById('qFormLine').innerHTML = `${t.quizQ} <b style="color:#7c3aed">${q.fname}</b>`;
+  document.getElementById('qOpts').innerHTML = q.opts.map(o =>
+    `<button type="button" class="qopt jp" onclick="pickAns(this,'${o.replace(/'/g,"\\'")}','${q.cor.replace(/'/g,"\\'")}')">` + o + `</button>`
+  ).join('');
 }
 
-function pickAns(el,ans,cor){
-  document.querySelectorAll('.qopt').forEach(b=>{b.onclick=null;if(b.textContent.trim()===cor)b.classList.add('ok');});
-  if(ans!==cor)el.classList.add('ng');
-  if(ans===cor)quizScore++;
-  setTimeout(()=>{quizIdx++;if(quizIdx>=quizQ.length)showResult();else showQ();},900);
+function pickAns(el, ans, cor) {
+  document.querySelectorAll('.qopt').forEach(b => {
+    b.onclick = null;
+    if (b.textContent.trim() === cor) b.classList.add('ok');
+  });
+  if (ans !== cor) el.classList.add('ng');
+  if (ans === cor) quizScore++;
+  speak(cor);
+  setTimeout(() => { quizIdx++; if (quizIdx >= quizQ.length) showResult(); else showQ(); }, 900);
 }
 
-function showResult(){
-  document.getElementById('qOpts').style.display='none';
-  document.getElementById('qResult').style.display='block';
-  document.getElementById('qNum').textContent='';
-  document.getElementById('qVerb').textContent='';
-  document.getElementById('qMean').textContent='';
-  document.getElementById('qForm').textContent='';
-  document.getElementById('qBar').style.width='100%';
-  let emoji,msg;
-  if(quizScore>15){emoji='🎉';msg='太厉害了！恭喜通关！'}
-  else if(quizScore>=10){emoji='💪';msg='仍需努力，继续加油！'}
-  else{emoji='😅';msg='你有认真学习吗……'}
-  document.getElementById('qEmoji').textContent=emoji;
-  document.getElementById('qScore').textContent=`${quizScore} / 20 题正确`;
-  document.getElementById('qMsg').textContent=msg;
+function showResult() {
+  document.getElementById('qOpts').style.display = 'none';
+  document.getElementById('qResult').style.display = 'block';
+  ['qNum','qVerb','qMean','qFormLine'].forEach(id => document.getElementById(id).textContent = '');
+  document.getElementById('qBar').style.width = '100%';
+  const t = T[lang];
+  const total = quizQ.length;
+  const ratio = quizScore / total;
+  const [emoji, msg] = ratio > 0.75 ? ['🎉', t.quizGreat] : ratio >= 0.5 ? ['💪', t.quizGood] : ['😅', t.quizBad];
+  document.getElementById('qEmoji').textContent = emoji;
+  document.getElementById('qScore').textContent = `${quizScore} / ${total}`;
+  document.getElementById('qMsg').textContent = msg;
 }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+applyLang();
+updateTableHeight();
+window.addEventListener('resize', updateTableHeight);
 </script>
 
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-import{getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail}from'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-const app=initializeApp({apiKey:'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',authDomain:'senridfauthentication.firebaseapp.com',projectId:'senridfauthentication',storageBucket:'senridfauthentication.firebasestorage.app',messagingSenderId:'86494932585',appId:'1:86494932585:web:185b8ed922cd491a63fcf8'});
-const auth=getAuth(app);
-const gate=document.getElementById('gate');
-onAuthStateChanged(auth,u=>{
-  if(u){gate.style.display='none';const a=document.getElementById('uarea');a.style.display='flex';document.getElementById('uemail').textContent=u.email;}
-  else{gate.style.display='flex';}
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {getFirestore,collection,addDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+const app = initializeApp({apiKey:'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',authDomain:'senridfauthentication.firebaseapp.com',projectId:'senridfauthentication',storageBucket:'senridfauthentication.firebasestorage.app',messagingSenderId:'86494932585',appId:'1:86494932585:web:185b8ed922cd491a63fcf8'});
+const auth = getAuth(app);
+const db = getFirestore(app);
+const gate = document.getElementById('gate');
+let _logged = false;
+onAuthStateChanged(auth, u => {
+  if (u) {
+    gate.style.display = 'none';
+    document.getElementById('uarea').style.display = 'flex';
+    document.getElementById('uemail').textContent = u.email;
+    if (!_logged) {
+      _logged = true;
+      addDoc(collection(db, 'visits'), {
+        email: u.email,
+        page: 'japanese_learner',
+        title: '日本語動詞活用',
+        timestamp: serverTimestamp(),
+        device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+      }).catch(() => {});
+    }
+  } else {
+    gate.style.display = 'flex';
+  }
 });
-function msg(t,ok){const e=document.getElementById('gm');e.textContent=t;e.style.color=ok?'#10b981':'#ef4444';}
-document.getElementById('glogin').onclick=async()=>{
-  try{await signInWithEmailAndPassword(auth,document.getElementById('ge').value.trim(),document.getElementById('gp').value);}
-  catch{msg('邮箱或密码错误，请重试。');}
+function gm(txt, ok) {
+  const e = document.getElementById('gm');
+  e.textContent = txt;
+  e.style.color = ok ? '#10b981' : '#ef4444';
+}
+document.getElementById('glogin').onclick = async () => {
+  try {
+    await signInWithEmailAndPassword(auth, document.getElementById('ge').value.trim(), document.getElementById('gp').value);
+  } catch {
+    gm(T[lang].authBadCred);
+  }
 };
-document.getElementById('gforgot').onclick=async()=>{
-  const e=document.getElementById('ge').value.trim();
-  if(!e){msg('请先填写邮箱地址。');return;}
-  try{await sendPasswordResetEmail(auth,e);msg('重置邮件已发送，请查收。',true);}catch{msg('发送失败，请检查邮箱。');}
+document.getElementById('gforgot').onclick = async () => {
+  const e = document.getElementById('ge').value.trim();
+  if (!e) { gm(T[lang].authFillEmail); return; }
+  try {
+    await sendPasswordResetEmail(auth, e);
+    gm(T[lang].authResetSent, true);
+  } catch {
+    gm(T[lang].authResetFail);
+  }
 };
-document.getElementById('logoutBtn').onclick=()=>signOut(auth);
+document.getElementById('logoutBtn').onclick = () => signOut(auth);
 </script>
 </body>
 </html>

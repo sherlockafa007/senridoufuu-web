@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 · 千里同風</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500&family=Noto+Sans+SC:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
+.jp { font-family: 'Noto Sans JP', sans-serif; }
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; }
+.stat-val { font-size: 2rem; font-weight: 600; line-height: 1; margin-bottom: 4px; }
+.bar { height: 8px; border-radius: 4px; background: #dbeafe; }
+.bar-fill { height: 100%; border-radius: 4px; background: #3b82f6; transition: width .4s; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+.tag-mobile { background: #fef3c7; color: #92400e; }
+.tag-desktop { background: #ede9fe; color: #5b21b6; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Header -->
+<header class="bg-white border-b border-gray-200 h-14 flex items-center px-6 sticky top-0 z-10">
+  <div class="flex items-center gap-3 flex-1">
+    <span class="text-gray-300 font-light text-lg">千里同風</span>
+    <span class="text-gray-200">·</span>
+    <span class="text-gray-700 font-medium text-sm">管理后台</span>
+    <span id="lastRefresh" class="text-gray-400 text-xs ml-2"></span>
+  </div>
+  <div class="flex items-center gap-3">
+    <button onclick="loadData()" id="refreshBtn" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">↻ 刷新</button>
+    <span id="adminEmail" class="text-xs text-gray-400 hidden sm:block"></span>
+    <button id="logoutBtn" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors">退出</button>
+  </div>
+</header>
+
+<!-- Auth Gate -->
+<div id="gate" style="display:flex;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.8);backdrop-filter:blur(6px)">
+  <div style="background:#fff;border-radius:16px;padding:44px 36px;max-width:360px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <div style="font-size:36px;margin-bottom:14px">🔐</div>
+    <h2 style="font-size:17px;font-weight:600;margin-bottom:6px">管理员登录</h2>
+    <p style="font-size:13px;color:#9ca3af;margin-bottom:22px">仅限授权管理员访问</p>
+    <input id="ge" type="email" placeholder="邮箱地址" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;font-family:inherit">
+    <input id="gp" type="password" placeholder="密码" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;font-family:inherit">
+    <div id="gm" style="font-size:12px;min-height:16px;margin-bottom:8px;color:#ef4444"></div>
+    <button id="glogin" style="display:block;width:100%;padding:12px;background:#1e293b;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">登录</button>
+  </div>
+</div>
+
+<!-- No Permission -->
+<div id="noPerm" style="display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.8)">
+  <div style="background:#fff;border-radius:16px;padding:44px 36px;max-width:340px;width:calc(100% - 40px);text-align:center">
+    <div style="font-size:36px;margin-bottom:14px">🚫</div>
+    <h2 style="font-size:16px;font-weight:600;margin-bottom:8px">无访问权限</h2>
+    <p style="font-size:13px;color:#9ca3af;margin-bottom:20px">此页面仅限管理员查看。</p>
+    <button id="noPermLogout" style="padding:10px 24px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer">退出登录</button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="flex items-center justify-center h-64">
+  <div class="text-gray-400 text-sm">加载中...</div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" style="display:none" class="max-w-5xl mx-auto px-4 py-6">
+
+  <!-- Stat Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="card">
+      <div class="text-xs text-gray-400 mb-2">总访问次数</div>
+      <div class="stat-val text-gray-800" id="st-total">—</div>
+    </div>
+    <div class="card">
+      <div class="text-xs text-gray-400 mb-2">活跃用户数</div>
+      <div class="stat-val text-blue-600" id="st-users">—</div>
+    </div>
+    <div class="card">
+      <div class="text-xs text-gray-400 mb-2">今日访问</div>
+      <div class="stat-val text-green-600" id="st-today">—</div>
+    </div>
+    <div class="card">
+      <div class="text-xs text-gray-400 mb-2">本周访问</div>
+      <div class="stat-val text-purple-600" id="st-week">—</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+
+    <!-- Per-Page Stats -->
+    <div class="card">
+      <div class="text-sm font-medium text-gray-700 mb-4">各页面访问</div>
+      <div id="byPage" class="space-y-3"></div>
+    </div>
+
+    <!-- Per-User Stats -->
+    <div class="card">
+      <div class="text-sm font-medium text-gray-700 mb-4">各用户访问</div>
+      <div id="byUser" class="space-y-3"></div>
+    </div>
+
+  </div>
+
+  <!-- Recent Visits Table -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <div class="text-sm font-medium text-gray-700">最近访问记录</div>
+      <div class="text-xs text-gray-400" id="recCount"></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="text-gray-400 border-b border-gray-100">
+            <th class="text-left pb-2 font-medium pr-4">时间</th>
+            <th class="text-left pb-2 font-medium pr-4">用户</th>
+            <th class="text-left pb-2 font-medium pr-4">页面</th>
+            <th class="text-left pb-2 font-medium">设备</th>
+          </tr>
+        </thead>
+        <tbody id="recTable" class="divide-y divide-gray-50"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {getFirestore,collection,getDocs,query,orderBy,limit} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+const ADMINS = ['sherlockafa@gmail.com', 'yuki.minami@senridf.com'];
+const PAGE_NAMES = {
+  japanese_learner: '日本語動詞活用',
+  translation: '中日翻訳ツール',
+  analysis: '文書分析',
+  lifestory: 'ライフストーリー'
+};
+
+const app = initializeApp({
+  apiKey:'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',
+  authDomain:'senridfauthentication.firebaseapp.com',
+  projectId:'senridfauthentication',
+  storageBucket:'senridfauthentication.firebasestorage.app',
+  messagingSenderId:'86494932585',
+  appId:'1:86494932585:web:185b8ed922cd491a63fcf8'
+});
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ── Auth State ────────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async u => {
+  if (!u) {
+    showGate();
+    return;
+  }
+  if (!ADMINS.includes(u.email)) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('noPerm').style.display = 'flex';
+    return;
+  }
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('adminEmail').textContent = u.email;
+  await loadData();
+});
+
+// ── Load Data ─────────────────────────────────────────────────────────────────
+window.loadData = async function() {
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('refreshBtn').textContent = '加载中…';
+
+  try {
+    const q = query(collection(db, 'visits'), orderBy('timestamp', 'desc'), limit(500));
+    const snap = await getDocs(q);
+    const docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
+
+    renderDashboard(docs);
+    document.getElementById('lastRefresh').textContent = '更新于 ' + new Date().toLocaleTimeString('zh-CN');
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loading').innerHTML = '<div class="text-red-400 text-sm">加载失败，请检查 Firestore 安全规则</div>';
+  } finally {
+    document.getElementById('refreshBtn').textContent = '↻ 刷新';
+  }
+};
+
+function renderDashboard(docs) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(todayStart - 6 * 86400000);
+
+  const total = docs.length;
+  const uniqueUsers = new Set(docs.map(d => d.email)).size;
+  const todayCount = docs.filter(d => d.timestamp?.toDate() >= todayStart).length;
+  const weekCount = docs.filter(d => d.timestamp?.toDate() >= weekStart).length;
+
+  document.getElementById('st-total').textContent = total;
+  document.getElementById('st-users').textContent = uniqueUsers;
+  document.getElementById('st-today').textContent = todayCount;
+  document.getElementById('st-week').textContent = weekCount;
+
+  // ── Per-Page ───────────────────────────────────────────────────────────────
+  const byPage = {};
+  docs.forEach(d => { byPage[d.page || 'unknown'] = (byPage[d.page || 'unknown'] || 0) + 1; });
+  const maxPage = Math.max(...Object.values(byPage), 1);
+  document.getElementById('byPage').innerHTML = Object.entries(byPage)
+    .sort((a, b) => b[1] - a[1])
+    .map(([page, cnt]) => `
+      <div>
+        <div class="flex justify-between text-xs mb-1">
+          <span class="text-gray-600">${PAGE_NAMES[page] || page}</span>
+          <span class="text-gray-400 font-medium">${cnt}</span>
+        </div>
+        <div class="bar"><div class="bar-fill" style="width:${(cnt/maxPage*100).toFixed(0)}%"></div></div>
+      </div>`
+    ).join('') || '<div class="text-xs text-gray-400">暂无数据</div>';
+
+  // ── Per-User ───────────────────────────────────────────────────────────────
+  const byUser = {};
+  docs.forEach(d => { byUser[d.email || '匿名'] = (byUser[d.email || '匿名'] || 0) + 1; });
+  const maxUser = Math.max(...Object.values(byUser), 1);
+  document.getElementById('byUser').innerHTML = Object.entries(byUser)
+    .sort((a, b) => b[1] - a[1])
+    .map(([email, cnt]) => `
+      <div>
+        <div class="flex justify-between text-xs mb-1">
+          <span class="text-gray-600 truncate max-w-[180px]" title="${email}">${email}</span>
+          <span class="text-gray-400 font-medium">${cnt}</span>
+        </div>
+        <div class="bar" style="background:#dcfce7"><div class="bar-fill" style="width:${(cnt/maxUser*100).toFixed(0)}%;background:#22c55e"></div></div>
+      </div>`
+    ).join('') || '<div class="text-xs text-gray-400">暂无数据</div>';
+
+  // ── Recent Table ───────────────────────────────────────────────────────────
+  const shown = docs.slice(0, 100);
+  document.getElementById('recCount').textContent = `最近 ${shown.length} 条 / 共 ${total} 条`;
+  document.getElementById('recTable').innerHTML = shown.map(d => {
+    const ts = d.timestamp?.toDate();
+    const timeStr = ts ? ts.toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    const deviceTag = d.device === 'mobile'
+      ? '<span class="tag tag-mobile">手机</span>'
+      : '<span class="tag tag-desktop">电脑</span>';
+    return `<tr class="hover:bg-gray-50">
+      <td class="py-2 pr-4 text-gray-400 whitespace-nowrap">${timeStr}</td>
+      <td class="py-2 pr-4 text-gray-600 max-w-[160px] truncate" title="${d.email || ''}">${d.email || '—'}</td>
+      <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">${PAGE_NAMES[d.page] || d.page || '—'}</td>
+      <td class="py-2">${deviceTag}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" class="py-4 text-center text-gray-400">暂无记录</td></tr>';
+}
+
+// ── Auth Gate ─────────────────────────────────────────────────────────────────
+function showGate() {
+  document.getElementById('gate').style.display = 'flex';
+  document.getElementById('loading').style.display = 'none';
+}
+
+function gm(txt, ok) {
+  const e = document.getElementById('gm');
+  e.textContent = txt;
+  e.style.color = ok ? '#10b981' : '#ef4444';
+}
+
+document.getElementById('glogin').onclick = async () => {
+  try {
+    await signInWithEmailAndPassword(auth, document.getElementById('ge').value.trim(), document.getElementById('gp').value);
+  } catch {
+    gm('邮箱或密码错误，请重试。');
+  }
+};
+
+document.getElementById('logoutBtn').onclick = () => signOut(auth);
+document.getElementById('noPermLogout').onclick = () => signOut(auth);
+</script>
+</body>
+</html>
