@@ -11,6 +11,10 @@
   path = "/api/translate-stream"
   function = "translate-stream"
 
+[[edge_functions]]
+  path = "/api/analyze-stream"
+  function = "analyze-stream"
+
 [[headers]]
   for = "/*"
   [headers.values]

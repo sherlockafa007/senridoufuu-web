@@ -352,7 +352,7 @@
         <!-- Status -->
         <div class="an-status">
           <div class="an-status__dot"></div>
-          <span>Qwen-Plus · 準備完了 / 就绪</span>
+          <span>Qwen-Plus · ストリーミング / 流式输出</span>
         </div>
 
         <!-- Drop zone -->
@@ -416,7 +416,7 @@
 
   <script>
     /* ── Config ── */
-    const API_ENDPOINT = '/.netlify/functions/analyze';
+    const API_ENDPOINT = '/api/analyze-stream';
     const MAX_FILES = 5;
     const isLocal = location.protocol === 'file:' ||
                     location.hostname === '127.0.0.1' ||
@@ -587,8 +587,14 @@
       const ready = uploadedFiles.filter(f => !f.loading && f.content !== null);
       if (ready.length === 0) return;
 
-      setLoading(true);
+      elSubmit.disabled = true;
+      elLoading.style.display = 'flex';
       clearError();
+      elReport.innerHTML = '';
+      elResult.style.display = '';
+
+      let accumulated = '';
+      let firstToken = false;
 
       try {
         const res = await fetch(API_ENDPOINT, {
@@ -600,24 +606,64 @@
           })
         });
 
-        let data;
-        try {
-          data = await res.json();
-        } catch {
-          const msg = res.status === 504
-            ? 'タイムアウト：ファイルを減らすか内容を少なくしてお試しください。\n超时：请减少文件数量或内容后重试。'
-            : `サーバーエラー（HTTP ${res.status}）\n服务器错误（HTTP ${res.status}）`;
+        // Check Content-Type before deciding how to parse the error
+        if (!res.ok) {
+          const ct = res.headers.get('content-type') || '';
+          let msg;
+          if (ct.includes('application/json')) {
+            const data = await res.json().catch(() => ({}));
+            msg = data.error || `サーバーエラー（HTTP ${res.status}）\n服务器错误（HTTP ${res.status}）`;
+          } else {
+            msg = `サーバーエラー（HTTP ${res.status}）\n服务器错误（HTTP ${res.status}）`;
+          }
           throw new Error(msg);
         }
-        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
-        elReport.innerHTML = renderMarkdown(data.content || '');
-        elResult.style.display = '';
+        if (!res.headers.get('content-type')?.includes('event-stream')) {
+          throw new Error('予期しないレスポンス形式です。\n意外的响应格式，请刷新后重试。');
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // keep any incomplete line for next chunk
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const payload = line.slice(6).trim();
+            if (payload === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(payload);
+              const delta = parsed.choices?.[0]?.delta?.content;
+              if (delta) {
+                if (!firstToken) {
+                  firstToken = true;
+                  elLoading.style.display = 'none';
+                }
+                accumulated += delta;
+                elReport.innerHTML = renderMarkdown(accumulated);
+              }
+            } catch { /* ignore malformed SSE lines */ }
+          }
+        }
+
+        if (!accumulated) {
+          showError('分析結果が空です。/ 分析结果为空。');
+        }
+
       } catch (err) {
         showError(err.message);
-        elResult.style.display = '';
       } finally {
-        setLoading(false);
+        elLoading.style.display = 'none';
+        elSubmit.disabled = false;
       }
     }
 
