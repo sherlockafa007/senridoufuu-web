@@ -1,6 +1,9 @@
 exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers: { 'Content-Type': 'application/json' }, body: '' };
+  }
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return { statusCode: 405, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
 
   const apiKey = process.env.QWEN_API_KEY;
@@ -16,15 +19,17 @@ exports.handler = async (event) => {
   try {
     body = JSON.parse(event.body);
   } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON' }) };
+    return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Invalid JSON' }) };
   }
 
   const { files, prompt } = body;
   if (!Array.isArray(files) || files.length === 0) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'files array required' }) };
+    return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'files array required' }) };
   }
 
-  const CHAR_LIMIT = 30000;
+  // Per-file limit: 18,000 chars. With 5 files max = 90k chars total context.
+  // qwen-turbo handles this within Netlify's 10s function timeout.
+  const CHAR_LIMIT = 18000;
   const docContext = files.map((f, i) => {
     const content = (f.content || '').trim().slice(0, CHAR_LIMIT);
     return `【文件${i + 1}：${f.name}】\n${content || '（内容为空，可能为扫描版 PDF，无法提取文字层）'}`;
@@ -43,18 +48,18 @@ exports.handler = async (event) => {
   try {
     const response = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
       method: 'POST',
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.timeout(9000),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'qwen-plus',
+        model: 'qwen-turbo',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ],
-        max_tokens: 2000,
+        max_tokens: 1500,
         temperature: 0.2
       })
     });
@@ -75,10 +80,14 @@ exports.handler = async (event) => {
       body: JSON.stringify({ content: data.choices[0].message.content })
     };
   } catch (err) {
+    const isTimeout = err.name === 'TimeoutError' || err.message?.includes('timeout');
     return {
-      statusCode: 500,
+      statusCode: isTimeout ? 504 : 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: err.message })
+      body: JSON.stringify({ error: isTimeout
+        ? '分析超时，请减少文件数量或内容后重试。/ 分析がタイムアウトしました。ファイルを減らしてお試しください。'
+        : err.message
+      })
     };
   }
 };

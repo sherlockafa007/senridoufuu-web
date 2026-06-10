@@ -604,10 +604,10 @@
         try {
           data = await res.json();
         } catch {
-          throw new Error(
-            `サーバーエラー（HTTP ${res.status}）。タイムアウトの可能性があります。ファイルを減らしてお試しください。\n` +
-            `服务器错误（HTTP ${res.status}），可能是超时，请减少文件数量或内容后重试。`
-          );
+          const msg = res.status === 504
+            ? 'タイムアウト：ファイルを減らすか内容を少なくしてお試しください。\n超时：请减少文件数量或内容后重试。'
+            : `サーバーエラー（HTTP ${res.status}）\n服务器错误（HTTP ${res.status}）`;
+          throw new Error(msg);
         }
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
