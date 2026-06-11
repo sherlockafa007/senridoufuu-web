@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Noto+Serif+JP:wght@300;400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
   <style>
     /* ── Layout ── */
     .an-wrap {
@@ -302,6 +303,41 @@
     }
     .an-report li { margin-bottom: 0.4em; }
     .an-report strong { font-weight: 500; }
+    .an-report table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25em 0;
+      font-size: 0.875rem;
+      display: block;
+      overflow-x: auto;
+    }
+    .an-report th {
+      background: #f5f4f0;
+      font-weight: 500;
+      text-align: left;
+      padding: 0.5em 0.75em;
+      border: 1px solid var(--c-border);
+    }
+    .an-report td {
+      padding: 0.5em 0.75em;
+      border: 1px solid var(--c-border);
+      vertical-align: top;
+      line-height: 1.65;
+    }
+    .an-report tr:nth-child(even) td { background: #fafaf8; }
+    .an-report blockquote {
+      border-left: 3px solid #6b8f5e;
+      margin: 1em 0;
+      padding: 0.6em 1em;
+      background: #f8f8f6;
+      color: var(--c-text-2);
+    }
+    .an-report blockquote p { margin: 0; }
+    .an-report hr {
+      border: none;
+      border-top: 1px solid var(--c-border);
+      margin: 1.5em 0;
+    }
 
     /* ════════════════════════════════════════
        RESPONSIVE
@@ -926,37 +962,13 @@
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    /* ── Markdown renderer (lightweight) ── */
+    /* ── Markdown renderer ── */
     function renderMarkdown(text) {
-      const escape = s => s
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-      const inline = s => escape(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-      const blocks = text.split(/\n{2,}/);
-      return blocks.map(block => {
-        const lines = block.split('\n').map(l => l.trimEnd()).filter(Boolean);
-        if (!lines.length) return '';
-
-        const first = lines[0];
-
-        if (/^#{1,2}\s/.test(first)) {
-          return `<h3>${inline(first.replace(/^#{1,2}\s+/, ''))}</h3>`;
-        }
-        if (/^#{3,}\s/.test(first)) {
-          return `<h4>${inline(first.replace(/^#{3,}\s+/, ''))}</h4>`;
-        }
-
-        const isList = lines.every(l => /^[-*•]\s/.test(l) || /^\d+\.\s/.test(l));
-        if (isList) {
-          const items = lines.map(l =>
-            `<li>${inline(l.replace(/^[-*•]\s/, '').replace(/^\d+\.\s/, ''))}</li>`
-          ).join('');
-          return `<ul>${items}</ul>`;
-        }
-
-        return `<p>${lines.map(inline).join('<br>')}</p>`;
-      }).join('');
+      if (typeof marked !== 'undefined') {
+        return marked.parse(text, { breaks: false, gfm: true });
+      }
+      // fallback: plain text with line breaks
+      return `<p>${text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</p>`;
     }
   </script>
 </body>
