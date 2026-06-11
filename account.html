@@ -92,6 +92,8 @@
     .foot { padding: 20px 32px; border-top: 1px solid var(--border); font-size: 12px; color: #9ca3af; text-align: center; }
     /* ── Admin link ── */
     #admin-link { display: none; border-color: #d1fae5; background: #f0fdf4; }
+    /* ── Register view ── */
+    #view-register { display: none; }
     /* ── Password change ── */
     #pw-section { display: none; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 14px; }
     #pw-section.open { display: block; }
@@ -115,17 +117,38 @@
 
     <!-- Guest (not logged in) -->
     <div id="state-guest">
-      <div class="icon">🔑</div>
-      <h1 class="card-title">会员中心</h1>
-      <p class="card-desc">此区域仅对受邀会员开放，请登录继续。</p>
-      <form id="login-form" novalidate>
-        <input id="login-email" type="email" class="form-input" placeholder="邮箱地址" autocomplete="email">
-        <input id="login-password" type="password" class="form-input" placeholder="密码" autocomplete="current-password">
-        <div id="login-error" class="form-error"></div>
-        <button type="submit" class="btn-primary">登录</button>
-        <button type="button" id="forgot-btn" class="btn-forgot">忘记密码？</button>
-      </form>
-      <a class="btn-secondary" href="./">← 返回首页</a>
+
+      <!-- Login view -->
+      <div id="view-login">
+        <div class="icon">🔑</div>
+        <h1 class="card-title">会员中心</h1>
+        <p class="card-desc">登录您的账号，或注册新账号。</p>
+        <form id="login-form" novalidate>
+          <input id="login-email" type="email" class="form-input" placeholder="邮箱地址" autocomplete="email">
+          <input id="login-password" type="password" class="form-input" placeholder="密码" autocomplete="current-password">
+          <div id="login-error" class="form-error"></div>
+          <button type="submit" class="btn-primary">登录</button>
+          <button type="button" id="forgot-btn" class="btn-forgot">忘记密码？</button>
+        </form>
+        <button type="button" id="to-register" class="btn-secondary">还没有账号？注册</button>
+        <a class="btn-secondary" href="./">← 返回首页</a>
+      </div>
+
+      <!-- Register view -->
+      <div id="view-register">
+        <div class="icon">✉️</div>
+        <h1 class="card-title">注册账号</h1>
+        <p class="card-desc">创建账号后即可使用会员功能。</p>
+        <form id="register-form" novalidate>
+          <input id="reg-email"    type="email"    class="form-input" placeholder="邮箱地址" autocomplete="email">
+          <input id="reg-password" type="password" class="form-input" placeholder="密码（至少 6 位）" autocomplete="new-password">
+          <input id="reg-confirm"  type="password" class="form-input" placeholder="确认密码" autocomplete="new-password">
+          <div id="reg-error" class="form-error"></div>
+          <button type="submit" class="btn-primary">注册</button>
+        </form>
+        <button type="button" id="to-login" class="btn-secondary">已有账号？登录</button>
+      </div>
+
     </div>
 
     <!-- Member (logged in) -->
@@ -175,7 +198,7 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
-           updatePassword, reauthenticateWithCredential, EmailAuthProvider }
+           createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider }
     from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
   const app = initializeApp({
@@ -237,6 +260,51 @@
   });
 
   document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+  /* ── Login / Register view toggle ── */
+  function showView(name) {
+    document.getElementById('view-login').style.display    = name === 'login'    ? '' : 'none';
+    document.getElementById('view-register').style.display = name === 'register' ? '' : 'none';
+  }
+  document.getElementById('to-register').addEventListener('click', () => {
+    document.getElementById('login-error').textContent = '';
+    showView('register');
+  });
+  document.getElementById('to-login').addEventListener('click', () => {
+    document.getElementById('reg-error').textContent = '';
+    showView('login');
+  });
+
+  /* ── Register ── */
+  document.getElementById('register-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email   = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const confirm  = document.getElementById('reg-confirm').value;
+    const errEl    = document.getElementById('reg-error');
+    errEl.className = 'form-error';
+
+    if (!email || !password || !confirm) {
+      errEl.className = 'form-error err'; errEl.textContent = '请填写所有字段。'; return;
+    }
+    if (password.length < 6) {
+      errEl.className = 'form-error err'; errEl.textContent = '密码至少 6 位。'; return;
+    }
+    if (password !== confirm) {
+      errEl.className = 'form-error err'; errEl.textContent = '两次密码不一致。'; return;
+    }
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged fires automatically and shows member state
+    } catch (err) {
+      errEl.className = 'form-error err';
+      errEl.textContent = err.code === 'auth/email-already-in-use'
+        ? '该邮箱已注册，请直接登录。'
+        : err.code === 'auth/invalid-email'
+          ? '邮箱格式不正确。'
+          : '注册失败，请稍后再试。';
+    }
+  });
 
   /* ── Password change ── */
   document.getElementById('pw-toggle').addEventListener('click', () => {
