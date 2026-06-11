@@ -320,6 +320,64 @@
       .an-file-chars { display: none; }
       .an-result { padding-top: 28px; }
     }
+
+    /* ── Section panel ── */
+    .an-section-panel {
+      border: 1px solid var(--c-border);
+      border-top: none;
+      background: var(--c-surface);
+    }
+    .an-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 16px;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .an-section-header:hover { background: var(--c-accent-light); }
+    .an-section-info {
+      font-family: var(--f-mono);
+      font-size: 0.5rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--c-text-3);
+    }
+    .an-section-info--sel { color: var(--c-accent-mid); }
+    .an-section-arrow { font-size: 0.55rem; color: var(--c-text-3); }
+    .an-section-body { display: none; padding: 10px 16px 14px; }
+    .an-section-body.is-open { display: block; }
+    .an-section-actions { display: flex; gap: 6px; margin-bottom: 10px; }
+    .an-section-btn {
+      font-family: var(--f-mono);
+      font-size: 0.5rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      background: none;
+      border: 1px solid var(--c-border);
+      color: var(--c-text-3);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .an-section-btn:hover { border-color: var(--c-accent); color: var(--c-accent); }
+    .an-section-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--c-border);
+      cursor: pointer;
+      font-family: var(--f-sans);
+      font-size: 0.8125rem;
+      color: var(--c-text-2);
+    }
+    .an-section-item:last-child { border-bottom: none; }
+    .an-section-item input[type="checkbox"] { flex-shrink: 0; cursor: pointer; accent-color: var(--c-accent); }
+    .an-section-item-title { flex: 1; font-weight: 300; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .an-section-item-chars { font-family: var(--f-mono); font-size: 0.5625rem; color: var(--c-text-3); flex-shrink: 0; }
+    .an-section-item-chars--warn { color: #b45309; }
   </style>
 </head>
 <body>
@@ -483,6 +541,13 @@
           placeholder.content = content;
           placeholder.chars   = content.length;
           placeholder.loading = false;
+          if (content.length > 30000) {
+            const sections = detectSections(content);
+            if (sections.length >= 3) {
+              smartAutoSelect(sections);
+              placeholder.sections = sections;
+            }
+          }
         } catch (err) {
           placeholder.content = '';
           placeholder.chars   = 0;
@@ -528,6 +593,166 @@
       }).join('\n\n');
     }
 
+    /* ── Section detection ─────────────────────────────────────────────────── */
+
+    const FINANCE_KW = ['财务','收入','利润','成本','资产','负债','现金','营收','毛利','净利','EBITDA','息税','经营成果','管理层讨论','MD&A','财务数据','财务报告','主要财务'];
+    const RISK_KW    = ['风险','不确定'];
+    const SKIP_KW    = ['声明','签署','承诺书','目录','封面','附件','附录'];
+
+    function isSectionHeader(line) {
+      if (!line || line.length > 55 || line.length < 2) return false;
+      return (
+        /^第[一二三四五六七八九十百千\d]+[章节条]/.test(line) ||
+        /^[一二三四五六七八九十]+[、]/.test(line)             ||
+        /^\d+\.\s+[一-龥A-Z]/.test(line)              ||
+        /^[（(][一二三四五六七八九十\d]+[）)]/.test(line)
+      );
+    }
+
+    function scoreSection(title, content) {
+      if (SKIP_KW.some(k => title.includes(k))) return -1;
+      const sample = title + ' ' + content.slice(0, 3000);
+      let score  = FINANCE_KW.filter(k => sample.includes(k)).length * 2;
+      score     += RISK_KW.filter(k => title.includes(k)).length * 3;
+      const nums = sample.match(/\d[\d,，]*\.?\d*\s*[万亿元%％]/g);
+      score     += Math.min((nums || []).length * 0.3, 5);
+      return score;
+    }
+
+    function detectSections(text) {
+      const lines = text.split('\n');
+      const raw   = [];
+      let cur     = null;
+
+      for (const line of lines) {
+        const t = line.trim();
+        if (isSectionHeader(t)) {
+          if (cur) raw.push(cur);
+          cur = { title: t, lines: [] };
+        } else if (cur) {
+          cur.lines.push(line);
+        }
+      }
+      if (cur) raw.push(cur);
+      if (raw.length < 3) return [];
+
+      return raw.map(r => {
+        const content = r.lines.join('\n').trim();
+        return { title: r.title, content, chars: content.length, score: scoreSection(r.title, content), selected: false };
+      });
+    }
+
+    const SMART_MAX = 25000;
+
+    function smartAutoSelect(sections) {
+      const order = sections.map((s, i) => ({ i, score: s.score })).sort((a, b) => b.score - a.score);
+      sections.forEach(s => s.selected = false);
+      let budget = SMART_MAX;
+      for (const { i } of order) {
+        const s = sections[i];
+        if (s.score < 0 || budget <= 500) continue;
+        s.selected = true;
+        budget -= Math.min(s.chars, budget);
+        if (budget <= 0) break;
+      }
+    }
+
+    function selectedSectionChars(file) {
+      if (!file.sections || file.sections.length === 0) return file.chars || 0;
+      return file.sections.filter(s => s.selected).reduce((n, s) => n + s.chars, 0);
+    }
+
+    function buildFileContent(file) {
+      if (!file.sections || file.sections.length === 0) {
+        return (file.content || '').slice(0, 30000);
+      }
+      const chosen = file.sections.filter(s => s.selected);
+      if (chosen.length === 0) return (file.content || '').slice(0, 5000);
+      const perSec = Math.min(12000, Math.floor(28000 / chosen.length));
+      return chosen.map(s => `【${s.title}】\n${s.content.slice(0, perSec)}`).join('\n\n');
+    }
+
+    /* ── Section panel UI ───────────────────────────────────────────────────── */
+
+    function toggleSectionPanel(idx) {
+      const body  = document.getElementById(`sp-body-${idx}`);
+      const arrow = document.getElementById(`sp-arrow-${idx}`);
+      if (!body) return;
+      const open = body.classList.toggle('is-open');
+      arrow.textContent = open ? '▲' : '▼';
+    }
+
+    function updateSectionHeader(idx) {
+      const file = uploadedFiles[idx];
+      if (!file || !file.sections) return;
+      const sel   = file.sections.filter(s => s.selected).length;
+      const chars = selectedSectionChars(file).toLocaleString();
+      const el    = document.getElementById(`sp-info-${idx}`);
+      if (el) {
+        el.textContent  = `${file.sections.length} 个章节 · 已选 ${sel} 个 · 约 ${chars} 字符`;
+        el.className    = `an-section-info${sel > 0 ? ' an-section-info--sel' : ''}`;
+      }
+      // Refresh file-level chars display
+      const fc = document.getElementById(`fc-${idx}`);
+      if (fc) fc.textContent = `${selectedSectionChars(file).toLocaleString()} / ${(file.chars || 0).toLocaleString()} 字`;
+    }
+
+    function toggleSection(idx, si) {
+      uploadedFiles[idx].sections[si].selected = !uploadedFiles[idx].sections[si].selected;
+      const cb = document.querySelector(`#sp-list-${idx} input[data-si="${si}"]`);
+      if (cb) cb.checked = uploadedFiles[idx].sections[si].selected;
+      updateSectionHeader(idx);
+    }
+
+    function selectAllSections(idx, all) {
+      uploadedFiles[idx].sections.forEach(s => s.selected = all);
+      refreshSectionList(idx);
+      updateSectionHeader(idx);
+    }
+
+    function smartReselect(idx) {
+      smartAutoSelect(uploadedFiles[idx].sections);
+      refreshSectionList(idx);
+      updateSectionHeader(idx);
+    }
+
+    function refreshSectionList(idx) {
+      const el = document.getElementById(`sp-list-${idx}`);
+      if (!el) return;
+      el.querySelectorAll('input[type="checkbox"]').forEach((cb, si) => {
+        cb.checked = uploadedFiles[idx].sections[si]?.selected || false;
+      });
+    }
+
+    function buildSectionPanel(idx) {
+      const file = uploadedFiles[idx];
+      if (!file.sections || file.sections.length === 0) return '';
+      const sel   = file.sections.filter(s => s.selected).length;
+      const chars = selectedSectionChars(file).toLocaleString();
+      const items = file.sections.map((s, si) => {
+        const warnCls = s.chars > 8000 ? ' an-section-item-chars--warn' : '';
+        return `<label class="an-section-item">
+          <input type="checkbox" data-si="${si}" ${s.selected ? 'checked' : ''} onchange="toggleSection(${idx},${si})">
+          <span class="an-section-item-title" title="${escHtml(s.title)}">${escHtml(s.title)}</span>
+          <span class="an-section-item-chars${warnCls}">${s.chars.toLocaleString()}</span>
+        </label>`;
+      }).join('');
+      return `<div class="an-section-panel">
+        <div class="an-section-header" onclick="toggleSectionPanel(${idx})">
+          <span class="an-section-info${sel > 0 ? ' an-section-info--sel' : ''}" id="sp-info-${idx}">${file.sections.length} 个章节 · 已选 ${sel} 个 · 约 ${chars} 字符</span>
+          <span class="an-section-arrow" id="sp-arrow-${idx}">▼</span>
+        </div>
+        <div class="an-section-body" id="sp-body-${idx}">
+          <div class="an-section-actions">
+            <button class="an-section-btn" onclick="smartReselect(${idx})">智能选择</button>
+            <button class="an-section-btn" onclick="selectAllSections(${idx},true)">全选</button>
+            <button class="an-section-btn" onclick="selectAllSections(${idx},false)">全不选</button>
+          </div>
+          <div id="sp-list-${idx}">${items}</div>
+        </div>
+      </div>`;
+    }
+
     /* ── Render file list ── */
     function renderFileList() {
       elFileList.innerHTML = uploadedFiles.map((f, idx) => {
@@ -541,12 +766,16 @@
           chars = `<span class="an-file-chars an-file-chars--warn">エラー / 错误</span>`;
         } else if (f.chars === 0) {
           chars = `<span class="an-file-chars an-file-chars--warn">0 文字 — スキャン版？ / 扫描版？</span>`;
+        } else if (f.sections && f.sections.length > 0) {
+          const selChars = selectedSectionChars(f);
+          chars = `<span class="an-file-chars" id="fc-${idx}">${selChars.toLocaleString()} / ${f.chars.toLocaleString()} 字</span>`;
         } else {
           chars = `<span class="an-file-chars">${f.chars.toLocaleString()} 文字</span>`;
         }
 
-        const rm = `<button class="an-file-remove" data-idx="${idx}" title="削除 / 移除">×</button>`;
-        return `<div class="an-file-item">${badge}${name}${chars}${rm}</div>`;
+        const rm    = `<button class="an-file-remove" data-idx="${idx}" title="削除 / 移除">×</button>`;
+        const panel = (f.sections && f.sections.length > 0) ? buildSectionPanel(idx) : '';
+        return `<div><div class="an-file-item">${badge}${name}${chars}${rm}</div>${panel}</div>`;
       }).join('');
 
       // Remove buttons
@@ -601,7 +830,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            files: ready.map(f => ({ name: f.name, content: f.content })),
+            files: ready.map(f => ({ name: f.name, content: buildFileContent(f) })),
             prompt: elPrompt.value.trim()
           })
         });
