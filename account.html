@@ -90,6 +90,11 @@
     .tool-link__arrow { color: #9ca3af; font-size: 16px; }
     /* ── Footer ── */
     .foot { padding: 20px 32px; border-top: 1px solid var(--border); font-size: 12px; color: #9ca3af; text-align: center; }
+    /* ── Admin link ── */
+    #admin-link { display: none; border-color: #d1fae5; background: #f0fdf4; }
+    /* ── Password change ── */
+    #pw-section { display: none; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 14px; }
+    #pw-section.open { display: block; }
     @media (max-width: 500px) { .card { padding: 36px 24px; } }
   </style>
 </head>
@@ -129,6 +134,13 @@
       <h1 class="card-title">欢迎回来</h1>
       <p class="member-email" id="member-email"></p>
       <div id="tool-list">
+        <a class="tool-link" id="admin-link" href="solutions/demo/admin.html">
+          <div>
+            <div class="tool-link__name">🔧 管理后台</div>
+            <div class="tool-link__desc">访问记录 · 数据统计</div>
+          </div>
+          <span class="tool-link__arrow">→</span>
+        </a>
         <a class="tool-link" href="solutions/demo/japanese_learner.html">
           <div>
             <div class="tool-link__name">日語基礎学習ツール</div>
@@ -144,6 +156,14 @@
           <span class="tool-link__arrow">→</span>
         </a>
       </div>
+      <div id="pw-section">
+        <input id="pw-old"     type="password" class="form-input" placeholder="当前密码" autocomplete="current-password">
+        <input id="pw-new"     type="password" class="form-input" placeholder="新密码（至少 6 位）" autocomplete="new-password">
+        <input id="pw-confirm" type="password" class="form-input" placeholder="确认新密码" autocomplete="new-password">
+        <div id="pw-msg" class="form-error"></div>
+        <button id="pw-submit" type="button" class="btn-primary">确认修改</button>
+      </div>
+      <button id="pw-toggle" type="button" class="btn-forgot">修改密码</button>
       <button id="logout-btn" type="button" class="btn-danger">退出登录</button>
     </div>
 
@@ -154,7 +174,8 @@
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail }
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
+           updatePassword, reauthenticateWithCredential, EmailAuthProvider }
     from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
   const app = initializeApp({
@@ -166,6 +187,7 @@
     appId:             '1:86494932585:web:185b8ed922cd491a63fcf8'
   });
   const auth = getAuth(app);
+  const ADMINS = ['sherlockafa@gmail.com', 'yuki.minami@senridf.com'];
 
   function show(id) {
     ['state-loading','state-guest','state-member'].forEach(s => {
@@ -176,6 +198,8 @@
   onAuthStateChanged(auth, user => {
     if (user) {
       document.getElementById('member-email').textContent = user.email;
+      document.getElementById('admin-link').style.display =
+        ADMINS.includes(user.email) ? 'flex' : 'none';
       show('state-member');
     } else {
       show('state-guest');
@@ -213,6 +237,46 @@
   });
 
   document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+  /* ── Password change ── */
+  document.getElementById('pw-toggle').addEventListener('click', () => {
+    const sec = document.getElementById('pw-section');
+    sec.classList.toggle('open');
+    document.getElementById('pw-msg').textContent = '';
+    ['pw-old','pw-new','pw-confirm'].forEach(id => document.getElementById(id).value = '');
+  });
+
+  document.getElementById('pw-submit').addEventListener('click', async () => {
+    const oldPw  = document.getElementById('pw-old').value;
+    const newPw  = document.getElementById('pw-new').value;
+    const confirm = document.getElementById('pw-confirm').value;
+    const msg = document.getElementById('pw-msg');
+    msg.className = 'form-error';
+
+    if (!oldPw || !newPw || !confirm) {
+      msg.className = 'form-error err'; msg.textContent = '请填写所有字段。'; return;
+    }
+    if (newPw.length < 6) {
+      msg.className = 'form-error err'; msg.textContent = '新密码至少 6 位。'; return;
+    }
+    if (newPw !== confirm) {
+      msg.className = 'form-error err'; msg.textContent = '两次输入的新密码不一致。'; return;
+    }
+
+    const user = auth.currentUser;
+    try {
+      const cred = EmailAuthProvider.credential(user.email, oldPw);
+      await reauthenticateWithCredential(user, cred);
+      await updatePassword(user, newPw);
+      msg.className = 'form-error ok'; msg.textContent = '密码已更新。';
+      ['pw-old','pw-new','pw-confirm'].forEach(id => document.getElementById(id).value = '');
+    } catch (err) {
+      msg.className = 'form-error err';
+      msg.textContent = err.code === 'auth/invalid-credential'
+        ? '当前密码错误，请重试。'
+        : '修改失败，请稍后再试。';
+    }
+  });
 </script>
 
 </body>
