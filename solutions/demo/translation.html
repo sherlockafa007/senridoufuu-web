@@ -742,6 +742,7 @@
       #summaryResultPanel { padding: 14px !important; }
     }
   </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/docx@8/build/index.js"></script>
 </head>
 <body data-page-title="tl_page_title">
 
@@ -934,7 +935,7 @@
   <div id="footer-placeholder"></div>
   <script src="js/main.js"></script>
   <script>
-    const API_ENDPOINT = '/.netlify/functions/translate';
+    const API_ENDPOINT = '/api/translate';
     const isLocal = location.protocol === 'file:' ||
                     location.hostname === '127.0.0.1' ||
                     location.hostname === 'localhost';
@@ -1013,7 +1014,7 @@
 
     function prewarmToken() {
       if (isLocal || cachedToken) return;
-      fetch('/.netlify/functions/deepgram-token')
+      fetch('/api/deepgram-token')
         .then(r => r.json())
         .then(d => { if (d.key) cachedToken = d.key; })
         .catch(() => {});
@@ -1149,7 +1150,7 @@
       try {
         const tokenPromise = cachedToken
           ? Promise.resolve({ key: cachedToken })
-          : fetch('/.netlify/functions/deepgram-token').then(r => r.json());
+          : fetch('/api/deepgram-token').then(r => r.json());
         cachedToken = null;
 
         const [tokenData, stream] = await Promise.all([
@@ -1697,7 +1698,7 @@
 
     async function callSummaryApi(dialogues) {
       try {
-        const response = await fetch('/.netlify/functions/summary', {
+        const response = await fetch('/api/summary', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ dialogues })
@@ -1749,25 +1750,43 @@
       `;
     }
 
-    function downloadDocx(base64, filename) {
+    async function generateAndDownloadDocx(summary) {
       try {
-        const binaryString = atob(base64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        const { Document, Packer, Paragraph, HeadingLevel } = window.docx;
+        const makeItems = (arr) => arr && arr.length > 0
+          ? arr.map(t => new Paragraph({ text: `• ${t}` }))
+          : [new Paragraph({ text: '（无）' })];
 
+        const doc = new Document({ sections: [{ children: [
+          new Paragraph({ text: '会议纪要', heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({ text: `日期：${new Date().toLocaleDateString('zh-CN')}` }),
+          new Paragraph({ text: '参与者：中国团队、日本客户' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '【议题】', heading: HeadingLevel.HEADING_2 }),
+          ...makeItems(summary.topics),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '【客户反馈】', heading: HeadingLevel.HEADING_2 }),
+          ...makeItems(summary.feedback),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '【行动项】', heading: HeadingLevel.HEADING_2 }),
+          ...(summary.actions && summary.actions.length > 0
+            ? summary.actions.map(a => new Paragraph({
+                text: `${a.actor}: ☐ ${a.task}${a.deadline ? `（${a.deadline}）` : ''}`
+              }))
+            : [new Paragraph({ text: '（无）' })]),
+        ]}]});
+
+        const blob = await Packer.toBlob(doc);
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename;
+        a.download = `summary_${Date.now()}.docx`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } catch (err) {
-        console.error('Download error:', err);
+        console.error('DOCX generation error:', err);
         alert('下载文件失败，请重试');
       }
     }
@@ -1789,12 +1808,9 @@
         // Call backend API
         const result = await callSummaryApi(voiceHistory);
 
-        // Save summary to state
+        // Save summary to state (DOCX generated client-side on demand)
         state.currentSummary = result.summary;
-        state.docxData = {
-          base64: result.docxBase64,
-          filename: result.docxFilename
-        };
+        state.docxData = { summary: result.summary };
 
         // Display result panel
         showSummaryResult(result);
@@ -1851,8 +1867,8 @@
     const summaryNewMeetingBtn = document.getElementById('summaryNewMeetingBtn');
 
     summaryDownloadBtn.addEventListener('click', () => {
-      if (state.docxData && state.docxData.base64) {
-        downloadDocx(state.docxData.base64, state.docxData.filename || '会议纪要.docx');
+      if (state.docxData && state.docxData.summary) {
+        generateAndDownloadDocx(state.docxData.summary);
       }
     });
 

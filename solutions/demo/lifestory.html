@@ -461,7 +461,7 @@ function pickNext(analysis) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 async function callAnalyze(question, answer) {
-  const res = await fetch('/.netlify/functions/lifestory', {
+  const res = await fetch('/api/lifestory', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -477,7 +477,7 @@ async function callAnalyze(question, answer) {
 }
 
 async function callBridge(lastAnswer, nextQuestion) {
-  const res = await fetch('/.netlify/functions/lifestory', {
+  const res = await fetch('/api/lifestory', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'bridge', lastAnswer, nextQuestion }),
@@ -525,7 +525,7 @@ async function genStory() {
     const ctrl = new AbortController();
     const timeoutId = setTimeout(() => ctrl.abort(), 90000);  // 90 秒超时
 
-    const res = await fetch('/.netlify/functions/lifestory', {
+    const res = await fetch('/api/lifestory', {
       method: 'POST',
       signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json' },
