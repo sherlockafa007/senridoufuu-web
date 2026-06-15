@@ -669,6 +669,7 @@ function showTool(u) {
 
 onAuthStateChanged(auth, async u => {
   if (u) {
+    localStorage.setItem('sdf_user_email', u.email);
     if (ADMINS.includes(u.email)) { showTool(u); return; }
     try {
       const snap = await getDoc(doc(db, 'users', u.uid));

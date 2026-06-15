@@ -1919,6 +1919,7 @@ const auth=getAuth(app);const db=getFirestore(app);
 onAuthStateChanged(auth,async user=>{
   const gate=document.getElementById('auth-gate');
   if(!user){window.location.replace('/account.html');return;}
+  localStorage.setItem('sdf_user_email',user.email);
   if(ADMINS.includes(user.email)){gate.remove();return;}
   try{
     const snap=await getDoc(doc(db,'users',user.uid));
