@@ -152,6 +152,8 @@
   </style>
 </head>
 <body>
+<div id="auth-gate" style="position:fixed;inset:0;background:#faf9f7;display:flex;align-items:center;justify-content:center;z-index:9999"><div style="text-align:center"><div style="width:28px;height:28px;border:2px solid #e5e7eb;border-top-color:#a87c4f;border-radius:50%;animation:ag-s .8s linear infinite;margin:0 auto"></div><p style="color:#9ca3af;font-size:13px;margin-top:12px;font-family:sans-serif">验证身份中…</p></div></div>
+<style>@keyframes ag-s{to{transform:rotate(360deg)}}</style>
 
 <header class="hdr">
   <div class="hdr-left">
@@ -1001,6 +1003,27 @@ if (state.answers.length > 0) {
 }
 
 document.getElementById('q-ta').addEventListener('input', updateCount);
+</script>
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {getFirestore,doc,getDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+const ADMINS=['sherlockafa@gmail.com','yuki.minami@senridf.com'];
+const app=initializeApp({apiKey:'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',authDomain:'senridfauthentication.firebaseapp.com',projectId:'senridfauthentication',storageBucket:'senridfauthentication.firebasestorage.app',messagingSenderId:'86494932585',appId:'1:86494932585:web:185b8ed922cd491a63fcf8'});
+const auth=getAuth(app);const db=getFirestore(app);
+onAuthStateChanged(auth,async user=>{
+  const gate=document.getElementById('auth-gate');
+  if(!user){window.location.replace('/account.html');return;}
+  if(ADMINS.includes(user.email)){gate.remove();return;}
+  try{
+    const snap=await getDoc(doc(db,'users',user.uid));
+    const status=snap.data()?.status||'pending';
+    if(status==='approved'){gate.remove();return;}
+    gate.innerHTML=`<div style="text-align:center;max-width:340px;padding:32px 24px;font-family:sans-serif"><div style="font-size:2.5rem;margin-bottom:16px">${status==='disabled'?'🚫':'⏳'}</div><h2 style="font-size:18px;font-weight:600;margin-bottom:12px;color:#1f2937">${status==='disabled'?'账号已停用':'审核中'}</h2><p style="color:#6b7280;font-size:13px;line-height:1.8">${status==='disabled'?'您的账号已被停用，请联系管理员。':'账号正在审核中，审核通过后即可使用。'}</p><a href="/account.html" style="display:inline-block;margin-top:20px;color:#9ca3af;font-size:12px;text-decoration:none">← 返回</a></div>`;
+  }catch{
+    gate.innerHTML='<div style="text-align:center;max-width:340px;padding:32px 24px;font-family:sans-serif"><div style="font-size:2.5rem;margin-bottom:16px">⏳</div><h2 style="font-size:18px;font-weight:600;margin-bottom:12px;color:#1f2937">审核中</h2><p style="color:#6b7280;font-size:13px;line-height:1.8">账号正在审核中，审核通过后即可使用。</p><a href="/account.html" style="display:inline-block;margin-top:20px;color:#9ca3af;font-size:12px;text-decoration:none">← 返回</a></div>';
+  }
+});
 </script>
 </body>
 </html>

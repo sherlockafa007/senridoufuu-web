@@ -66,6 +66,17 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
 <!-- Dashboard -->
 <div id="dashboard" style="display:none" class="max-w-5xl mx-auto px-4 py-6">
 
+  <!-- Users Management -->
+  <div class="card mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="text-sm font-medium text-gray-700">用户管理</div>
+      <button onclick="loadUsers()" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">↻ 刷新</button>
+    </div>
+    <div id="userList">
+      <div class="text-gray-400 text-xs py-2">加载中…</div>
+    </div>
+  </div>
+
   <!-- Stat Cards -->
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
     <div class="card">
@@ -128,7 +139,7 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {getFirestore,collection,getDocs,query,orderBy,limit} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {getFirestore,collection,getDocs,query,orderBy,limit,doc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const ADMINS = ['sherlockafa@gmail.com', 'yuki.minami@senridf.com'];
 const PAGE_NAMES = {
@@ -162,6 +173,7 @@ onAuthStateChanged(auth, async u => {
   }
   document.getElementById('gate').style.display = 'none';
   document.getElementById('adminEmail').textContent = u.email;
+  loadUsers();
   await loadData();
 });
 
@@ -277,6 +289,51 @@ document.getElementById('glogin').onclick = async () => {
 
 document.getElementById('logoutBtn').onclick = () => signOut(auth);
 document.getElementById('noPermLogout').onclick = () => signOut(auth);
+
+// ── Users Management ──────────────────────────────────────────────────────────
+window.loadUsers = async function() {
+  const el = document.getElementById('userList');
+  if (!el) return;
+  el.innerHTML = '<div class="text-gray-400 text-xs py-2">加载中…</div>';
+  try {
+    const snap = await getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc')));
+    if (snap.empty) {
+      el.innerHTML = '<div class="text-gray-400 text-xs py-2">暂无注册用户</div>';
+      return;
+    }
+    el.innerHTML = snap.docs.map(d => {
+      const u = d.data();
+      const status = u.status || 'pending';
+      const statusColor = status === 'approved' ? 'text-green-600' : status === 'disabled' ? 'text-red-500' : 'text-yellow-500';
+      const statusLabel = status === 'approved' ? '已通过' : status === 'disabled' ? '已停用' : '待审核';
+      const createdAt = u.createdAt?.toDate?.()?.toLocaleDateString('zh-CN') || '—';
+      const approveBtn = status !== 'approved'
+        ? `<button onclick="setUserStatus('${d.id}','approved')" class="text-xs px-2 py-1 rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors">通过</button>`
+        : '';
+      const toggleBtn = status !== 'disabled'
+        ? `<button onclick="setUserStatus('${d.id}','disabled')" class="text-xs px-2 py-1 rounded bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors ml-1">停用</button>`
+        : `<button onclick="setUserStatus('${d.id}','pending')" class="text-xs px-2 py-1 rounded bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100 transition-colors ml-1">恢复</button>`;
+      return `<div class="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+        <div>
+          <div class="text-xs text-gray-700 font-medium">${u.email || '—'}</div>
+          <div class="text-xs ${statusColor} mt-0.5">${statusLabel} · 注册于 ${createdAt}</div>
+        </div>
+        <div class="flex items-center gap-1">${approveBtn}${toggleBtn}</div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    el.innerHTML = `<div class="text-red-400 text-xs py-2">${err.message}</div>`;
+  }
+};
+
+window.setUserStatus = async function(uid, status) {
+  try {
+    await updateDoc(doc(db, 'users', uid), { status });
+    await loadUsers();
+  } catch (err) {
+    alert('操作失败：' + err.message);
+  }
+};
 </script>
 </body>
 </html>

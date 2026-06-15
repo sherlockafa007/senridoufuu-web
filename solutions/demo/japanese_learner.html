@@ -113,6 +113,16 @@ td,th{border:1px solid #e5e7eb}
   </div>
 </div>
 
+<!-- Status overlay for pending/disabled users -->
+<div id="gate-status" style="display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.75);backdrop-filter:blur(6px)">
+  <div style="background:#fff;border-radius:16px;padding:44px 36px;max-width:360px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div id="gs-icon" style="font-size:38px;margin-bottom:14px"></div>
+    <h2 id="gs-title" style="font-size:17px;font-weight:600;margin-bottom:8px;font-family:'Noto Sans SC',sans-serif"></h2>
+    <p id="gs-desc" style="font-size:13px;color:#78716c;line-height:1.8;margin-bottom:22px"></p>
+    <a href="/account.html" style="font-size:12px;color:#9ca3af;text-decoration:none">← 返回账号页面</a>
+  </div>
+</div>
+
 <!-- Auth Gate -->
 <div id="gate" style="display:flex;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.75);backdrop-filter:blur(6px)">
   <div style="background:#fff;border-radius:16px;padding:44px 36px;max-width:360px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)">
@@ -582,29 +592,56 @@ window.addEventListener('resize', updateTableHeight);
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {getFirestore,collection,addDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {getFirestore,collection,addDoc,serverTimestamp,doc,getDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+const ADMINS = ['sherlockafa@gmail.com', 'yuki.minami@senridf.com'];
 const app = initializeApp({apiKey:'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',authDomain:'senridfauthentication.firebaseapp.com',projectId:'senridfauthentication',storageBucket:'senridfauthentication.firebasestorage.app',messagingSenderId:'86494932585',appId:'1:86494932585:web:185b8ed922cd491a63fcf8'});
 const auth = getAuth(app);
 const db = getFirestore(app);
 const gate = document.getElementById('gate');
+const gateStatus = document.getElementById('gate-status');
 let _logged = false;
-onAuthStateChanged(auth, u => {
+
+function showTool(u) {
+  gate.style.display = 'none';
+  gateStatus.style.display = 'none';
+  document.getElementById('uarea').style.display = 'flex';
+  document.getElementById('uemail').textContent = u.email;
+  if (!_logged) {
+    _logged = true;
+    addDoc(collection(db, 'visits'), {
+      email: u.email,
+      page: 'japanese_learner',
+      title: '日本語動詞活用',
+      timestamp: serverTimestamp(),
+      device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+    }).catch(() => {});
+  }
+}
+
+onAuthStateChanged(auth, async u => {
   if (u) {
-    gate.style.display = 'none';
-    document.getElementById('uarea').style.display = 'flex';
-    document.getElementById('uemail').textContent = u.email;
-    if (!_logged) {
-      _logged = true;
-      addDoc(collection(db, 'visits'), {
-        email: u.email,
-        page: 'japanese_learner',
-        title: '日本語動詞活用',
-        timestamp: serverTimestamp(),
-        device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
-      }).catch(() => {});
+    if (ADMINS.includes(u.email)) { showTool(u); return; }
+    try {
+      const snap = await getDoc(doc(db, 'users', u.uid));
+      const status = snap.data()?.status || 'pending';
+      if (status === 'approved') { showTool(u); return; }
+      gate.style.display = 'none';
+      document.getElementById('gs-icon').textContent = status === 'disabled' ? '🚫' : '⏳';
+      document.getElementById('gs-title').textContent = status === 'disabled' ? '账号已停用' : '审核中';
+      document.getElementById('gs-desc').textContent = status === 'disabled'
+        ? '您的账号已被停用，请联系管理员。'
+        : '账号正在审核中，审核通过后即可使用。';
+      gateStatus.style.display = 'flex';
+    } catch {
+      gate.style.display = 'none';
+      document.getElementById('gs-icon').textContent = '⏳';
+      document.getElementById('gs-title').textContent = '审核中';
+      document.getElementById('gs-desc').textContent = '账号正在审核中，审核通过后即可使用。';
+      gateStatus.style.display = 'flex';
     }
   } else {
     gate.style.display = 'flex';
+    gateStatus.style.display = 'none';
   }
 });
 function gm(txt, ok) {
