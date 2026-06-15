@@ -170,8 +170,8 @@
       text-transform: uppercase;
       color: var(--c-text-2);
       cursor: pointer;
-      appearance: none;
       -webkit-appearance: none;
+      appearance: none;
     }
     .voice-lang-sel:focus { outline: none; border-color: var(--c-accent); }
     .voice-lang-sep {
@@ -741,11 +741,22 @@
 
       #summaryResultPanel { padding: 14px !important; }
     }
+    #auth-gate { position:fixed;inset:0;background:#faf9f7;display:flex;align-items:center;justify-content:center;z-index:9999; }
+    .ag-center { text-align:center; }
+    .ag-spinner { width:28px;height:28px;border:2px solid #e5e7eb;border-top-color:#a87c4f;border-radius:50%;animation:ag-s .8s linear infinite;margin:0 auto; }
+    .ag-text { color:#9ca3af;font-size:13px;margin-top:12px;font-family:sans-serif; }
+    .tl-hint { font-size:0.875em;opacity:0.7; }
+    #tabText { display:none; }
+    #summaryResultPanel { display:none;margin-top:32px;padding:20px;background:var(--c-bg-alt);border:1px solid var(--c-border); }
+    .srp-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:16px; }
+    .srp-title { margin:0;font-size:1rem;font-weight:500; }
+    #summaryContent { margin-bottom:20px; }
+    .srp-footer { display:flex;gap:12px; }
   </style>
   <script defer src="https://cdn.jsdelivr.net/npm/docx@8/build/index.js"></script>
 </head>
 <body data-page-title="tl_page_title">
-<div id="auth-gate" style="position:fixed;inset:0;background:#faf9f7;display:flex;align-items:center;justify-content:center;z-index:9999"><div style="text-align:center"><div style="width:28px;height:28px;border:2px solid #e5e7eb;border-top-color:#a87c4f;border-radius:50%;animation:ag-s .8s linear infinite;margin:0 auto"></div><p style="color:#9ca3af;font-size:13px;margin-top:12px;font-family:sans-serif">验证身份中…</p></div></div>
+<div id="auth-gate"><div class="ag-center"><div class="ag-spinner"></div><p class="ag-text">验证身份中…</p></div></div>
 <style>@keyframes ag-s{to{transform:rotate(360deg)}}</style>
 
   <div id="nav-placeholder"></div>
@@ -758,7 +769,7 @@
           <h1 class="section__title">中日翻訳 · 音声通訳</h1>
           <p class="section__lead">
             テキスト翻訳・音声リアルタイム通訳に対応。講義や会議の同時通訳にもご利用いただけます。<br>
-            <span style="font-size:0.875em;opacity:0.7;">支持文字翻译及语音实时口译，适用于授课和会议场景。</span>
+            <span class="tl-hint">支持文字翻译及语音实时口译，适用于授课和会议场景。</span>
           </p>
         </div>
       </div>
@@ -798,7 +809,7 @@
           <div class="voice-setup-row">
             <div class="voice-spk-cfg">
               <span class="voice-spk-id">甲</span>
-              <select class="voice-lang-sel" id="selA">
+              <select class="voice-lang-sel" id="selA" title="甲方语言">
                 <option value="ja">日本語</option>
                 <option value="zh">中文</option>
                 <option value="en">English</option>
@@ -807,7 +818,7 @@
             <span class="voice-lang-sep">⇄</span>
             <div class="voice-spk-cfg">
               <span class="voice-spk-id">乙</span>
-              <select class="voice-lang-sel" id="selB">
+              <select class="voice-lang-sel" id="selB" title="乙方语言">
                 <option value="zh">中文</option>
                 <option value="ja">日本語</option>
                 <option value="en">English</option>
@@ -844,7 +855,7 @@
         </div><!-- /tabVoice -->
 
         <!-- ══════════════════════════════ TEXT TAB ══════════════════════════════ -->
-        <div id="tabText" class="tl-tab-panel" style="display:none">
+        <div id="tabText" class="tl-tab-panel">
 
           <div class="tl-status">
             <div class="tl-status__dot" id="tlStatusDot"></div>
@@ -897,15 +908,15 @@
         </div><!-- /tabText -->
 
         <!-- Summary Result Panel -->
-        <div id="summaryResultPanel" style="display: none; margin-top: 32px; padding: 20px; background: var(--c-bg-alt); border: 1px solid var(--c-border);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="margin: 0; font-size: 1rem; font-weight: 500;" data-i18n="tl_summary_title">生成的会议纪要</h3>
+        <div id="summaryResultPanel">
+          <div class="srp-header">
+            <h3 class="srp-title" data-i18n="tl_summary_title">生成的会议纪要</h3>
             <button type="button" class="tl-action-btn tl-action-btn--ghost" id="summaryClosePanelBtn" data-i18n="tl_summary_close">✕ 关闭</button>
           </div>
 
-          <div id="summaryContent" style="margin-bottom: 20px;"></div>
+          <div id="summaryContent"></div>
 
-          <div style="display: flex; gap: 12px;">
+          <div class="srp-footer">
             <button type="button" class="tl-action-btn tl-action-btn--primary" id="summaryDownloadBtn" data-i18n="tl_summary_download">💾 下载纪要（Word）</button>
             <button type="button" class="tl-action-btn tl-action-btn--ghost" id="summaryNewMeetingBtn" data-i18n="tl_summary_new">➕ 新建会议</button>
           </div>

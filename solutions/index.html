@@ -10,6 +10,38 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Noto+Serif+JP:wght@300;400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <base href="../">
   <link rel="stylesheet" href="css/main.css">
+  <style>
+    .tool-card {
+      display: block; border: 1px solid var(--c-border);
+      padding: 40px 40px 36px; color: inherit; text-decoration: none;
+      transition: border-color 300ms var(--ease), background 300ms var(--ease);
+    }
+    .tool-card:hover { border-color: var(--c-accent-mid); background: var(--c-accent-light); }
+    .tool-card__category {
+      font-family: var(--f-mono); font-size: 0.5625rem; letter-spacing: 0.28em;
+      color: var(--c-accent-mid); text-transform: uppercase; margin-bottom: 10px;
+    }
+    .tool-card__badge {
+      display: inline-block; font-family: var(--f-mono); font-size: 0.5rem;
+      letter-spacing: 0.2em; color: var(--c-text-3); text-transform: uppercase;
+      padding: 4px 10px; border: 1px solid var(--c-border); margin-bottom: 20px;
+    }
+    .tool-card__name {
+      font-family: var(--f-serif); font-size: 1.25rem; font-weight: 300;
+      letter-spacing: 0.1em; color: var(--c-text); margin-bottom: 12px;
+    }
+    .tool-card__desc {
+      font-family: var(--f-sans); font-size: 0.875rem; font-weight: 300;
+      line-height: 1.9; color: var(--c-text-2); margin-bottom: 24px;
+    }
+    .tool-card__cta {
+      font-family: var(--f-mono); font-size: 0.6875rem; letter-spacing: 0.14em;
+      color: var(--c-accent);
+    }
+    .tool-cards-grid { margin-top: 56px; }
+    .mvv-wrap .section { border-top: none; padding: 96px 48px; }
+    .mvv-wrap .values-grid { margin-top: 64px; }
+  </style>
 </head>
 <body data-page-title="solutions_page_title">
 
@@ -29,6 +61,45 @@
         </div>
       </div>
     </div>
+
+    <!-- Online Tools Section -->
+    <section class="section">
+      <div data-animate>
+        <span class="section__eyebrow" data-i18n="demo_tools_eyebrow">オンラインツール</span>
+        <h2 class="section__title" data-i18n="demo_tools_title">会員専用ツール</h2>
+        <p class="section__lead" data-i18n="demo_tools_body">ログイン後にご利用いただけます。</p>
+      </div>
+      <div class="demo-grid tool-cards-grid">
+        <a href="solutions/demo/translation.html" class="tool-card" data-animate data-animate-delay="1">
+          <div class="tool-card__category">翻訳 / Translation</div>
+          <div class="tool-card__badge" data-i18n="demo_member_badge">会員限定</div>
+          <h3 class="tool-card__name" data-i18n="tl_title">中日翻訳 + 回訳検証</h3>
+          <p class="tool-card__desc" data-i18n="tl_lead">中国語・日本語を相互翻訳し、回訳で精度を確認。</p>
+          <span class="tool-card__cta"><span data-i18n="tl_cta">翻訳ツールを開く</span> →</span>
+        </a>
+        <a href="solutions/demo/analysis.html" class="tool-card" data-animate data-animate-delay="2">
+          <div class="tool-card__category">分析 / Analysis</div>
+          <div class="tool-card__badge" data-i18n="demo_member_badge">会員限定</div>
+          <h3 class="tool-card__name" data-i18n="analysis_title">文書分析 · 比較レポート</h3>
+          <p class="tool-card__desc" data-i18n="analysis_desc">複数のPDF・Word・Excelをアップロードし、AIが内容を横断分析。</p>
+          <span class="tool-card__cta"><span data-i18n="analysis_cta">分析ツールを開く</span> →</span>
+        </a>
+        <a href="solutions/demo/lifestory.html" class="tool-card" data-animate data-animate-delay="3">
+          <div class="tool-card__category">記録 / Story</div>
+          <div class="tool-card__badge" data-i18n="demo_member_badge">会員限定</div>
+          <h3 class="tool-card__name" data-i18n="lifestory_title">生平故事 · 人生インタビュー</h3>
+          <p class="tool-card__desc" data-i18n="lifestory_desc">約100問のインタビューに答えると、AIがあなたの生涯を一冊の物語に。</p>
+          <span class="tool-card__cta"><span data-i18n="lifestory_cta">記録を始める</span> →</span>
+        </a>
+        <a href="solutions/demo/japanese_learner.html" class="tool-card" data-animate data-animate-delay="4">
+          <div class="tool-card__category">学習 / Learning</div>
+          <div class="tool-card__badge" data-i18n="demo_member_badge">会員限定</div>
+          <h3 class="tool-card__name" data-i18n="japanese_title">日本語基礎学習ツール</h3>
+          <p class="tool-card__desc" data-i18n="japanese_desc">214語の常用動詞を内蔵。活用自動生成付き。</p>
+          <span class="tool-card__cta"><span data-i18n="japanese_cta">学習を始める</span> →</span>
+        </a>
+      </div>
+    </section>
 
     <!-- Products Showcase -->
     <section class="section">
@@ -81,12 +152,12 @@
 
     <!-- Services -->
     <div class="mvv-wrap">
-      <section class="section" style="border-top: none; padding: 96px 48px;">
+      <section class="section">
         <div data-animate>
           <span class="section__eyebrow" data-i18n="services_eyebrow">サービス</span>
           <h2 class="section__title" data-i18n="services_title">私たちが提供すること</h2>
         </div>
-        <div class="values-grid" style="margin-top: 64px;">
+        <div class="values-grid">
           <div class="value-card" data-animate data-animate-delay="1">
             <div class="value-card__number">01</div>
             <h3 class="value-card__name" data-i18n="srv1_name">市場・業界調査</h3>

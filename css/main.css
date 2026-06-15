@@ -37,7 +37,7 @@
 
 /* === RESET === */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html { font-size: 16px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   font-family: var(--f-sans);
   background: var(--c-bg);
@@ -57,8 +57,8 @@ ul, ol { list-style: none; }
   z-index: 100;
   height: var(--nav-h);
   background: rgba(248, 248, 245, 0.88);
-  backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   border-bottom: 1px solid transparent;
   transition: border-color 300ms var(--ease), background 300ms var(--ease);
 }
@@ -152,6 +152,13 @@ ul, ol { list-style: none; }
   transform: translateX(-50%) translateY(0);
   pointer-events: all;
 }
+.nav__dropdown::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 0; right: 0;
+  height: 20px;
+}
 .nav__dropdown-link {
   display: block;
   padding: 10px 22px;
@@ -189,6 +196,7 @@ ul, ol { list-style: none; }
 .nav__lang-sep {
   font-size: 0.625rem;
   color: var(--c-border);
+  -webkit-user-select: none;
   user-select: none;
   pointer-events: none;
 }

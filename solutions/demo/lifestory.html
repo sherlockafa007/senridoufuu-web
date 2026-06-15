@@ -149,10 +149,17 @@
 
       .action-btns { bottom: 12px; right: 12px; flex-direction: row; }
     }
+    #auth-gate { position:fixed;inset:0;background:#faf9f7;display:flex;align-items:center;justify-content:center;z-index:9999; }
+    .ag-center { text-align:center; }
+    .ag-spinner { width:28px;height:28px;border:2px solid #e5e7eb;border-top-color:#a87c4f;border-radius:50%;animation:ag-s .8s linear infinite;margin:0 auto; }
+    .ag-text { color:#9ca3af;font-size:13px;margin-top:12px;font-family:sans-serif; }
+    #char-hint,#import-file { display:none; }
+    .privacy-label { display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--text2);cursor:pointer; }
+    .privacy-label input[type="checkbox"] { cursor:pointer; }
   </style>
 </head>
 <body>
-<div id="auth-gate" style="position:fixed;inset:0;background:#faf9f7;display:flex;align-items:center;justify-content:center;z-index:9999"><div style="text-align:center"><div style="width:28px;height:28px;border:2px solid #e5e7eb;border-top-color:#a87c4f;border-radius:50%;animation:ag-s .8s linear infinite;margin:0 auto"></div><p style="color:#9ca3af;font-size:13px;margin-top:12px;font-family:sans-serif">验证身份中…</p></div></div>
+<div id="auth-gate"><div class="ag-center"><div class="ag-spinner"></div><p class="ag-text">验证身份中…</p></div></div>
 <style>@keyframes ag-s{to{transform:rotate(360deg)}}</style>
 
 <header class="hdr">
@@ -200,7 +207,7 @@
     <p class="q-text" id="q-text"></p>
     <div class="answer-box">
       <textarea class="answer-ta" id="q-ta" placeholder="在这里写下你的回答…" rows="5"></textarea>
-      <div class="char-hint" id="char-hint" style="display:none;"></div>
+      <div class="char-hint" id="char-hint"></div>
       <div class="answer-foot">
         <button type="button" class="btn-mic" id="btn-mic" onclick="toggleVoice()">
           <span class="mic-dot"></span>
@@ -208,8 +215,8 @@
         </button>
         <span class="char-ct" id="char-ct">0 字</span>
       </div>
-      <label style="display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px; color:var(--text2); cursor:pointer;">
-        <input type="checkbox" id="privacy-chk" style="cursor:pointer;"> 🔒 标记为隐私，不分析
+      <label class="privacy-label">
+        <input type="checkbox" id="privacy-chk"> 🔒 标记为隐私，不分析
       </label>
     </div>
     <div id="q-err"></div>
@@ -257,7 +264,7 @@
   <button type="button" class="action-btn" onclick="document.getElementById('import-file').click()" title="从 JSON 文件恢复数据">导入</button>
   <button type="button" class="action-btn" onclick="resetAll()" title="清除所有数据，无法恢复">重置</button>
 </div>
-<input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+<input type="file" id="import-file" accept=".json" onchange="importData(event)">
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════════

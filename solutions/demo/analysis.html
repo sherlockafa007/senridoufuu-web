@@ -414,10 +414,16 @@
     .an-section-item-title { flex: 1; font-weight: 300; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .an-section-item-chars { font-family: var(--f-mono); font-size: 0.5625rem; color: var(--c-text-3); flex-shrink: 0; }
     .an-section-item-chars--warn { color: #b45309; }
+    #auth-gate { position:fixed;inset:0;background:#faf9f7;display:flex;align-items:center;justify-content:center;z-index:9999; }
+    .ag-center { text-align:center; }
+    .ag-spinner { width:28px;height:28px;border:2px solid #e5e7eb;border-top-color:#a87c4f;border-radius:50%;animation:ag-s .8s linear infinite;margin:0 auto; }
+    .ag-text { color:#9ca3af;font-size:13px;margin-top:12px;font-family:sans-serif; }
+    .an-hint { font-size:0.875em;opacity:0.7; }
+    #anPromptSection,#anActions,#anResult,#anLoading,#anError { display:none; }
   </style>
 </head>
 <body>
-<div id="auth-gate" style="position:fixed;inset:0;background:#faf9f7;display:flex;align-items:center;justify-content:center;z-index:9999"><div style="text-align:center"><div style="width:28px;height:28px;border:2px solid #e5e7eb;border-top-color:#a87c4f;border-radius:50%;animation:ag-s .8s linear infinite;margin:0 auto"></div><p style="color:#9ca3af;font-size:13px;margin-top:12px;font-family:sans-serif">验证身份中…</p></div></div>
+<div id="auth-gate"><div class="ag-center"><div class="ag-spinner"></div><p class="ag-text">验证身份中…</p></div></div>
 <style>@keyframes ag-s{to{transform:rotate(360deg)}}</style>
 
   <div id="nav-placeholder"></div>
@@ -430,7 +436,7 @@
           <h1 class="section__title">文書分析 · 比較レポート</h1>
           <p class="section__lead">
             複数の PDF・Word・Excel を読み込み、AI が内容を横断分析してレポートを生成します。<br>
-            <span style="font-size:0.875em;opacity:0.7;">上传多份文件，AI 跨文件交叉分析，生成对比报告。</span>
+            <span class="an-hint">上传多份文件，AI 跨文件交叉分析，生成对比报告。</span>
           </p>
         </div>
       </div>
@@ -466,7 +472,7 @@
         <div class="an-file-list" id="anFileList"></div>
 
         <!-- Prompt -->
-        <div class="an-prompt-section" id="anPromptSection" style="display:none">
+        <div class="an-prompt-section" id="anPromptSection">
           <div class="an-prompt-label">
             分析方向 / 分析问题
             <span>（省略可・省略时 AI 自动综合分析 / 可留空）</span>
@@ -476,7 +482,7 @@
         </div>
 
         <!-- Actions -->
-        <div class="an-actions" id="anActions" style="display:none">
+        <div class="an-actions" id="anActions">
           <button type="button" class="an-action-btn an-action-btn--primary" id="anSubmit">
             分析する / 开始分析
           </button>
@@ -486,13 +492,13 @@
         </div>
 
         <!-- Result -->
-        <div class="an-result" id="anResult" style="display:none">
+        <div class="an-result" id="anResult">
           <div class="an-result-header">分析レポート / 分析报告</div>
-          <div class="an-loading" id="anLoading" style="display:none">
+          <div class="an-loading" id="anLoading">
             <div class="an-spinner"></div>
             <span>分析中 / 分析中…</span>
           </div>
-          <div class="an-error" id="anError" style="display:none"></div>
+          <div class="an-error" id="anError"></div>
           <div class="an-report" id="anReport"></div>
         </div>
 

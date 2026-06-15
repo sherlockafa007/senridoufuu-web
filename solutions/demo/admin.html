@@ -16,6 +16,26 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
 .tag { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
 .tag-mobile { background: #fef3c7; color: #92400e; }
 .tag-desktop { background: #ede9fe; color: #5b21b6; }
+/* Auth overlays */
+.ag-overlay { position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.8); }
+#gate { display:flex;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px); }
+#noPerm { display:none; }
+.ag-box { background:#fff;border-radius:16px;padding:44px 36px;text-align:center; }
+.ag-box--login { max-width:360px;width:calc(100% - 40px);box-shadow:0 20px 60px rgba(0,0,0,.25); }
+.ag-box--noperm { max-width:340px;width:calc(100% - 40px); }
+.ag-icon { font-size:36px;margin-bottom:14px; }
+.ag-title { font-weight:600; }
+.ag-title--login { font-size:17px;margin-bottom:6px; }
+.ag-title--noperm { font-size:16px;margin-bottom:8px; }
+.ag-desc { font-size:13px;color:#9ca3af; }
+.ag-desc--login { margin-bottom:22px; }
+.ag-desc--noperm { margin-bottom:20px; }
+.ag-input { display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;font-family:inherit; }
+.ag-error { font-size:12px;min-height:16px;margin-bottom:8px;color:#ef4444; }
+.ag-btn-login { display:block;width:100%;padding:12px;background:#1e293b;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit; }
+.ag-btn-noperm { padding:10px 24px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer; }
+#dashboard { display:none; }
+.tbl-scroll { overflow-x:auto; }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -29,32 +49,32 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
     <span id="lastRefresh" class="text-gray-400 text-xs ml-2"></span>
   </div>
   <div class="flex items-center gap-3">
-    <button onclick="loadData()" id="refreshBtn" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">↻ 刷新</button>
+    <button onclick="loadData()" type="button" id="refreshBtn" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">↻ 刷新</button>
     <span id="adminEmail" class="text-xs text-gray-400 hidden sm:block"></span>
-    <button id="logoutBtn" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors">退出</button>
+    <button id="logoutBtn" type="button" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors">退出</button>
   </div>
 </header>
 
 <!-- Auth Gate -->
-<div id="gate" style="display:flex;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.8);backdrop-filter:blur(6px)">
-  <div style="background:#fff;border-radius:16px;padding:44px 36px;max-width:360px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)">
-    <div style="font-size:36px;margin-bottom:14px">🔐</div>
-    <h2 style="font-size:17px;font-weight:600;margin-bottom:6px">管理员登录</h2>
-    <p style="font-size:13px;color:#9ca3af;margin-bottom:22px">仅限授权管理员访问</p>
-    <input id="ge" type="email" placeholder="邮箱地址" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;font-family:inherit">
-    <input id="gp" type="password" placeholder="密码" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;font-family:inherit">
-    <div id="gm" style="font-size:12px;min-height:16px;margin-bottom:8px;color:#ef4444"></div>
-    <button id="glogin" style="display:block;width:100%;padding:12px;background:#1e293b;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">登录</button>
+<div id="gate" class="ag-overlay">
+  <div class="ag-box ag-box--login">
+    <div class="ag-icon">🔐</div>
+    <h2 class="ag-title ag-title--login">管理员登录</h2>
+    <p class="ag-desc ag-desc--login">仅限授权管理员访问</p>
+    <input id="ge" type="email" placeholder="邮箱地址" class="ag-input">
+    <input id="gp" type="password" placeholder="密码" class="ag-input">
+    <div id="gm" class="ag-error"></div>
+    <button id="glogin" type="button" class="ag-btn-login">登录</button>
   </div>
 </div>
 
 <!-- No Permission -->
-<div id="noPerm" style="display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.8)">
-  <div style="background:#fff;border-radius:16px;padding:44px 36px;max-width:340px;width:calc(100% - 40px);text-align:center">
-    <div style="font-size:36px;margin-bottom:14px">🚫</div>
-    <h2 style="font-size:16px;font-weight:600;margin-bottom:8px">无访问权限</h2>
-    <p style="font-size:13px;color:#9ca3af;margin-bottom:20px">此页面仅限管理员查看。</p>
-    <button id="noPermLogout" style="padding:10px 24px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer">退出登录</button>
+<div id="noPerm" class="ag-overlay">
+  <div class="ag-box ag-box--noperm">
+    <div class="ag-icon">🚫</div>
+    <h2 class="ag-title ag-title--noperm">无访问权限</h2>
+    <p class="ag-desc ag-desc--noperm">此页面仅限管理员查看。</p>
+    <button id="noPermLogout" type="button" class="ag-btn-noperm">退出登录</button>
   </div>
 </div>
 
@@ -64,13 +84,13 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
 </div>
 
 <!-- Dashboard -->
-<div id="dashboard" style="display:none" class="max-w-5xl mx-auto px-4 py-6">
+<div id="dashboard" class="max-w-5xl mx-auto px-4 py-6">
 
   <!-- Users Management -->
   <div class="card mb-6">
     <div class="flex items-center justify-between mb-4">
       <div class="text-sm font-medium text-gray-700">用户管理</div>
-      <button onclick="loadUsers()" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">↻ 刷新</button>
+      <button onclick="loadUsers()" type="button" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">↻ 刷新</button>
     </div>
     <div id="userList">
       <div class="text-gray-400 text-xs py-2">加载中…</div>
@@ -119,7 +139,7 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
       <div class="text-sm font-medium text-gray-700">最近访问记录</div>
       <div class="text-xs text-gray-400" id="recCount"></div>
     </div>
-    <div style="overflow-x:auto">
+    <div class="tbl-scroll">
       <table class="w-full text-xs">
         <thead>
           <tr class="text-gray-400 border-b border-gray-100">

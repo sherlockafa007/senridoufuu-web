@@ -23,15 +23,64 @@ td,th{border:1px solid #e5e7eb}
 .scroll-hint{display:none;text-align:center;font-size:11px;color:#9ca3af;padding:4px 0;background:#f9fafb;border-bottom:1px solid #e5e7eb}
 .speak-btn{display:inline-block;font-size:10px;opacity:0.35;cursor:pointer;padding:0 3px;border:none;background:none;vertical-align:middle;transition:opacity .15s;line-height:1}
 .speak-btn:hover{opacity:1}
-.fcheck-label{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;border:1.5px solid #e5e7eb;transition:all .15s;user-select:none;font-family:'Noto Sans JP',sans-serif}
+.fcheck-label{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;border:1.5px solid #e5e7eb;transition:all .15s;-webkit-user-select:none;user-select:none;font-family:'Noto Sans JP',sans-serif}
 .fcheck-label.active{border-color:#7c3aed;background:#f5f3ff;color:#5b21b6;font-weight:500}
-.col-label{display:inline-flex;align-items:center;font-size:11px;padding:4px 9px;border-radius:5px;cursor:pointer;border:1.5px solid #e5e7eb;transition:all .15s;user-select:none;font-family:'Noto Sans JP',sans-serif;color:#6b7280}
+.col-label{display:inline-flex;align-items:center;font-size:11px;padding:4px 9px;border-radius:5px;cursor:pointer;border:1.5px solid #e5e7eb;transition:all .15s;-webkit-user-select:none;user-select:none;font-family:'Noto Sans JP',sans-serif;color:#6b7280}
 .col-label.active{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
 @media (max-width:640px){
   .scroll-hint{display:block}
   td,th{padding:4px 6px!important}
   .speak-btn{display:none}
 }
+/* Layout */
+#colPanel{display:none}
+#tableWrap{height:calc(100vh - 56px);overflow:auto}
+/* Quiz Setup Modal */
+#quizSetBox{display:none;position:fixed;inset:0;z-index:160;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
+.qs-box{background:#fff;border-radius:16px;padding:24px 20px;max-width:420px;width:calc(100% - 32px)}
+#quizSetTitle{font-size:15px;font-weight:600;margin-bottom:14px;text-align:center;font-family:'Noto Sans JP',sans-serif}
+#fmChecks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.qs-sel-row{display:flex;gap:10px;margin-bottom:16px;justify-content:center}
+.qs-sel-btn{font-size:12px;color:#6b7280;border:none;background:none;cursor:pointer;text-decoration:underline}
+.qs-sep{color:#d1d5db}
+.qs-foot{display:flex;gap:8px}
+#quizStartBtn{flex:1;padding:10px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit}
+#quizCancelBtn{padding:10px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit}
+/* Quiz Modal */
+#quizBox{display:none;position:fixed;inset:0;z-index:150;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
+.qb-box{background:#fff;border-radius:16px;padding:28px 24px;max-width:480px;width:calc(100% - 32px);text-align:center}
+.qb-hdr{display:flex;align-items:center;margin-bottom:16px}
+#qNum{font-size:12px;color:#6b7280;white-space:nowrap}
+.qb-bar-wrap{flex:1;height:4px;background:#f3f4f6;border-radius:2px;margin:0 10px}
+#qBar{height:100%;background:#7c3aed;border-radius:2px;transition:width .3s;width:5%}
+.qb-close{font-size:20px;border:none;background:none;cursor:pointer;color:#9ca3af;line-height:1}
+#qVerb{font-size:26px;font-weight:600;margin-bottom:6px}
+#qMean{font-size:13px;color:#6b7280;margin-bottom:4px}
+#qFormLine{font-size:13px;color:#374151;margin-bottom:18px}
+#qOpts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#qResult{display:none;padding:16px 0}
+#qEmoji{font-size:52px;margin-bottom:10px}
+#qScore{font-size:22px;font-weight:600;margin-bottom:6px}
+#qMsg{font-size:14px;color:#6b7280;margin-bottom:18px}
+#quizAgainBtn{padding:10px 22px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;font-family:inherit}
+#quizCloseBtn{padding:10px 22px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit}
+/* Status/Auth Gate overlays */
+.gs-overlay{position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.75);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#gate-status{display:none}
+#gate{display:flex}
+.gs-box{background:#fff;border-radius:16px;padding:44px 36px;max-width:360px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+#gs-icon{font-size:38px;margin-bottom:14px}
+#gs-title{font-size:17px;font-weight:600;margin-bottom:8px;font-family:'Noto Sans SC',sans-serif}
+#gs-desc{font-size:13px;color:#78716c;line-height:1.8;margin-bottom:22px}
+.gs-back{font-size:12px;color:#9ca3af;text-decoration:none}
+.gs-icon-key{font-size:38px;margin-bottom:14px}
+#authTitle{font-size:17px;font-weight:600;margin-bottom:8px;font-family:'Noto Sans SC',sans-serif}
+#authDesc{font-size:13px;color:#78716c;line-height:1.8;margin-bottom:22px}
+.gs-input{display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none}
+#gm{font-size:12px;min-height:16px;margin-bottom:8px;color:#ef4444}
+#glogin{display:block;width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer;margin-bottom:8px}
+#gforgot{display:block;background:none;border:none;font-size:12px;color:#9ca3af;cursor:pointer;font-family:inherit;margin-bottom:10px}
+#authBack{font-size:12px;color:#9ca3af;text-decoration:none}
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -41,14 +90,14 @@ td,th{border:1px solid #e5e7eb}
     <a href="../demo.html" id="backBtn" class="text-gray-400 hover:text-gray-600 text-sm shrink-0">← 返回</a>
     <span id="pageTitle" class="jp font-semibold text-gray-800 shrink-0 text-sm">日本語動詞活用</span>
     <div class="flex gap-1 ml-1 shrink-0">
-      <button type="button" data-g="1" onclick="setG(1)" id="gBtn1" class="tab-on px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
-      <button type="button" data-g="2" onclick="setG(2)" id="gBtn2" class="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
-      <button type="button" data-g="3" onclick="setG(3)" id="gBtn3" class="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
-      <button type="button" data-g="0" onclick="setG(0)" id="gBtnAll" class="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
+      <button type="button" data-g="1" onclick="setG(1)" id="gBtn1" title="一类" class="tab-on px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
+      <button type="button" data-g="2" onclick="setG(2)" id="gBtn2" title="二类" class="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
+      <button type="button" data-g="3" onclick="setG(3)" id="gBtn3" title="三类" class="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
+      <button type="button" data-g="0" onclick="setG(0)" id="gBtnAll" title="全部" class="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 transition-colors"></button>
     </div>
-    <button type="button" id="practBtn" onclick="togglePractice()" class="px-2.5 py-1 rounded border border-gray-300 text-xs text-gray-600 hover:bg-gray-100 shrink-0 transition-colors"></button>
-    <button type="button" onclick="openQuizSet()" id="quizBtn" class="px-2.5 py-1 rounded border border-purple-300 text-xs text-purple-600 hover:bg-purple-50 shrink-0 transition-colors"></button>
-    <button type="button" onclick="toggleColPanel()" id="colSettingsBtn" class="px-2.5 py-1 rounded border border-gray-300 text-xs text-gray-600 hover:bg-gray-100 shrink-0 transition-colors"></button>
+    <button type="button" id="practBtn" onclick="togglePractice()" title="遮盖练习" class="px-2.5 py-1 rounded border border-gray-300 text-xs text-gray-600 hover:bg-gray-100 shrink-0 transition-colors"></button>
+    <button type="button" onclick="openQuizSet()" id="quizBtn" title="小测试" class="px-2.5 py-1 rounded border border-purple-300 text-xs text-purple-600 hover:bg-purple-50 shrink-0 transition-colors"></button>
+    <button type="button" onclick="toggleColPanel()" id="colSettingsBtn" title="列设置" class="px-2.5 py-1 rounded border border-gray-300 text-xs text-gray-600 hover:bg-gray-100 shrink-0 transition-colors"></button>
     <div class="flex gap-0.5 ml-auto shrink-0">
       <button type="button" onclick="setLang('ja')" id="lbja" class="px-2 py-1 rounded text-xs bg-gray-100 text-gray-500 transition-colors">日</button>
       <button type="button" onclick="setLang('zh')" id="lbzh" class="lang-on px-2 py-1 rounded text-xs bg-gray-100 text-gray-500 transition-colors">中</button>
@@ -56,18 +105,18 @@ td,th{border:1px solid #e5e7eb}
     </div>
     <div id="uarea" class="hidden items-center gap-2 shrink-0">
       <span id="uemail" class="text-xs text-gray-400 max-w-[120px] truncate hidden sm:block"></span>
-      <button type="button" id="logoutBtn" class="text-xs px-2 py-1 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"></button>
+      <button type="button" id="logoutBtn" title="退出" class="text-xs px-2 py-1 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"></button>
     </div>
   </div>
 </header>
 
 <div id="scrollHint" class="scroll-hint"></div>
 
-<div id="colPanel" style="display:none" class="bg-white border-b border-gray-100 px-4 py-2.5">
+<div id="colPanel" class="bg-white border-b border-gray-100 px-4 py-2.5">
   <div class="flex flex-wrap gap-1.5" id="colChecks"></div>
 </div>
 
-<div id="tableWrap" style="height:calc(100vh - 56px);overflow:auto">
+<div id="tableWrap">
   <table class="text-xs border-collapse w-full">
     <thead id="thead"></thead>
     <tbody id="tbody"></tbody>
@@ -75,66 +124,66 @@ td,th{border:1px solid #e5e7eb}
 </div>
 
 <!-- Quiz Setup Modal -->
-<div id="quizSetBox" style="display:none;position:fixed;inset:0;z-index:160;align-items:center;justify-content:center;background:rgba(0,0,0,.5)">
-  <div style="background:#fff;border-radius:16px;padding:24px 20px;max-width:420px;width:calc(100% - 32px)">
-    <h3 id="quizSetTitle" style="font-size:15px;font-weight:600;margin-bottom:14px;text-align:center;font-family:'Noto Sans JP',sans-serif"></h3>
-    <div id="fmChecks" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
-    <div style="display:flex;gap:10px;margin-bottom:16px;justify-content:center">
-      <button onclick="selectAllForms(true)" id="selAllBtn" style="font-size:12px;color:#6b7280;border:none;background:none;cursor:pointer;text-decoration:underline"></button>
-      <span style="color:#d1d5db">|</span>
-      <button onclick="selectAllForms(false)" id="selNoneBtn" style="font-size:12px;color:#6b7280;border:none;background:none;cursor:pointer;text-decoration:underline"></button>
+<div id="quizSetBox">
+  <div class="qs-box">
+    <h3 id="quizSetTitle"></h3>
+    <div id="fmChecks"></div>
+    <div class="qs-sel-row">
+      <button type="button" onclick="selectAllForms(true)" id="selAllBtn" title="全选" class="qs-sel-btn"></button>
+      <span class="qs-sep">|</span>
+      <button type="button" onclick="selectAllForms(false)" id="selNoneBtn" title="取消全选" class="qs-sel-btn"></button>
     </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="doStartQuiz()" id="quizStartBtn" style="flex:1;padding:10px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit"></button>
-      <button onclick="document.getElementById('quizSetBox').style.display='none'" id="quizCancelBtn" style="padding:10px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit"></button>
+    <div class="qs-foot">
+      <button type="button" onclick="doStartQuiz()" id="quizStartBtn" title="开始测试"></button>
+      <button type="button" onclick="document.getElementById('quizSetBox').style.display='none'" id="quizCancelBtn" title="取消"></button>
     </div>
   </div>
 </div>
 
 <!-- Quiz Modal -->
-<div id="quizBox" style="display:none;position:fixed;inset:0;z-index:150;align-items:center;justify-content:center;background:rgba(0,0,0,.5)">
-  <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:480px;width:calc(100% - 32px);text-align:center">
-    <div style="display:flex;align-items:center;margin-bottom:16px">
-      <span id="qNum" style="font-size:12px;color:#6b7280;white-space:nowrap"></span>
-      <div style="flex:1;height:4px;background:#f3f4f6;border-radius:2px;margin:0 10px"><div id="qBar" style="height:100%;background:#7c3aed;border-radius:2px;transition:width .3s;width:5%"></div></div>
-      <button onclick="document.getElementById('quizBox').style.display='none'" style="font-size:20px;border:none;background:none;cursor:pointer;color:#9ca3af;line-height:1">×</button>
+<div id="quizBox">
+  <div class="qb-box">
+    <div class="qb-hdr">
+      <span id="qNum"></span>
+      <div class="qb-bar-wrap"><div id="qBar"></div></div>
+      <button type="button" onclick="document.getElementById('quizBox').style.display='none'" title="关闭" class="qb-close">×</button>
     </div>
-    <div id="qVerb" class="jp" style="font-size:26px;font-weight:600;margin-bottom:6px"></div>
-    <div id="qMean" style="font-size:13px;color:#6b7280;margin-bottom:4px"></div>
-    <div id="qFormLine" style="font-size:13px;color:#374151;margin-bottom:18px"></div>
-    <div id="qOpts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
-    <div id="qResult" style="display:none;padding:16px 0">
-      <div id="qEmoji" style="font-size:52px;margin-bottom:10px"></div>
-      <div id="qScore" style="font-size:22px;font-weight:600;margin-bottom:6px"></div>
-      <div id="qMsg" style="font-size:14px;color:#6b7280;margin-bottom:18px"></div>
-      <button onclick="openQuizSet()" id="quizAgainBtn" style="padding:10px 22px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:8px;font-family:inherit"></button>
-      <button onclick="document.getElementById('quizBox').style.display='none'" id="quizCloseBtn" style="padding:10px 22px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit"></button>
+    <div id="qVerb" class="jp"></div>
+    <div id="qMean"></div>
+    <div id="qFormLine"></div>
+    <div id="qOpts"></div>
+    <div id="qResult">
+      <div id="qEmoji"></div>
+      <div id="qScore"></div>
+      <div id="qMsg"></div>
+      <button type="button" onclick="openQuizSet()" id="quizAgainBtn" title="再来一次"></button>
+      <button type="button" onclick="document.getElementById('quizBox').style.display='none'" id="quizCloseBtn" title="关闭"></button>
     </div>
   </div>
 </div>
 
 <!-- Status overlay for pending/disabled users -->
-<div id="gate-status" style="display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.75);backdrop-filter:blur(6px)">
-  <div style="background:#fff;border-radius:16px;padding:44px 36px;max-width:360px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)">
-    <div id="gs-icon" style="font-size:38px;margin-bottom:14px"></div>
-    <h2 id="gs-title" style="font-size:17px;font-weight:600;margin-bottom:8px;font-family:'Noto Sans SC',sans-serif"></h2>
-    <p id="gs-desc" style="font-size:13px;color:#78716c;line-height:1.8;margin-bottom:22px"></p>
-    <a href="/account.html" style="font-size:12px;color:#9ca3af;text-decoration:none">← 返回账号页面</a>
+<div id="gate-status" class="gs-overlay">
+  <div class="gs-box">
+    <div id="gs-icon"></div>
+    <h2 id="gs-title"></h2>
+    <p id="gs-desc"></p>
+    <a href="/account.html" class="gs-back">← 返回账号页面</a>
   </div>
 </div>
 
 <!-- Auth Gate -->
-<div id="gate" style="display:flex;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(28,25,20,.75);backdrop-filter:blur(6px)">
-  <div style="background:#fff;border-radius:16px;padding:44px 36px;max-width:360px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)">
-    <div style="font-size:38px;margin-bottom:14px">🔑</div>
-    <h2 id="authTitle" style="font-size:17px;font-weight:600;margin-bottom:8px;font-family:'Noto Sans SC',sans-serif"></h2>
-    <p id="authDesc" style="font-size:13px;color:#78716c;line-height:1.8;margin-bottom:22px"></p>
-    <input id="ge" type="email" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none">
-    <input id="gp" type="password" style="display:block;width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none">
-    <div id="gm" style="font-size:12px;min-height:16px;margin-bottom:8px;color:#ef4444"></div>
-    <button type="button" id="glogin" style="display:block;width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer;margin-bottom:8px"></button>
-    <button type="button" id="gforgot" style="display:block;background:none;border:none;font-size:12px;color:#9ca3af;cursor:pointer;font-family:inherit;margin-bottom:10px"></button>
-    <a href="../demo.html" id="authBack" style="font-size:12px;color:#9ca3af;text-decoration:none"></a>
+<div id="gate" class="gs-overlay">
+  <div class="gs-box">
+    <div class="gs-icon-key">🔑</div>
+    <h2 id="authTitle"></h2>
+    <p id="authDesc"></p>
+    <input id="ge" type="email" class="gs-input" title="邮箱地址" placeholder="邮箱地址">
+    <input id="gp" type="password" class="gs-input" title="密码" placeholder="密码">
+    <div id="gm"></div>
+    <button type="button" id="glogin" title="登录"></button>
+    <button type="button" id="gforgot" title="忘记密码"></button>
+    <a href="../demo.html" id="authBack" title="返回"></a>
   </div>
 </div>
 

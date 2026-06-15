@@ -227,6 +227,7 @@
 
   onAuthStateChanged(auth, async user => {
     if (user) {
+      localStorage.setItem('sdf_user_email', user.email);
       document.getElementById('member-email').textContent = user.email;
       document.getElementById('admin-link').style.display =
         ADMINS.includes(user.email) ? 'flex' : 'none';
@@ -253,6 +254,7 @@
       }
       show('state-member');
     } else {
+      localStorage.removeItem('sdf_user_email');
       document.getElementById('account-status').style.display = 'none';
       document.getElementById('tool-list').style.display = '';
       show('state-guest');

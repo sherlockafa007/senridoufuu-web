@@ -47,6 +47,10 @@ const T = {
     about_teaser_cta:     'チームを見る',
 
     nav_member:            'メンバー',
+    demo_tools_eyebrow:   'オンラインツール',
+    demo_tools_title:     '会員専用ツール',
+    demo_tools_body:      'ログイン後にご利用いただけます。',
+    demo_member_badge:    '会員限定',
 
     /* Footer */
     footer_tagline:        '人間がAIとの寄り添いを求めるすべての願いは、魂の共鳴への渇望にほかならない。',
@@ -194,6 +198,10 @@ const T = {
     about_teaser_cta:     '了解团队',
 
     nav_member:            '会员',
+    demo_tools_eyebrow:   '在线工具',
+    demo_tools_title:     '会员专属工具',
+    demo_tools_body:      '以下工具需登录后方可使用。',
+    demo_member_badge:    '会员专属',
 
     footer_tagline:        '人类对AI陪伴的一切渴望，不过是对灵魂共鸣的向往。',
     footer_nav_heading:    '导航',
@@ -334,6 +342,10 @@ const T = {
     about_teaser_cta:     'Meet the team',
 
     nav_member:            'Member',
+    demo_tools_eyebrow:   'Online Tools',
+    demo_tools_title:     'Member-Only Tools',
+    demo_tools_body:      'Available after logging in.',
+    demo_member_badge:    'Members Only',
 
     footer_tagline:        'Every human desire for closeness with AI is nothing but a yearning for resonance of souls.',
     footer_nav_heading:    'Navigation',
@@ -465,7 +477,7 @@ const NAV_HTML = `
           </div>
         </div>
       </div>
-      <a href="/account.html" class="nav__link" style="font-size:0.8125rem;opacity:.7;" data-i18n="nav_member">会员</a>
+      <a href="/account.html" id="nav-member-link" class="nav__link" style="font-size:0.8125rem;opacity:.7;"></a>
       <div class="nav__lang" id="langDesktop">
         <button class="nav__lang-btn" data-lang="ja">日</button>
         <span class="nav__lang-sep">/</span>
@@ -555,6 +567,7 @@ function applyTranslations(lang) {
   // Page title
   const titleKey = document.body.dataset.pageTitle;
   if (titleKey && t[titleKey]) document.title = t[titleKey];
+  updateNavMember();
 }
 
 /* === SWITCH LANGUAGE === */
@@ -562,6 +575,26 @@ function switchLang(lang) {
   currentLang = lang;
   localStorage.setItem('sdf_lang', lang);
   applyTranslations(lang);
+}
+
+/* === NAV MEMBER STATUS === */
+function updateNavMember() {
+  const el = document.getElementById('nav-member-link');
+  if (!el) return;
+  const email = localStorage.getItem('sdf_user_email');
+  const t = T[currentLang] || T.ja;
+  if (email) {
+    const name = email.split('@')[0];
+    el.textContent = '● ' + (name.length > 10 ? name.slice(0, 10) + '…' : name);
+    el.style.color = 'var(--c-accent)';
+    el.style.opacity = '1';
+    el.title = email;
+  } else {
+    el.textContent = t.nav_member || 'メンバー';
+    el.style.color = '';
+    el.style.opacity = '.7';
+    el.title = '';
+  }
 }
 
 /* === INJECT SHARED COMPONENTS === */
@@ -611,6 +644,8 @@ function injectShared() {
       link.classList.add('is-active');
     }
   });
+
+  updateNavMember();
 }
 
 /* === SCROLL ANIMATIONS === */
