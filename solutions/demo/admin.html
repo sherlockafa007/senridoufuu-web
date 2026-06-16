@@ -98,14 +98,18 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
   </div>
 
   <!-- Stat Cards -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+  <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
     <div class="card">
       <div class="text-xs text-gray-400 mb-2">总访问次数</div>
       <div class="stat-val text-gray-800" id="st-total">—</div>
     </div>
     <div class="card">
-      <div class="text-xs text-gray-400 mb-2">活跃用户数</div>
+      <div class="text-xs text-gray-400 mb-2">会员访问</div>
       <div class="stat-val text-blue-600" id="st-users">—</div>
+    </div>
+    <div class="card">
+      <div class="text-xs text-gray-400 mb-2">匿名访问</div>
+      <div class="stat-val text-orange-500" id="st-anon">—</div>
     </div>
     <div class="card">
       <div class="text-xs text-gray-400 mb-2">今日访问</div>
@@ -146,6 +150,7 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
             <th class="text-left pb-2 font-medium pr-4">时间</th>
             <th class="text-left pb-2 font-medium pr-4">用户</th>
             <th class="text-left pb-2 font-medium pr-4">页面</th>
+            <th class="text-left pb-2 font-medium pr-4">停留</th>
             <th class="text-left pb-2 font-medium">设备</th>
           </tr>
         </thead>
@@ -228,12 +233,15 @@ function renderDashboard(docs) {
   const weekStart = new Date(todayStart - 6 * 86400000);
 
   const total = docs.length;
-  const uniqueUsers = new Set(docs.map(d => d.email)).size;
+  const memberDocs = docs.filter(d => d.email);
+  const anonCount = docs.filter(d => !d.email).length;
+  const uniqueUsers = new Set(memberDocs.map(d => d.email)).size;
   const todayCount = docs.filter(d => d.timestamp?.toDate() >= todayStart).length;
   const weekCount = docs.filter(d => d.timestamp?.toDate() >= weekStart).length;
 
   document.getElementById('st-total').textContent = total;
   document.getElementById('st-users').textContent = uniqueUsers;
+  document.getElementById('st-anon').textContent = anonCount;
   document.getElementById('st-today').textContent = todayCount;
   document.getElementById('st-week').textContent = weekCount;
 
@@ -278,10 +286,13 @@ function renderDashboard(docs) {
     const deviceTag = d.device === 'mobile'
       ? '<span class="tag tag-mobile">手机</span>'
       : '<span class="tag tag-desktop">电脑</span>';
+    const userLabel = d.email || `<span class="text-orange-400">${d.anonId || '匿名'}</span>`;
+    const dur = d.duration != null ? (d.duration < 60 ? d.duration + 's' : Math.round(d.duration/60) + '分') : '—';
     return `<tr class="hover:bg-gray-50">
       <td class="py-2 pr-4 text-gray-400 whitespace-nowrap">${timeStr}</td>
-      <td class="py-2 pr-4 text-gray-600 max-w-[160px] truncate" title="${d.email || ''}">${d.email || '—'}</td>
+      <td class="py-2 pr-4 text-gray-600 max-w-[160px] truncate" title="${d.email || d.anonId || ''}">${userLabel}</td>
       <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">${PAGE_NAMES[d.page] || d.page || '—'}</td>
+      <td class="py-2 pr-4 text-gray-400 whitespace-nowrap">${dur}</td>
       <td class="py-2">${deviceTag}</td>
     </tr>`;
   }).join('') || '<tr><td colspan="4" class="py-4 text-center text-gray-400">暂无记录</td></tr>';

@@ -641,7 +641,7 @@ window.addEventListener('resize', updateTableHeight);
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {getFirestore,collection,addDoc,serverTimestamp,doc,getDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {getFirestore,collection,addDoc,serverTimestamp,doc,getDoc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 const ADMINS = ['sherlockafa@gmail.com', 'yuki.minami@senridf.com'];
 const app = initializeApp({apiKey:'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',authDomain:'senridfauthentication.firebaseapp.com',projectId:'senridfauthentication',storageBucket:'senridfauthentication.firebasestorage.app',messagingSenderId:'86494932585',appId:'1:86494932585:web:185b8ed922cd491a63fcf8'});
 const auth = getAuth(app);
@@ -649,6 +649,9 @@ const db = getFirestore(app);
 const gate = document.getElementById('gate');
 const gateStatus = document.getElementById('gate-status');
 let _logged = false;
+const _start = Date.now(); let _ref = null;
+function _anonId(){let i=localStorage.getItem('sdf_anon_id');if(!i){i='anon_'+Math.random().toString(36).slice(2,9);localStorage.setItem('sdf_anon_id',i);}return i;}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_ref){updateDoc(_ref,{duration:Math.round((Date.now()-_start)/1000)}).catch(()=>{});_ref=null;}});
 
 function showTool(u) {
   gate.style.display = 'none';
@@ -659,11 +662,12 @@ function showTool(u) {
     _logged = true;
     addDoc(collection(db, 'visits'), {
       email: u.email,
+      anonId: _anonId(),
       page: 'japanese_learner',
       title: '日本語動詞活用',
       timestamp: serverTimestamp(),
       device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
-    }).catch(() => {});
+    }).then(r => { _ref = r; }).catch(() => {});
   }
 }
 
