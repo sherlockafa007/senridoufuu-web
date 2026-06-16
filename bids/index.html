@@ -26,14 +26,16 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
           <input id="email" type="email" autocomplete="email"
+            title="邮箱" placeholder="your@email.com"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
           <input id="password" type="password" autocomplete="current-password"
+            title="密码" placeholder="••••••••"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
-        <button id="login-btn"
+        <button type="button"id="login-btn"
           class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors">
           登录
         </button>
@@ -52,7 +54,7 @@
         </div>
         <div class="flex items-center gap-3">
           <span id="user-email" class="text-xs text-gray-400 hidden sm:block"></span>
-          <button id="logout-btn" class="text-xs text-gray-500 hover:text-gray-800 transition-colors">退出</button>
+          <button type="button"id="logout-btn" class="text-xs text-gray-500 hover:text-gray-800 transition-colors">退出</button>
         </div>
       </div>
     </header>
@@ -64,17 +66,17 @@
         <!-- City filters -->
         <div class="flex flex-wrap gap-2 items-center">
           <span class="text-xs text-gray-400 mr-1">城市</span>
-          <button class="city-btn filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="all">全部</button>
-          <button class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="大阪市">大阪市</button>
-          <button class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="吹田市">吹田市</button>
-          <button class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="豊中市">豊中市</button>
+          <button type="button"class="city-btn filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="all">全部</button>
+          <button type="button"class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="大阪市">大阪市</button>
+          <button type="button"class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="吹田市">吹田市</button>
+          <button type="button"class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="豊中市">豊中市</button>
         </div>
         <!-- Category filters -->
         <div class="flex flex-wrap gap-2 items-center sm:ml-auto">
           <span class="text-xs text-gray-400 mr-1">类别</span>
-          <button class="cat-btn filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="all">全部</button>
-          <button class="cat-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="gyomuitaku">業務委託</button>
-          <button class="cat-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="buppin">物品供給</button>
+          <button type="button"class="cat-btn filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="all">全部</button>
+          <button type="button"class="cat-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="gyomuitaku">業務委託</button>
+          <button type="button"class="cat-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="buppin">物品供給</button>
         </div>
       </div>
 
