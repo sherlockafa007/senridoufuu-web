@@ -46,6 +46,13 @@ function parseBids(html, category, categoryLabel) {
       if (key && val) fields[key] = val;
     });
 
+    // Extract budget if field contains yen amount or explicit price
+    const budgetRaw = fields['予定価格'] || fields['上限額'] || fields['予算額'] || '';
+    const itemCategory = fields['種目'] || '';
+    // Some listings embed price in 種目 field (e.g. "〇〇円以内")
+    const budgetFromItem = /[0-9０-９].*円/.test(itemCategory) ? itemCategory : '';
+    const budget = budgetRaw || budgetFromItem;
+
     bids.push({
       title,
       source_url: sourceUrl,
@@ -55,6 +62,7 @@ function parseBids(html, category, categoryLabel) {
       deadline: fields['入札（締切）日時'] || '',
       contract_method: fields['入札契約方式'] || '',
       ordering_bureau: fields['発注担当局等'] || '',
+      budget,
     });
   });
 
@@ -62,17 +70,17 @@ function parseBids(html, category, categoryLabel) {
 }
 
 async function translate(bid) {
-  const prompt = `以下は大阪市の入札案件です。中国語で簡潔にまとめてください。
+  const prompt = `你是一名专业的日中双语翻译助手。请将以下日本大阪市政府招标信息翻译并整理为简体中文。
 
-案件名：${bid.title}
-発注元：${bid.ordering_bureau}
-締切：${bid.deadline}
-種別：${bid.category_label}
+招标标题：${bid.title}
+发注单位：${bid.ordering_bureau}
+截止日期：${bid.deadline}
+类别：${bid.category_label}
 
-以下の形式で出力してください（日本語は使わないこと）：
-【内容】（案件の内容を1〜2文で）
-【発注元】（発注局名）
-【截标】（締切日時）`;
+【重要】请严格用简体中文输出，禁止出现任何日语假名或汉字日语词汇。按以下格式输出：
+【内容】用1～2句中文简述招标内容
+【发注元】发注单位的中文译名
+【截标】截止日期（用中文表达，如"2026年3月12日（星期三）下午2时"）`;
 
   const res = await axios.post(
     'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',

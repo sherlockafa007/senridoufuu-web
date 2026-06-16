@@ -86,8 +86,10 @@
                 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">中文摘要 / 日文原题</th>
                 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">发注局室</th>
                 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">类别</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">发标时间</th>
                 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">截标日</th>
-                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">原文</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">预期报价</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">原文链接</th>
               </tr>
             </thead>
             <tbody id="bids-body" class="divide-y divide-gray-100"></tbody>
@@ -203,9 +205,9 @@
       tableWrap.classList.remove('hidden');
 
       tbody.innerHTML = filtered.map((bid, i) => {
-        const summaryLines = (bid.summary_zh || '').split('\n').filter(Boolean);
-        const summaryHtml = summaryLines.length
-          ? `<div class="text-gray-800 leading-relaxed">${summaryLines.map(escHtml).join('<br/>')}</div>`
+        const summary = (bid.summary_zh || '').trim();
+        const summaryHtml = summary
+          ? `<div class="text-gray-800 text-sm leading-relaxed">${summary.split('\n').filter(Boolean).map(escHtml).join('<br/>')}</div>`
           : '<div class="text-gray-400 italic text-xs">（翻译不可用）</div>';
 
         const categoryColors = {
@@ -214,22 +216,28 @@
         };
         const catClass = categoryColors[bid.category] || 'bg-gray-50 text-gray-600 border-gray-200';
 
+        const announced = (bid.announcement_date || '').replace(/令和\d+年/, '').trim() || '—';
         const deadline = (bid.deadline || '').replace(/令和\d+年/, '').trim() || '—';
+        const budget = (bid.budget || '').trim() || '—';
 
         return `<tr class="hover:bg-gray-50 transition-colors">
-          <td class="px-4 py-3 text-gray-400 align-top">${i + 1}</td>
-          <td class="px-4 py-3 align-top min-w-0 max-w-md">
+          <td class="px-4 py-3 text-gray-400 align-top text-xs">${i + 1}</td>
+          <td class="px-4 py-3 align-top min-w-0 max-w-sm">
             ${summaryHtml}
-            <div class="text-xs text-gray-400 mt-1 truncate" title="${escHtml(bid.title)}">${escHtml(bid.title)}</div>
+            <div class="text-xs text-gray-400 mt-1.5 truncate" title="${escHtml(bid.title)}">${escHtml(bid.title)}</div>
           </td>
           <td class="px-4 py-3 text-gray-700 align-top whitespace-nowrap text-xs">${escHtml(bid.ordering_bureau || '—')}</td>
           <td class="px-4 py-3 align-top whitespace-nowrap">
             <span class="px-2 py-0.5 rounded-full border text-xs font-medium ${catClass}">${escHtml(bid.category_label || bid.category)}</span>
           </td>
+          <td class="px-4 py-3 text-gray-500 align-top whitespace-nowrap text-xs">${escHtml(announced)}</td>
           <td class="px-4 py-3 text-gray-600 align-top whitespace-nowrap text-xs">${escHtml(deadline)}</td>
+          <td class="px-4 py-3 text-gray-500 align-top whitespace-nowrap text-xs">${escHtml(budget)}</td>
           <td class="px-4 py-3 align-top whitespace-nowrap">
             <a href="${escHtml(bid.source_url)}" target="_blank" rel="noopener"
-              class="text-indigo-600 hover:text-indigo-800 text-xs underline underline-offset-2">查看</a>
+              class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium">
+              原文 →
+            </a>
           </td>
         </tr>`;
       }).join('');
