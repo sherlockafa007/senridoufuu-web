@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>大阪市招标信息 — 千里同風</title>
+  <title>大阪府招标信息 — 千里同風</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,6 +11,7 @@
   <style>
     body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
     .hidden { display: none; }
+    .filter-btn.active { border-color: #6366f1; background: #eef2ff; color: #4338ca; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -19,7 +20,7 @@
   <div id="login-screen" class="flex items-center justify-center min-h-screen px-4">
     <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
       <h1 class="text-xl font-semibold text-gray-900 mb-1">千里同風 内部工具</h1>
-      <p class="text-sm text-gray-500 mb-6">大阪市招标信息监控</p>
+      <p class="text-sm text-gray-500 mb-6">大阪府招标信息监控</p>
       <div id="login-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
       <div class="space-y-4">
         <div>
@@ -44,36 +45,45 @@
   <div id="app" class="hidden">
     <!-- Header -->
     <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div>
-          <h1 class="text-base font-semibold text-gray-900">大阪市招标信息</h1>
-          <p class="text-xs text-gray-500">每日自动抓取 · 業務委託 &amp; 物品供給</p>
+          <h1 class="text-base font-semibold text-gray-900">大阪府招标信息</h1>
+          <p class="text-xs text-gray-500">大阪市 · 吹田市 · 豊中市 · 每日自动抓取</p>
         </div>
         <div class="flex items-center gap-3">
-          <span id="user-email" class="text-xs text-gray-400"></span>
+          <span id="user-email" class="text-xs text-gray-400 hidden sm:block"></span>
           <button id="logout-btn" class="text-xs text-gray-500 hover:text-gray-800 transition-colors">退出</button>
         </div>
       </div>
     </header>
 
-    <div class="max-w-6xl mx-auto px-4 py-6">
-      <!-- Stats + filters -->
-      <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-        <div id="stats" class="text-sm text-gray-500"></div>
-        <div class="flex gap-2 sm:ml-auto">
-          <button class="filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-indigo-500 bg-indigo-50 text-indigo-700" data-filter="all">全部</button>
-          <button class="filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600" data-filter="gyomuitaku">業務委託</button>
-          <button class="filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600" data-filter="buppin">物品供給</button>
+    <div class="max-w-7xl mx-auto px-4 py-5">
+
+      <!-- Filters -->
+      <div class="flex flex-col sm:flex-row gap-3 mb-5">
+        <!-- City filters -->
+        <div class="flex flex-wrap gap-2 items-center">
+          <span class="text-xs text-gray-400 mr-1">城市</span>
+          <button class="city-btn filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="all">全部</button>
+          <button class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="大阪市">大阪市</button>
+          <button class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="吹田市">吹田市</button>
+          <button class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="豊中市">豊中市</button>
+        </div>
+        <!-- Category filters -->
+        <div class="flex flex-wrap gap-2 items-center sm:ml-auto">
+          <span class="text-xs text-gray-400 mr-1">类别</span>
+          <button class="cat-btn filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="all">全部</button>
+          <button class="cat-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="gyomuitaku">業務委託</button>
+          <button class="cat-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="buppin">物品供給</button>
         </div>
       </div>
 
-      <!-- Loading -->
+      <!-- Stats -->
+      <div id="stats" class="text-xs text-gray-400 mb-3"></div>
+
+      <!-- Loading / Error / Empty -->
       <div id="loading" class="text-center py-16 text-gray-400 text-sm">加载中…</div>
-
-      <!-- Error -->
       <div id="load-error" class="hidden text-center py-16 text-red-500 text-sm"></div>
-
-      <!-- Empty -->
       <div id="empty" class="hidden text-center py-16 text-gray-400 text-sm">暂无数据</div>
 
       <!-- Table -->
@@ -84,6 +94,7 @@
               <tr>
                 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-8">#</th>
                 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">中文摘要 / 日文原题</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">城市</th>
                 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">发注局室</th>
                 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">类别</th>
                 <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">发标时间</th>
@@ -99,7 +110,6 @@
     </div>
   </div>
 
-  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
@@ -119,7 +129,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // --- Auth UI ---
+    // ── Auth ──────────────────────────────────────────────────────────────
     const loginScreen = document.getElementById('login-screen');
     const appEl = document.getElementById('app');
     const loginError = document.getElementById('login-error');
@@ -130,8 +140,8 @@
       loginError.classList.add('hidden');
       try {
         await signInWithEmailAndPassword(auth, email, password);
-      } catch (e) {
-        loginError.textContent = '登录失败：' + (e.code === 'auth/invalid-credential' ? '邮箱或密码错误' : e.message);
+      } catch {
+        loginError.textContent = '邮箱或密码错误，请重试';
         loginError.classList.remove('hidden');
       }
     });
@@ -142,7 +152,6 @@
 
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
-    // --- Auth state ---
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         loginScreen.classList.add('hidden');
@@ -155,9 +164,10 @@
       }
     });
 
-    // --- Data ---
+    // ── Data ──────────────────────────────────────────────────────────────
     let allBids = [];
-    let activeFilter = 'all';
+    let activeCity = 'all';
+    let activeCat = 'all';
 
     async function loadBids() {
       const loadingEl = document.getElementById('loading');
@@ -171,7 +181,7 @@
       emptyEl.classList.add('hidden');
 
       try {
-        const q = query(collection(db, 'bids'), orderBy('scraped_at', 'desc'), limit(200));
+        const q = query(collection(db, 'bids'), orderBy('scraped_at', 'desc'), limit(300));
         const snap = await getDocs(q);
         allBids = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         loadingEl.classList.add('hidden');
@@ -189,11 +199,13 @@
       const tbody = document.getElementById('bids-body');
       const statsEl = document.getElementById('stats');
 
-      const filtered = activeFilter === 'all'
-        ? allBids
-        : allBids.filter((b) => b.category === activeFilter);
+      const filtered = allBids.filter((b) => {
+        if (activeCity !== 'all' && b.city !== activeCity) return false;
+        if (activeCat !== 'all' && b.category !== activeCat) return false;
+        return true;
+      });
 
-      statsEl.textContent = `共 ${filtered.length} 条${activeFilter === 'all' ? '' : ' · 已筛选'}`;
+      statsEl.textContent = `共 ${filtered.length} 条`;
 
       if (filtered.length === 0) {
         tableWrap.classList.add('hidden');
@@ -204,40 +216,48 @@
       emptyEl.classList.add('hidden');
       tableWrap.classList.remove('hidden');
 
+      const cityColors = {
+        '大阪市': 'text-indigo-600 bg-indigo-50',
+        '吹田市': 'text-teal-600 bg-teal-50',
+        '豊中市': 'text-orange-600 bg-orange-50',
+      };
+      const catColors = {
+        gyomuitaku: 'bg-blue-50 text-blue-700 border-blue-200',
+        buppin: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      };
+
       tbody.innerHTML = filtered.map((bid, i) => {
         const summary = (bid.summary_zh || '').trim();
         const summaryHtml = summary
           ? `<div class="text-gray-800 text-sm leading-relaxed">${summary.split('\n').filter(Boolean).map(escHtml).join('<br/>')}</div>`
           : '<div class="text-gray-400 italic text-xs">（翻译不可用）</div>';
 
-        const categoryColors = {
-          gyomuitaku: 'bg-blue-50 text-blue-700 border-blue-200',
-          buppin: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        };
-        const catClass = categoryColors[bid.category] || 'bg-gray-50 text-gray-600 border-gray-200';
+        const cityClass = cityColors[bid.city] || 'text-gray-600 bg-gray-50';
+        const catClass = catColors[bid.category] || 'bg-gray-50 text-gray-600 border-gray-200';
 
         const announced = (bid.announcement_date || '').replace(/令和\d+年/, '').trim() || '—';
         const deadline = (bid.deadline || '').replace(/令和\d+年/, '').trim() || '—';
         const budget = (bid.budget || '').trim() || '—';
 
-        return `<tr class="hover:bg-gray-50 transition-colors">
-          <td class="px-4 py-3 text-gray-400 align-top text-xs">${i + 1}</td>
-          <td class="px-4 py-3 align-top min-w-0 max-w-sm">
+        return `<tr class="hover:bg-gray-50 transition-colors align-top">
+          <td class="px-4 py-3 text-gray-400 text-xs">${i + 1}</td>
+          <td class="px-4 py-3 min-w-0 max-w-sm">
             ${summaryHtml}
             <div class="text-xs text-gray-400 mt-1.5 truncate" title="${escHtml(bid.title)}">${escHtml(bid.title)}</div>
           </td>
-          <td class="px-4 py-3 text-gray-700 align-top whitespace-nowrap text-xs">${escHtml(bid.ordering_bureau || '—')}</td>
-          <td class="px-4 py-3 align-top whitespace-nowrap">
-            <span class="px-2 py-0.5 rounded-full border text-xs font-medium ${catClass}">${escHtml(bid.category_label || bid.category)}</span>
+          <td class="px-4 py-3 whitespace-nowrap">
+            <span class="px-2 py-0.5 rounded text-xs font-medium ${cityClass}">${escHtml(bid.city || '—')}</span>
           </td>
-          <td class="px-4 py-3 text-gray-500 align-top whitespace-nowrap text-xs">${escHtml(announced)}</td>
-          <td class="px-4 py-3 text-gray-600 align-top whitespace-nowrap text-xs">${escHtml(deadline)}</td>
-          <td class="px-4 py-3 text-gray-500 align-top whitespace-nowrap text-xs">${escHtml(budget)}</td>
-          <td class="px-4 py-3 align-top whitespace-nowrap">
+          <td class="px-4 py-3 text-gray-700 whitespace-nowrap text-xs">${escHtml(bid.ordering_bureau || '—')}</td>
+          <td class="px-4 py-3 whitespace-nowrap">
+            <span class="px-2 py-0.5 rounded-full border text-xs font-medium ${catClass}">${escHtml(bid.category_label || bid.category || '—')}</span>
+          </td>
+          <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">${escHtml(announced)}</td>
+          <td class="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">${escHtml(deadline)}</td>
+          <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">${escHtml(budget)}</td>
+          <td class="px-4 py-3 whitespace-nowrap">
             <a href="${escHtml(bid.source_url)}" target="_blank" rel="noopener"
-              class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-              原文 →
-            </a>
+              class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">原文 →</a>
           </td>
         </tr>`;
       }).join('');
@@ -245,22 +265,28 @@
 
     function escHtml(str) {
       return String(str || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // --- Filters ---
-    document.querySelectorAll('.filter-btn').forEach((btn) => {
+    // ── Filters ───────────────────────────────────────────────────────────
+    function activateBtn(group, clicked) {
+      document.querySelectorAll(group).forEach((b) => b.classList.remove('active'));
+      clicked.classList.add('active');
+    }
+
+    document.querySelectorAll('.city-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach((b) => {
-          b.classList.remove('active', 'border-indigo-500', 'bg-indigo-50', 'text-indigo-700');
-          b.classList.add('border-gray-200', 'text-gray-600');
-        });
-        btn.classList.add('active', 'border-indigo-500', 'bg-indigo-50', 'text-indigo-700');
-        btn.classList.remove('border-gray-200', 'text-gray-600');
-        activeFilter = btn.dataset.filter;
+        activateBtn('.city-btn', btn);
+        activeCity = btn.dataset.city;
+        renderBids();
+      });
+    });
+
+    document.querySelectorAll('.cat-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activateBtn('.cat-btn', btn);
+        activeCat = btn.dataset.cat;
         renderBids();
       });
     });
