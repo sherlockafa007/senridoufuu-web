@@ -1,0 +1,11 @@
+{
+  "name": "bid-scraper",
+  "version": "1.0.0",
+  "description": "Daily scraper for Osaka City bid announcements",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^1.7.0",
+    "cheerio": "^1.0.0",
+    "firebase-admin": "^12.0.0"
+  }
+}

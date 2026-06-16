@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>大阪市招标信息 — 千里同風</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Login screen -->
+  <div id="login-screen" class="flex items-center justify-center min-h-screen px-4">
+    <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
+      <h1 class="text-xl font-semibold text-gray-900 mb-1">千里同風 内部工具</h1>
+      <p class="text-sm text-gray-500 mb-6">大阪市招标信息监控</p>
+      <div id="login-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+          <input id="email" type="email" autocomplete="email"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+          <input id="password" type="password" autocomplete="current-password"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <button id="login-btn"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors">
+          登录
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main app -->
+  <div id="app" class="hidden">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div>
+          <h1 class="text-base font-semibold text-gray-900">大阪市招标信息</h1>
+          <p class="text-xs text-gray-500">每日自动抓取 · 業務委託 &amp; 物品供給</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="user-email" class="text-xs text-gray-400"></span>
+          <button id="logout-btn" class="text-xs text-gray-500 hover:text-gray-800 transition-colors">退出</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto px-4 py-6">
+      <!-- Stats + filters -->
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+        <div id="stats" class="text-sm text-gray-500"></div>
+        <div class="flex gap-2 sm:ml-auto">
+          <button class="filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-indigo-500 bg-indigo-50 text-indigo-700" data-filter="all">全部</button>
+          <button class="filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600" data-filter="gyomuitaku">業務委託</button>
+          <button class="filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600" data-filter="buppin">物品供給</button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="loading" class="text-center py-16 text-gray-400 text-sm">加载中…</div>
+
+      <!-- Error -->
+      <div id="load-error" class="hidden text-center py-16 text-red-500 text-sm"></div>
+
+      <!-- Empty -->
+      <div id="empty" class="hidden text-center py-16 text-gray-400 text-sm">暂无数据</div>
+
+      <!-- Table -->
+      <div id="table-wrap" class="hidden bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-8">#</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">中文摘要 / 日文原题</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">发注局室</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">类别</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">截标日</th>
+                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">原文</th>
+              </tr>
+            </thead>
+            <tbody id="bids-body" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { getFirestore, collection, query, orderBy, limit, getDocs }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    const app = initializeApp({
+      apiKey: 'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',
+      authDomain: 'senridfauthentication.firebaseapp.com',
+      projectId: 'senridfauthentication',
+      storageBucket: 'senridfauthentication.firebasestorage.app',
+      messagingSenderId: '86494932585',
+      appId: '1:86494932585:web:185b8ed922cd491a63fcf8',
+    });
+
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- Auth UI ---
+    const loginScreen = document.getElementById('login-screen');
+    const appEl = document.getElementById('app');
+    const loginError = document.getElementById('login-error');
+
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      loginError.classList.add('hidden');
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (e) {
+        loginError.textContent = '登录失败：' + (e.code === 'auth/invalid-credential' ? '邮箱或密码错误' : e.message);
+        loginError.classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('login-btn').click();
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+    // --- Auth state ---
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        loginScreen.classList.add('hidden');
+        appEl.classList.remove('hidden');
+        document.getElementById('user-email').textContent = user.email;
+        await loadBids();
+      } else {
+        loginScreen.classList.remove('hidden');
+        appEl.classList.add('hidden');
+      }
+    });
+
+    // --- Data ---
+    let allBids = [];
+    let activeFilter = 'all';
+
+    async function loadBids() {
+      const loadingEl = document.getElementById('loading');
+      const errorEl = document.getElementById('load-error');
+      const tableWrap = document.getElementById('table-wrap');
+      const emptyEl = document.getElementById('empty');
+
+      loadingEl.classList.remove('hidden');
+      tableWrap.classList.add('hidden');
+      errorEl.classList.add('hidden');
+      emptyEl.classList.add('hidden');
+
+      try {
+        const q = query(collection(db, 'bids'), orderBy('scraped_at', 'desc'), limit(200));
+        const snap = await getDocs(q);
+        allBids = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        loadingEl.classList.add('hidden');
+        renderBids();
+      } catch (e) {
+        loadingEl.classList.add('hidden');
+        errorEl.textContent = '加载失败：' + e.message;
+        errorEl.classList.remove('hidden');
+      }
+    }
+
+    function renderBids() {
+      const tableWrap = document.getElementById('table-wrap');
+      const emptyEl = document.getElementById('empty');
+      const tbody = document.getElementById('bids-body');
+      const statsEl = document.getElementById('stats');
+
+      const filtered = activeFilter === 'all'
+        ? allBids
+        : allBids.filter((b) => b.category === activeFilter);
+
+      statsEl.textContent = `共 ${filtered.length} 条${activeFilter === 'all' ? '' : ' · 已筛选'}`;
+
+      if (filtered.length === 0) {
+        tableWrap.classList.add('hidden');
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+      tableWrap.classList.remove('hidden');
+
+      tbody.innerHTML = filtered.map((bid, i) => {
+        const summaryLines = (bid.summary_zh || '').split('\n').filter(Boolean);
+        const summaryHtml = summaryLines.length
+          ? `<div class="text-gray-800 leading-relaxed">${summaryLines.map(escHtml).join('<br/>')}</div>`
+          : '<div class="text-gray-400 italic text-xs">（翻译不可用）</div>';
+
+        const categoryColors = {
+          gyomuitaku: 'bg-blue-50 text-blue-700 border-blue-200',
+          buppin: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        };
+        const catClass = categoryColors[bid.category] || 'bg-gray-50 text-gray-600 border-gray-200';
+
+        const deadline = (bid.deadline || '').replace(/令和\d+年/, '').trim() || '—';
+
+        return `<tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-4 py-3 text-gray-400 align-top">${i + 1}</td>
+          <td class="px-4 py-3 align-top min-w-0 max-w-md">
+            ${summaryHtml}
+            <div class="text-xs text-gray-400 mt-1 truncate" title="${escHtml(bid.title)}">${escHtml(bid.title)}</div>
+          </td>
+          <td class="px-4 py-3 text-gray-700 align-top whitespace-nowrap text-xs">${escHtml(bid.ordering_bureau || '—')}</td>
+          <td class="px-4 py-3 align-top whitespace-nowrap">
+            <span class="px-2 py-0.5 rounded-full border text-xs font-medium ${catClass}">${escHtml(bid.category_label || bid.category)}</span>
+          </td>
+          <td class="px-4 py-3 text-gray-600 align-top whitespace-nowrap text-xs">${escHtml(deadline)}</td>
+          <td class="px-4 py-3 align-top whitespace-nowrap">
+            <a href="${escHtml(bid.source_url)}" target="_blank" rel="noopener"
+              class="text-indigo-600 hover:text-indigo-800 text-xs underline underline-offset-2">查看</a>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function escHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // --- Filters ---
+    document.querySelectorAll('.filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach((b) => {
+          b.classList.remove('active', 'border-indigo-500', 'bg-indigo-50', 'text-indigo-700');
+          b.classList.add('border-gray-200', 'text-gray-600');
+        });
+        btn.classList.add('active', 'border-indigo-500', 'bg-indigo-50', 'text-indigo-700');
+        btn.classList.remove('border-gray-200', 'text-gray-600');
+        activeFilter = btn.dataset.filter;
+        renderBids();
+      });
+    });
+  </script>
+</body>
+</html>

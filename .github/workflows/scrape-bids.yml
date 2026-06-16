@@ -1,0 +1,27 @@
+name: Scrape Osaka City Bids
+
+on:
+  schedule:
+    - cron: '0 17 * * *'   # 02:00 JST (UTC+9) every day
+  workflow_dispatch:         # allow manual trigger from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: scripts/bid-scraper
+        run: npm install
+
+      - name: Run scraper
+        working-directory: scripts/bid-scraper
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+        run: node index.js
