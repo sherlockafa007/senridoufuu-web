@@ -976,8 +976,8 @@
         document.querySelectorAll('.tl-tab').forEach(t => t.classList.remove('is-active'));
         tab.classList.add('is-active');
         const target = tab.dataset.tab; // 'Voice' or 'Text'
-        document.getElementById('tabVoice').style.display = target === 'Voice' ? '' : 'none';
-        document.getElementById('tabText').style.display  = target === 'Text'  ? '' : 'none';
+        document.getElementById('tabVoice').style.display = target === 'Voice' ? 'block' : 'none';
+        document.getElementById('tabText').style.display  = target === 'Text'  ? 'block' : 'none';
         if (target === 'Voice') prewarmToken();
       });
     });

@@ -242,7 +242,7 @@
         if (file.name.endsWith('.txt')) {
           uploadedText = new TextDecoder('utf-8').decode(arrayBuffer);
         } else {
-          const result = await mammoth.extractRawValue({ arrayBuffer });
+          const result = await mammoth.extractRawText({ arrayBuffer });
           uploadedText = result.value;
         }
         fileName.textContent = `✓ ${file.name}（${uploadedText.length.toLocaleString()} 字）`;
