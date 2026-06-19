@@ -13,13 +13,12 @@
     body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
     .hidden { display: none; }
     .tab-btn.active { border-color: #6366f1; color: #4338ca; background: #eef2ff; }
-    .result-card code { background: #fef2f2; color: #b91c1c; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; font-family: monospace; }
-    .result-card strong { font-weight: 600; }
-    .result-card blockquote { border-left: 3px solid #d1d5db; padding-left: 12px; color: #9ca3af; font-style: italic; margin: 8px 0; }
-    .result-card li { margin-bottom: 14px; line-height: 1.7; }
-    .result-card ul { list-style: none; padding: 0; }
     .spinner { width: 24px; height: 24px; border: 3px solid #e5e7eb; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .dismiss-btn.confirmed { background: #d1fae5 !important; border-color: #6ee7b7 !important; color: #059669 !important; }
+    .error-item.dismissed-hidden { display: none; }
+    .error-item.dismissed-visible { opacity: 0.4; }
+    .error-item.dismissed-visible .original { text-decoration: line-through; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -51,34 +50,49 @@
 
   <!-- App -->
   <div id="app" class="hidden">
+
     <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
         <div>
           <h1 class="text-base font-semibold text-gray-900">文稿校对助手</h1>
-          <p class="text-xs text-gray-500">错别字 · 重复 · 编辑指令 · 逻辑冲突</p>
+          <p class="text-xs text-gray-500">错别字 · 重复 · 编辑指令 · 逻辑冲突 · 标题一致性</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <button type="button" id="history-btn"
+            class="text-xs text-gray-500 hover:text-gray-700 px-2.5 py-1 rounded border border-gray-200 hover:border-gray-300 transition-colors">历史</button>
           <span id="user-email" class="text-xs text-gray-400 hidden sm:block"></span>
-          <button type="button" id="logout-btn" class="text-xs text-gray-500 hover:text-gray-800">退出</button>
+          <button type="button" id="logout-btn" class="text-xs text-gray-500 hover:text-gray-800 ml-1">退出</button>
         </div>
       </div>
     </header>
+
+    <!-- History panel -->
+    <div id="history-panel" class="hidden bg-white border-b border-gray-200 shadow-sm">
+      <div class="max-w-3xl mx-auto px-4 py-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-medium text-gray-700">历史校对记录（最近 30 次）</h3>
+          <div class="flex gap-3">
+            <button type="button" id="clear-history-btn"
+              class="text-xs text-red-400 hover:text-red-600 transition-colors">清除全部</button>
+            <button type="button" id="close-history-btn"
+              class="text-xs text-gray-400 hover:text-gray-600">关闭</button>
+          </div>
+        </div>
+        <div id="history-content"></div>
+      </div>
+    </div>
 
     <main class="max-w-3xl mx-auto px-4 py-6">
 
       <!-- Input card -->
       <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
-
-        <!-- Tabs -->
         <div class="flex gap-2 mb-4">
           <button type="button" class="tab-btn active px-4 py-1.5 rounded-full text-sm border border-gray-200 text-gray-600 transition-colors" data-tab="paste">粘贴文本</button>
           <button type="button" class="tab-btn px-4 py-1.5 rounded-full text-sm border border-gray-200 text-gray-600 transition-colors" data-tab="upload">上传 Word</button>
         </div>
 
-        <!-- Paste tab -->
         <div id="tab-paste">
-          <textarea id="text-input" rows="12"
-            placeholder="请将中文文稿粘贴于此…"
+          <textarea id="text-input" rows="12" placeholder="请将中文文稿粘贴于此…"
             class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400 leading-relaxed"></textarea>
           <div class="flex justify-between items-center mt-2 text-xs text-gray-400">
             <span>支持中文新闻稿、文章、稿件</span>
@@ -86,7 +100,6 @@
           </div>
         </div>
 
-        <!-- Upload tab -->
         <div id="tab-upload" class="hidden">
           <label for="file-input"
             class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
@@ -116,13 +129,18 @@
 
       <!-- Results -->
       <div id="results" class="hidden">
-        <div id="results-summary" class="flex items-center justify-between mb-4">
-          <p class="text-sm font-medium text-gray-700"></p>
-          <button type="button" id="copy-btn"
-            class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
-            复制完整报告
-          </button>
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <p id="results-summary-text" class="text-sm font-medium text-gray-700"></p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" id="toggle-all-btn"
+              class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">展开全部</button>
+            <button type="button" id="toggle-dismissed-btn"
+              class="hidden text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"></button>
+            <button type="button" id="copy-btn"
+              class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">复制完整报告</button>
+          </div>
         </div>
+        <p class="text-xs text-gray-400 mb-3">点击条目展开查看问题说明；点击 ✓ 标记为已确认无误（可恢复）</p>
         <div id="results-cards" class="space-y-4"></div>
         <p class="text-xs text-gray-400 mt-4 text-center">以上内容由 AI 生成，仅供参考，请以人工判断为准</p>
       </div>
@@ -143,10 +161,9 @@
       messagingSenderId: '86494932585',
       appId: '1:86494932585:web:185b8ed922cd491a63fcf8',
     });
-
     const auth = getAuth(app);
 
-    // ── Auth ──────────────────────────────────────────────────────────────
+    // ── Auth ────────────────────────────────────────────────────────────────
     const loginScreen = document.getElementById('login-screen');
     const appEl = document.getElementById('app');
     const loginError = document.getElementById('login-error');
@@ -178,7 +195,7 @@
       }
     });
 
-    // ── Tab switching ────────────────────────────────────────────────────
+    // ── Tab switching ───────────────────────────────────────────────────────
     let activeTab = 'paste';
     document.querySelectorAll('.tab-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -191,7 +208,7 @@
       });
     });
 
-    // ── Char count ───────────────────────────────────────────────────────
+    // ── Char count ──────────────────────────────────────────────────────────
     const textInput = document.getElementById('text-input');
     const charCount = document.getElementById('char-count');
     textInput.addEventListener('input', () => {
@@ -200,7 +217,7 @@
       charCount.className = n > 20000 ? 'text-xs text-red-500' : 'text-xs text-gray-400';
     });
 
-    // ── Word file upload ─────────────────────────────────────────────────
+    // ── File upload ─────────────────────────────────────────────────────────
     let uploadedText = '';
     const fileInput = document.getElementById('file-input');
     const fileName = document.getElementById('file-name');
@@ -209,23 +226,18 @@
     fileInput.addEventListener('change', async () => {
       const file = fileInput.files[0];
       if (!file) return;
-
       fileError.classList.add('hidden');
       fileName.textContent = '解析中…';
-
       try {
         const arrayBuffer = await file.arrayBuffer();
-
         if (file.name.endsWith('.txt')) {
           uploadedText = new TextDecoder('utf-8').decode(arrayBuffer);
         } else {
-          // mammoth for .docx
           const result = await mammoth.extractRawValue({ arrayBuffer });
           uploadedText = result.value;
         }
-
         fileName.textContent = `✓ ${file.name}（${uploadedText.length.toLocaleString()} 字）`;
-      } catch (err) {
+      } catch {
         fileError.textContent = '文件解析失败，请尝试另存为 .txt 后上传';
         fileError.classList.remove('hidden');
         fileName.textContent = '';
@@ -233,54 +245,84 @@
       }
     });
 
-    // ── Categories config ────────────────────────────────────────────────
+    // ── Categories ──────────────────────────────────────────────────────────
     const CATS = [
-      { keywords: ['一、错别字', '错别字'], label: '一、错别字', color: 'red',    badge: 'bg-red-100 text-red-700',    border: 'border-red-200',   head: 'bg-red-50' },
-      { keywords: ['二、重复',   '重复或'], label: '二、重复或未完成的句子', color: 'amber',  badge: 'bg-amber-100 text-amber-700', border: 'border-amber-200', head: 'bg-amber-50' },
-      { keywords: ['三、编辑',   '编辑指'], label: '三、编辑指令和插入提示', color: 'blue',   badge: 'bg-blue-100 text-blue-700',   border: 'border-blue-200',  head: 'bg-blue-50' },
-      { keywords: ['四、前后',   '逻辑和'], label: '四、前后逻辑和细节冲突', color: 'purple', badge: 'bg-purple-100 text-purple-700',border: 'border-purple-200',head: 'bg-purple-50' },
+      { key: 'typos',  keywords: ['一、错别字'], label: '一、错别字',           short: '错别字', badge: 'bg-red-100 text-red-700',     border: 'border-red-200',    head: 'bg-red-50' },
+      { key: 'repeat', keywords: ['二、重复'],   label: '二、重复或未完成的句子', short: '重复句', badge: 'bg-amber-100 text-amber-700', border: 'border-amber-200',  head: 'bg-amber-50' },
+      { key: 'marks',  keywords: ['三、编辑'],   label: '三、编辑指令和插入提示', short: '编辑指令', badge: 'bg-blue-100 text-blue-700',  border: 'border-blue-200',   head: 'bg-blue-50' },
+      { key: 'logic',  keywords: ['四、前后'],   label: '四、前后逻辑和细节冲突', short: '逻辑',  badge: 'bg-purple-100 text-purple-700', border: 'border-purple-200', head: 'bg-purple-50' },
+      { key: 'title',  keywords: ['五、标题'],   label: '五、标题与正文一致性',   short: '标题',  badge: 'bg-green-100 text-green-700',  border: 'border-green-200',  head: 'bg-green-50' },
     ];
 
-    // ── Markdown → HTML (minimal) ────────────────────────────────────────
-    function renderSection(md) {
-      // Escape HTML first
-      let html = md
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-      // Blockquotes
-      html = html.replace(/^&gt; (.+)$/gm,
-        '<blockquote>$1</blockquote>');
+    // ── History (localStorage) ──────────────────────────────────────────────
+    const HIST_KEY = 'proofreader_history';
 
-      // Inline code
-      html = html.replace(/`([^`]+)`/g,
-        '<code>$1</code>');
+    function saveHistory(preview, sections) {
+      const counts = {};
+      CATS.forEach((cat) => { counts[cat.key] = sections[cat.label]?.count || 0; });
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+      const hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+      hist.unshift({ ts: Date.now(), preview: preview.replace(/\s+/g, ' ').trim().slice(0, 50), counts, total });
+      if (hist.length > 30) hist.length = 30;
+      localStorage.setItem(HIST_KEY, JSON.stringify(hist));
+    }
 
-      // Bold
-      html = html.replace(/\*\*([^*\n]+)\*\*/g,
-        '<strong>$1</strong>');
-
-      // List items — each "- " starts a new <li>
-      // Split into lines and group list items
-      const lines = html.split('\n');
-      const out = [];
-      let inList = false;
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (/^- /.test(line)) {
-          if (!inList) { out.push('<ul>'); inList = true; }
-          out.push(`<li>${line.slice(2)}`);
-        } else if (/^\s{2,}/.test(line) && inList) {
-          // continuation of previous list item
-          out.push(`<br>${line.trim()}`);
-        } else {
-          if (inList) { out.push('</li></ul>'); inList = false; }
-          if (line.trim()) out.push(`<p>${line}</p>`);
-        }
+    function renderHistory() {
+      const hist = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+      const el = document.getElementById('history-content');
+      if (!hist.length) {
+        el.innerHTML = '<p class="text-sm text-gray-400 py-4 text-center">暂无历史记录</p>';
+        return;
       }
-      if (inList) out.push('</li></ul>');
+      const catHeaders = CATS.map((c) =>
+        `<th class="px-2 py-2 text-xs font-medium text-gray-500 text-center whitespace-nowrap">${c.short}</th>`
+      ).join('');
+      const rows = hist.map((h) => {
+        const d = new Date(h.ts);
+        const ds = `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        const cells = CATS.map((c) => {
+          const n = h.counts[c.key] || 0;
+          return `<td class="px-2 py-2 text-center text-xs ${n ? 'font-medium text-gray-800' : 'text-gray-300'}">${n || '—'}</td>`;
+        }).join('');
+        return `<tr class="border-t border-gray-100 hover:bg-gray-50">
+          <td class="px-3 py-2 text-xs text-gray-400 whitespace-nowrap">${ds}</td>
+          <td class="px-3 py-2 text-xs text-gray-600 max-w-xs truncate" title="${esc(h.preview)}">${esc(h.preview)}</td>
+          ${cells}
+          <td class="px-2 py-2 text-center text-xs font-semibold ${h.total ? 'text-indigo-700' : 'text-gray-400'}">${h.total || '—'}</td>
+        </tr>`;
+      }).join('');
+      el.innerHTML = `<div class="overflow-x-auto">
+        <table class="w-full min-w-[540px]">
+          <thead><tr class="bg-gray-50">
+            <th class="px-3 py-2 text-xs font-medium text-gray-500 text-left whitespace-nowrap">时间</th>
+            <th class="px-3 py-2 text-xs font-medium text-gray-500 text-left">文稿</th>
+            ${catHeaders}
+            <th class="px-2 py-2 text-xs font-medium text-gray-500 text-center">合计</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    }
 
-      return out.join('\n');
+    // ── Error item parsing ──────────────────────────────────────────────────
+    function parseErrorItems(content) {
+      if (!content.trim() || /^>\s/.test(content.trim())) return [];
+      const items = [];
+      const lines = content.split('\n');
+      let cur = null;
+      for (const line of lines) {
+        const oM = line.match(/^- \*\*原文\*\*[：:]\s*`?(.+?)`?\s*$/);
+        const iM = line.match(/^\s*\*\*问题\*\*[：:]\s*(.+)/);
+        const sM = line.match(/^\s*\*\*建议\*\*[：:]\s*(.+)/);
+        if (oM) { if (cur) items.push(cur); cur = { original: oM[1].trim(), issue: '', suggestion: '' }; }
+        else if (iM && cur) cur.issue = iM[1].trim();
+        else if (sM && cur) cur.suggestion = sM[1].trim();
+      }
+      if (cur) items.push(cur);
+      return items;
     }
 
     function parseSections(markdown) {
@@ -292,8 +334,9 @@
         const content = part.slice(firstLine.length + 1).trim();
         for (const cat of CATS) {
           if (cat.keywords.some((kw) => firstLine.includes(kw))) {
-            const count = (content.match(/- \*\*原文\*\*/g) || []).length;
-            sections[cat.label] = { content, count };
+            const isNoIssues = /^>\s/.test(content.trim());
+            const items = isNoIssues ? [] : parseErrorItems(content);
+            sections[cat.label] = { count: items.length, items, isNoIssues };
             break;
           }
         }
@@ -301,20 +344,130 @@
       return sections;
     }
 
-    // ── Proofreading ─────────────────────────────────────────────────────
+    // ── Error item HTML ─────────────────────────────────────────────────────
+    function renderErrorItem(item, id) {
+      return `<div class="error-item border-b border-gray-100 last:border-0" id="${id}">
+        <div class="error-header flex items-start gap-3 px-5 py-2.5 cursor-pointer hover:bg-gray-50 group" data-error-id="${id}">
+          <button type="button"
+            class="dismiss-btn shrink-0 mt-0.5 w-5 h-5 rounded border border-gray-300 text-gray-300 flex items-center justify-center text-xs transition-all group-hover:border-gray-400 group-hover:text-gray-400"
+            title="标记为无误" data-dismiss-id="${id}">✓</button>
+          <span class="original flex-1 text-sm font-mono text-red-700 bg-red-50 px-2 py-0.5 rounded break-all">${esc(item.original)}</span>
+          <span class="expand-icon shrink-0 mt-1.5 text-gray-300 text-xs transition-transform duration-150">▶</span>
+        </div>
+        <div class="error-detail px-5 pb-3 space-y-1.5" style="padding-left:3.25rem;display:none">
+          <div class="text-sm text-gray-700"><span class="text-xs text-gray-400 mr-1.5">问题</span>${esc(item.issue)}</div>
+          <div class="text-sm text-indigo-700"><span class="text-xs text-gray-400 mr-1.5">建议</span>${esc(item.suggestion)}</div>
+        </div>
+      </div>`;
+    }
+
+    // ── Dismiss state ───────────────────────────────────────────────────────
+    const dismissedIds = new Set();
+    let showingDismissed = false;
+
+    function toggleDismiss(id) {
+      const item = document.getElementById(id);
+      if (!item) return;
+      const btn = item.querySelector('.dismiss-btn');
+      if (dismissedIds.has(id)) {
+        dismissedIds.delete(id);
+        item.classList.remove('dismissed-hidden', 'dismissed-visible');
+        btn.classList.remove('confirmed');
+        btn.title = '标记为无误';
+      } else {
+        dismissedIds.add(id);
+        btn.classList.add('confirmed');
+        btn.title = '已确认无误，点击恢复';
+        item.classList.add(showingDismissed ? 'dismissed-visible' : 'dismissed-hidden');
+      }
+      updateDismissedBtn();
+    }
+
+    function updateDismissedBtn() {
+      const n = dismissedIds.size;
+      const btn = document.getElementById('toggle-dismissed-btn');
+      if (n === 0) {
+        btn.classList.add('hidden');
+      } else {
+        btn.classList.remove('hidden');
+        btn.textContent = showingDismissed ? `隐藏已忽略 (${n})` : `显示已忽略 (${n})`;
+      }
+    }
+
+    document.getElementById('toggle-dismissed-btn').addEventListener('click', () => {
+      showingDismissed = !showingDismissed;
+      dismissedIds.forEach((id) => {
+        const item = document.getElementById(id);
+        if (!item) return;
+        if (showingDismissed) {
+          item.classList.replace('dismissed-hidden', 'dismissed-visible');
+        } else {
+          item.classList.replace('dismissed-visible', 'dismissed-hidden');
+        }
+      });
+      updateDismissedBtn();
+    });
+
+    // ── Expand / collapse ───────────────────────────────────────────────────
+    let allExpanded = false;
+
+    function toggleItemExpand(id) {
+      const item = document.getElementById(id);
+      if (!item || dismissedIds.has(id)) return;
+      const detail = item.querySelector('.error-detail');
+      const icon = item.querySelector('.expand-icon');
+      const expanding = detail.style.display === 'none';
+      detail.style.display = expanding ? 'block' : 'none';
+      icon.style.transform = expanding ? 'rotate(90deg)' : '';
+    }
+
+    document.getElementById('toggle-all-btn').addEventListener('click', () => {
+      allExpanded = !allExpanded;
+      document.querySelectorAll('.error-detail').forEach((d) => {
+        d.style.display = allExpanded ? 'block' : 'none';
+      });
+      document.querySelectorAll('.expand-icon').forEach((i) => {
+        i.style.transform = allExpanded ? 'rotate(90deg)' : '';
+      });
+      document.getElementById('toggle-all-btn').textContent = allExpanded ? '折叠全部' : '展开全部';
+    });
+
+    // ── Event delegation ────────────────────────────────────────────────────
+    document.getElementById('results-cards').addEventListener('click', (e) => {
+      const dismissBtn = e.target.closest('[data-dismiss-id]');
+      if (dismissBtn) {
+        e.stopPropagation();
+        toggleDismiss(dismissBtn.dataset.dismissId);
+        return;
+      }
+      const header = e.target.closest('[data-error-id]');
+      if (header) toggleItemExpand(header.dataset.errorId);
+    });
+
+    // ── History panel ───────────────────────────────────────────────────────
+    const histPanel = document.getElementById('history-panel');
+    document.getElementById('history-btn').addEventListener('click', () => {
+      const isOpen = !histPanel.classList.contains('hidden');
+      if (isOpen) { histPanel.classList.add('hidden'); return; }
+      renderHistory();
+      histPanel.classList.remove('hidden');
+    });
+    document.getElementById('close-history-btn').addEventListener('click', () => {
+      histPanel.classList.add('hidden');
+    });
+    document.getElementById('clear-history-btn').addEventListener('click', () => {
+      if (!confirm('确定清除全部历史记录？')) return;
+      localStorage.removeItem(HIST_KEY);
+      renderHistory();
+    });
+
+    // ── Proofreading ────────────────────────────────────────────────────────
     let lastRawResult = '';
 
     document.getElementById('check-btn').addEventListener('click', async () => {
       const inputErr = document.getElementById('input-error');
       inputErr.classList.add('hidden');
-
-      let text = '';
-      if (activeTab === 'paste') {
-        text = textInput.value.trim();
-      } else {
-        text = uploadedText.trim();
-      }
-
+      const text = (activeTab === 'paste' ? textInput.value : uploadedText).trim();
       if (!text) {
         inputErr.textContent = activeTab === 'paste' ? '请先粘贴文稿' : '请先上传文件';
         inputErr.classList.remove('hidden');
@@ -324,24 +477,19 @@
         inputErr.textContent = `文本超过 20,000 字（当前 ${text.length.toLocaleString()} 字），超出部分将被截断`;
         inputErr.classList.remove('hidden');
       }
-
-      // Show loading
       document.getElementById('loading').classList.remove('hidden');
       document.getElementById('results').classList.add('hidden');
       document.getElementById('check-btn').disabled = true;
-
       try {
         const res = await fetch('/api/proofread', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text }),
         });
-
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || '请求失败');
-
         lastRawResult = data.result;
-        showResults(data.result, data.truncated);
+        showResults(data.result, data.truncated, text);
       } catch (err) {
         inputErr.textContent = '校对失败：' + err.message;
         inputErr.classList.remove('hidden');
@@ -351,36 +499,46 @@
       }
     });
 
-    function showResults(markdown, truncated) {
+    function showResults(markdown, truncated, inputText) {
+      dismissedIds.clear();
+      showingDismissed = false;
+      allExpanded = false;
+      document.getElementById('toggle-all-btn').textContent = '展开全部';
+      updateDismissedBtn();
+
       const sections = parseSections(markdown);
-      const totalIssues = Object.values(sections).reduce((s, v) => s + v.count, 0);
+      const total = Object.values(sections).reduce((s, v) => s + v.count, 0);
 
-      const summaryEl = document.querySelector('#results-summary p');
-      summaryEl.textContent = `发现 ${totalIssues} 处可能的问题${truncated ? '（文本已截断至 20,000 字）' : ''}`;
+      saveHistory(inputText, sections);
 
-      const cardsEl = document.getElementById('results-cards');
-      cardsEl.innerHTML = CATS.map((cat) => {
+      document.getElementById('results-summary-text').textContent =
+        `发现 ${total} 处可能的问题${truncated ? '（文本已截断至 20,000 字）' : ''}`;
+
+      document.getElementById('results-cards').innerHTML = CATS.map((cat, ci) => {
         const sec = sections[cat.label];
         const count = sec ? sec.count : 0;
-        const content = sec ? renderSection(sec.content) : '<p class="text-gray-400 italic text-sm">未找到对应章节</p>';
-
-        return `
-          <div class="bg-white rounded-xl border ${cat.border} shadow-sm overflow-hidden result-card">
-            <div class="${cat.head} px-5 py-3 flex items-center justify-between">
-              <span class="text-sm font-medium text-gray-800">${cat.label}</span>
-              <span class="px-2 py-0.5 rounded-full text-xs font-medium ${cat.badge}">${count > 0 ? count + ' 处' : '无'}</span>
-            </div>
-            <div class="px-5 py-4 text-sm text-gray-700 leading-relaxed">
-              ${content}
-            </div>
-          </div>`;
+        let body;
+        if (!sec) {
+          body = '<p class="text-xs text-gray-400 px-5 py-4 italic">未找到对应章节</p>';
+        } else if (sec.isNoIssues || count === 0) {
+          body = '<p class="text-sm text-gray-400 italic px-5 py-3 my-2 border-l-2 border-gray-200 mx-5">未发现问题</p>';
+        } else {
+          body = `<div>${sec.items.map((item, i) => renderErrorItem(item, `e-${ci}-${i}`)).join('')}</div>`;
+        }
+        return `<div class="bg-white rounded-xl border ${cat.border} shadow-sm overflow-hidden">
+          <div class="${cat.head} px-5 py-3 flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-800">${cat.label}</span>
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium ${cat.badge}">${count > 0 ? count + ' 处' : '无'}</span>
+          </div>
+          ${body}
+        </div>`;
       }).join('');
 
       document.getElementById('results').classList.remove('hidden');
       document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    // ── Copy report ───────────────────────────────────────────────────────
+    // ── Copy report ─────────────────────────────────────────────────────────
     document.getElementById('copy-btn').addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(lastRawResult);
