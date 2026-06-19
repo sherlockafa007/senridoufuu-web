@@ -163,6 +163,15 @@
     });
     const auth = getAuth(app);
 
+    // Authenticated fetch — attaches the current user's Firebase ID token.
+    async function apiFetch(url, opts = {}) {
+      const token = await auth.currentUser?.getIdToken();
+      return fetch(url, {
+        ...opts,
+        headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}` },
+      });
+    }
+
     // ── Auth ────────────────────────────────────────────────────────────────
     const loginScreen = document.getElementById('login-screen');
     const appEl = document.getElementById('app');
@@ -481,7 +490,7 @@
       document.getElementById('results').classList.add('hidden');
       document.getElementById('check-btn').disabled = true;
       try {
-        const res = await fetch('/api/proofread', {
+        const res = await apiFetch('/api/proofread', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text }),

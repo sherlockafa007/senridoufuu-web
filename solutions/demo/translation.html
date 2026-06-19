@@ -960,6 +960,16 @@
         .replace(/>/g, '&gt;');
     }
 
+    // Authenticated fetch — attaches the current user's Firebase ID token.
+    // window.sdfGetToken is exposed by the firebase auth module at the bottom.
+    async function apiFetch(url, opts = {}) {
+      const token = await window.sdfGetToken?.();
+      return fetch(url, {
+        ...opts,
+        headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}` },
+      });
+    }
+
     /* ── Tab switching ── */
     document.querySelectorAll('.tl-tab').forEach(tab => {
       tab.addEventListener('click', () => {
@@ -1025,12 +1035,13 @@
       }
     };
 
-    function prewarmToken() {
+    async function prewarmToken() {
       if (isLocal || cachedToken) return;
-      fetch('/api/deepgram-token')
-        .then(r => r.json())
-        .then(d => { if (d.key) cachedToken = d.key; })
-        .catch(() => {});
+      if (!(await window.sdfGetToken?.())) return;   // not signed in yet
+      try {
+        const d = await apiFetch('/api/deepgram-token').then(r => r.json());
+        if (d.access_token) cachedToken = d.access_token;
+      } catch { /* best-effort */ }
     }
     prewarmToken();
 
@@ -1162,8 +1173,8 @@
       elInterim.textContent = '接続中… / 连接中…';
       try {
         const tokenPromise = cachedToken
-          ? Promise.resolve({ key: cachedToken })
-          : fetch('/api/deepgram-token').then(r => r.json());
+          ? Promise.resolve({ access_token: cachedToken })
+          : apiFetch('/api/deepgram-token').then(r => r.json());
         cachedToken = null;
 
         const [tokenData, stream] = await Promise.all([
@@ -1191,7 +1202,7 @@
 
         dgSocket = new WebSocket(
           `wss://api.deepgram.com/v1/listen?${params}`,
-          ['token', tokenData.key]
+          ['bearer', tokenData.access_token]
         );
 
         dgSocket.onopen = () => {
@@ -1309,7 +1320,7 @@
       const item = appendStreamItem(text, spk, dir);
       setVoiceStatusBusy(true);
       try {
-        const res = await fetch('/api/translate-stream', {
+        const res = await apiFetch('/api/translate-stream', {
           method: 'POST',
           signal: activeFetchCtrl.signal,
           headers: { 'Content-Type': 'application/json' },
@@ -1432,7 +1443,7 @@
         `;
       }).join('');
       try {
-        const res = await fetch(API_ENDPOINT, {
+        const res = await apiFetch(API_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], mode: 'translate' })
@@ -1558,7 +1569,7 @@
       elLoading.classList.add('is-visible');
 
       try {
-        const res = await fetch(API_ENDPOINT, {
+        const res = await apiFetch(API_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages: conversationHistory })
@@ -1654,7 +1665,7 @@
       elError.classList.remove('is-visible');
 
       try {
-        const res = await fetch(API_ENDPOINT, {
+        const res = await apiFetch(API_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1711,7 +1722,7 @@
 
     async function callSummaryApi(dialogues) {
       try {
-        const response = await fetch('/api/summary', {
+        const response = await apiFetch('/api/summary', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ dialogues })
@@ -1920,6 +1931,7 @@ const _start=Date.now();let _ref=null,_logged=false;
 function _anonId(){let i=localStorage.getItem('sdf_anon_id');if(!i){i='anon_'+Math.random().toString(36).slice(2,9);localStorage.setItem('sdf_anon_id',i);}return i;}
 function _track(e){if(_logged)return;_logged=true;addDoc(collection(db,'visits'),{email:e,anonId:_anonId(),page:'translation',timestamp:serverTimestamp(),device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'desktop'}).then(r=>{_ref=r;}).catch(()=>{});}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_ref){updateDoc(_ref,{duration:Math.round((Date.now()-_start)/1000)}).catch(()=>{});_ref=null;}});
+window.sdfGetToken=()=>auth.currentUser?.getIdToken();
 onAuthStateChanged(auth,async user=>{
   const gate=document.getElementById('auth-gate');
   if(!user){window.location.replace('/account.html');return;}

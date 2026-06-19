@@ -469,8 +469,18 @@ function pickNext(analysis) {
 // API 调用
 // ══════════════════════════════════════════════════════════════════════════════
 
+// Authenticated fetch — attaches the current user's Firebase ID token.
+// window.sdfGetToken is exposed by the firebase auth module at the bottom.
+async function apiFetch(url, opts = {}) {
+  const token = await window.sdfGetToken?.();
+  return fetch(url, {
+    ...opts,
+    headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}` },
+  });
+}
+
 async function callAnalyze(question, answer) {
-  const res = await fetch('/api/lifestory', {
+  const res = await apiFetch('/api/lifestory', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -486,7 +496,7 @@ async function callAnalyze(question, answer) {
 }
 
 async function callBridge(lastAnswer, nextQuestion) {
-  const res = await fetch('/api/lifestory', {
+  const res = await apiFetch('/api/lifestory', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'bridge', lastAnswer, nextQuestion }),
@@ -534,7 +544,7 @@ async function genStory() {
     const ctrl = new AbortController();
     const timeoutId = setTimeout(() => ctrl.abort(), 90000);  // 90 秒超时
 
-    const res = await fetch('/api/lifestory', {
+    const res = await apiFetch('/api/lifestory', {
       method: 'POST',
       signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json' },
@@ -1018,6 +1028,7 @@ import {getFirestore,collection,doc,getDoc,addDoc,updateDoc,serverTimestamp} fro
 const ADMINS=['sherlockafa@gmail.com','yuki.minami@senridf.com'];
 const app=initializeApp({apiKey:'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',authDomain:'senridfauthentication.firebaseapp.com',projectId:'senridfauthentication',storageBucket:'senridfauthentication.firebasestorage.app',messagingSenderId:'86494932585',appId:'1:86494932585:web:185b8ed922cd491a63fcf8'});
 const auth=getAuth(app);const db=getFirestore(app);
+window.sdfGetToken=()=>auth.currentUser?.getIdToken();
 const _start=Date.now();let _ref=null,_logged=false;
 function _anonId(){let i=localStorage.getItem('sdf_anon_id');if(!i){i='anon_'+Math.random().toString(36).slice(2,9);localStorage.setItem('sdf_anon_id',i);}return i;}
 function _track(e){if(_logged)return;_logged=true;addDoc(collection(db,'visits'),{email:e,anonId:_anonId(),page:'lifestory',timestamp:serverTimestamp(),device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'desktop'}).then(r=>{_ref=r;}).catch(()=>{});}
