@@ -35,7 +35,7 @@
             title="密码" placeholder="••••••••"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
-        <button type="button"id="login-btn"
+        <button type="button" id="login-btn"
           class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors">
           登录
         </button>
@@ -45,7 +45,7 @@
 
   <!-- Main app -->
   <div id="app" class="hidden">
-    <!-- Header -->
+
     <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div>
@@ -54,7 +54,7 @@
         </div>
         <div class="flex items-center gap-3">
           <span id="user-email" class="text-xs text-gray-400 hidden sm:block"></span>
-          <button type="button"id="logout-btn" class="text-xs text-gray-500 hover:text-gray-800 transition-colors">退出</button>
+          <button type="button" id="logout-btn" class="text-xs text-gray-500 hover:text-gray-800 transition-colors">退出</button>
         </div>
       </div>
     </header>
@@ -63,20 +63,18 @@
 
       <!-- Filters -->
       <div class="flex flex-col sm:flex-row gap-3 mb-5">
-        <!-- City filters -->
         <div class="flex flex-wrap gap-2 items-center">
           <span class="text-xs text-gray-400 mr-1">城市</span>
-          <button type="button"class="city-btn filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="all">全部</button>
-          <button type="button"class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="大阪市">大阪市</button>
-          <button type="button"class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="吹田市">吹田市</button>
-          <button type="button"class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="豊中市">豊中市</button>
+          <button type="button" class="city-btn filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="all">全部</button>
+          <button type="button" class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="大阪市">大阪市</button>
+          <button type="button" class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="吹田市">吹田市</button>
+          <button type="button" class="city-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-city="豊中市">豊中市</button>
         </div>
-        <!-- Category filters -->
         <div class="flex flex-wrap gap-2 items-center sm:ml-auto">
           <span class="text-xs text-gray-400 mr-1">类别</span>
-          <button type="button"class="cat-btn filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="all">全部</button>
-          <button type="button"class="cat-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="gyomuitaku">業務委託</button>
-          <button type="button"class="cat-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="buppin">物品供給</button>
+          <button type="button" class="cat-btn filter-btn active px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="all">全部</button>
+          <button type="button" class="cat-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="gyomuitaku">業務委託</button>
+          <button type="button" class="cat-btn filter-btn px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 text-gray-600" data-cat="buppin">物品供給</button>
         </div>
       </div>
 
@@ -88,27 +86,35 @@
       <div id="load-error" class="hidden text-center py-16 text-red-500 text-sm"></div>
       <div id="empty" class="hidden text-center py-16 text-gray-400 text-sm">暂无数据</div>
 
-      <!-- Table -->
-      <div id="table-wrap" class="hidden bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-8">#</th>
-                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500">中文摘要 / 日文原题</th>
-                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">城市</th>
-                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">发注局室</th>
-                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">类别</th>
-                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">发标时间</th>
-                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">截标日</th>
-                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">预期报价</th>
-                <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">原文链接</th>
-              </tr>
-            </thead>
-            <tbody id="bids-body" class="divide-y divide-gray-100"></tbody>
-          </table>
+      <!-- Data section: mobile cards + desktop table -->
+      <div id="bids-section" class="hidden">
+
+        <!-- Mobile cards (hidden on md+) -->
+        <div id="mobile-list" class="md:hidden space-y-3"></div>
+
+        <!-- Desktop table (hidden on mobile, shown on md+) -->
+        <div class="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-8">#</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 min-w-[220px]">中文摘要 / 日文原题</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">城市</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-36 hidden lg:table-cell">发注局室</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">类别</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap hidden lg:table-cell">发标时间</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">截标日</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap hidden lg:table-cell">预期报价</th>
+                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">原文</th>
+                </tr>
+              </thead>
+              <tbody id="bids-body" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
         </div>
-      </div>
+
+      </div><!-- /#bids-section -->
     </div>
   </div>
 
@@ -174,11 +180,11 @@
     async function loadBids() {
       const loadingEl = document.getElementById('loading');
       const errorEl = document.getElementById('load-error');
-      const tableWrap = document.getElementById('table-wrap');
+      const bidsSection = document.getElementById('bids-section');
       const emptyEl = document.getElementById('empty');
 
       loadingEl.classList.remove('hidden');
-      tableWrap.classList.add('hidden');
+      bidsSection.classList.add('hidden');
       errorEl.classList.add('hidden');
       emptyEl.classList.add('hidden');
 
@@ -196,9 +202,10 @@
     }
 
     function renderBids() {
-      const tableWrap = document.getElementById('table-wrap');
+      const bidsSection = document.getElementById('bids-section');
       const emptyEl = document.getElementById('empty');
       const tbody = document.getElementById('bids-body');
+      const mobileList = document.getElementById('mobile-list');
       const statsEl = document.getElementById('stats');
 
       const filtered = allBids.filter((b) => {
@@ -210,13 +217,13 @@
       statsEl.textContent = `共 ${filtered.length} 条`;
 
       if (filtered.length === 0) {
-        tableWrap.classList.add('hidden');
+        bidsSection.classList.add('hidden');
         emptyEl.classList.remove('hidden');
         return;
       }
 
       emptyEl.classList.add('hidden');
-      tableWrap.classList.remove('hidden');
+      bidsSection.classList.remove('hidden');
 
       const cityColors = {
         '大阪市': 'text-indigo-600 bg-indigo-50',
@@ -228,6 +235,7 @@
         buppin: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       };
 
+      // ── Desktop table rows ───────────────────────────────────────────────
       tbody.innerHTML = filtered.map((bid, i) => {
         const summary = (bid.summary_zh || '').trim();
         const summaryHtml = summary
@@ -243,25 +251,55 @@
 
         return `<tr class="hover:bg-gray-50 transition-colors align-top">
           <td class="px-4 py-3 text-gray-400 text-xs">${i + 1}</td>
-          <td class="px-4 py-3 min-w-0 max-w-sm">
+          <td class="px-4 py-3">
             ${summaryHtml}
-            <div class="text-xs text-gray-400 mt-1.5 truncate" title="${escHtml(bid.title)}">${escHtml(bid.title)}</div>
+            <div class="text-xs text-gray-400 mt-1.5 truncate max-w-xs" title="${escHtml(bid.title)}">${escHtml(bid.title)}</div>
           </td>
           <td class="px-4 py-3 whitespace-nowrap">
             <span class="px-2 py-0.5 rounded text-xs font-medium ${cityClass}">${escHtml(bid.city || '—')}</span>
           </td>
-          <td class="px-4 py-3 text-gray-700 whitespace-nowrap text-xs">${escHtml(bid.ordering_bureau || '—')}</td>
+          <td class="px-4 py-3 hidden lg:table-cell max-w-[160px]">
+            <div class="text-xs text-gray-700 truncate" title="${escHtml(bid.ordering_bureau || '')}">${escHtml(bid.ordering_bureau || '—')}</div>
+          </td>
           <td class="px-4 py-3 whitespace-nowrap">
             <span class="px-2 py-0.5 rounded-full border text-xs font-medium ${catClass}">${escHtml(bid.category_label || bid.category || '—')}</span>
           </td>
-          <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">${escHtml(announced)}</td>
+          <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs hidden lg:table-cell">${escHtml(announced)}</td>
           <td class="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">${escHtml(deadline)}</td>
-          <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">${escHtml(budget)}</td>
+          <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs hidden lg:table-cell">${escHtml(budget)}</td>
           <td class="px-4 py-3 whitespace-nowrap">
             <a href="${escHtml(bid.source_url)}" target="_blank" rel="noopener"
-              class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">原文 →</a>
+              class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">→</a>
           </td>
         </tr>`;
+      }).join('');
+
+      // ── Mobile cards ─────────────────────────────────────────────────────
+      mobileList.innerHTML = filtered.map((bid) => {
+        const summary = (bid.summary_zh || '').trim();
+        const cityClass = cityColors[bid.city] || 'text-gray-600 bg-gray-50';
+        const catClass = catColors[bid.category] || 'bg-gray-50 text-gray-600 border-gray-200';
+        const deadline = (bid.deadline || '').replace(/令和\d+年/, '').trim();
+        const bureau = (bid.ordering_bureau || '').trim();
+
+        const summaryHtml = summary
+          ? summary.split('\n').filter(Boolean).map(escHtml).join('<br/>')
+          : '<span class="text-gray-400 italic">（翻译不可用）</span>';
+
+        return `<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+          <div class="flex items-center gap-2 mb-2 flex-wrap">
+            <span class="px-2 py-0.5 rounded text-xs font-medium ${cityClass}">${escHtml(bid.city || '—')}</span>
+            <span class="px-2 py-0.5 rounded-full border text-xs font-medium ${catClass}">${escHtml(bid.category_label || bid.category || '—')}</span>
+            ${deadline ? `<span class="text-xs text-gray-400 ml-auto whitespace-nowrap">截标 ${escHtml(deadline)}</span>` : ''}
+          </div>
+          <div class="text-sm text-gray-800 leading-relaxed mb-1">${summaryHtml}</div>
+          <div class="text-xs text-gray-400 truncate mb-3" title="${escHtml(bid.title)}">${escHtml(bid.title)}</div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs text-gray-500 truncate">${escHtml(bureau)}</span>
+            <a href="${escHtml(bid.source_url)}" target="_blank" rel="noopener"
+              class="text-indigo-600 hover:text-indigo-800 text-xs font-medium shrink-0">原文 →</a>
+          </div>
+        </div>`;
       }).join('');
     }
 
