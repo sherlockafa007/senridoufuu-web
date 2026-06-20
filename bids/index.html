@@ -47,7 +47,7 @@
   <div id="app" class="hidden">
 
     <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="max-w-6xl mx-auto px-3 py-2.5 flex items-center justify-between">
         <div>
           <h1 class="text-base font-semibold text-gray-900">大阪府招标信息</h1>
           <p class="text-xs text-gray-500">大阪市 · 吹田市 · 豊中市 · 每日自动抓取</p>
@@ -59,7 +59,7 @@
       </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 py-5">
+    <div class="max-w-6xl mx-auto px-4 py-5">
 
       <!-- Filters -->
       <div class="flex flex-col sm:flex-row gap-3 mb-5">
@@ -98,15 +98,15 @@
             <table class="w-full text-sm">
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-8">#</th>
-                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 min-w-[220px]">中文摘要 / 日文原题</th>
-                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">城市</th>
-                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 w-36 hidden lg:table-cell">发注局室</th>
-                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">类别</th>
-                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap hidden lg:table-cell">发标时间</th>
-                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">截标日</th>
-                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap hidden lg:table-cell">预期报价</th>
-                  <th class="text-left px-4 py-3 text-xs font-medium text-gray-500 whitespace-nowrap">原文</th>
+                  <th class="text-left px-3 py-2.5 text-xs font-medium text-gray-500 w-8">#</th>
+                  <th class="text-left px-3 py-2.5 text-xs font-medium text-gray-500 w-full min-w-[240px]">中文摘要 / 日文原题</th>
+                  <th class="text-left px-3 py-2.5 text-xs font-medium text-gray-500 whitespace-nowrap">城市</th>
+                  <th class="text-left px-3 py-2.5 text-xs font-medium text-gray-500 w-36 hidden lg:table-cell">发注局室</th>
+                  <th class="text-left px-3 py-2.5 text-xs font-medium text-gray-500 whitespace-nowrap">类别</th>
+                  <th class="text-left px-3 py-2.5 text-xs font-medium text-gray-500 whitespace-nowrap hidden lg:table-cell">发标时间</th>
+                  <th class="text-left px-3 py-2.5 text-xs font-medium text-gray-500 whitespace-nowrap">截标日</th>
+                  <th class="text-left px-3 py-2.5 text-xs font-medium text-gray-500 whitespace-nowrap hidden lg:table-cell">预期报价</th>
+                  <th class="text-left px-3 py-2.5 text-xs font-medium text-gray-500 whitespace-nowrap">原文</th>
                 </tr>
               </thead>
               <tbody id="bids-body" class="divide-y divide-gray-100"></tbody>
@@ -250,24 +250,24 @@
         const budget = (bid.budget || '').trim() || '—';
 
         return `<tr class="hover:bg-gray-50 transition-colors align-top">
-          <td class="px-4 py-3 text-gray-400 text-xs">${i + 1}</td>
-          <td class="px-4 py-3">
+          <td class="px-3 py-2.5 text-gray-400 text-xs">${i + 1}</td>
+          <td class="px-3 py-2.5">
             ${summaryHtml}
             <div class="text-xs text-gray-400 mt-1.5 truncate max-w-xs" title="${escHtml(bid.title)}">${escHtml(bid.title)}</div>
           </td>
-          <td class="px-4 py-3 whitespace-nowrap">
+          <td class="px-3 py-2.5 whitespace-nowrap">
             <span class="px-2 py-0.5 rounded text-xs font-medium ${cityClass}">${escHtml(bid.city || '—')}</span>
           </td>
-          <td class="px-4 py-3 hidden lg:table-cell max-w-[160px]">
+          <td class="px-3 py-2.5 hidden lg:table-cell max-w-[160px]">
             <div class="text-xs text-gray-700 truncate" title="${escHtml(bid.ordering_bureau || '')}">${escHtml(bid.ordering_bureau || '—')}</div>
           </td>
-          <td class="px-4 py-3 whitespace-nowrap">
+          <td class="px-3 py-2.5 whitespace-nowrap">
             <span class="px-2 py-0.5 rounded-full border text-xs font-medium ${catClass}">${escHtml(bid.category_label || bid.category || '—')}</span>
           </td>
-          <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs hidden lg:table-cell">${escHtml(announced)}</td>
-          <td class="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">${escHtml(deadline)}</td>
-          <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs hidden lg:table-cell">${escHtml(budget)}</td>
-          <td class="px-4 py-3 whitespace-nowrap">
+          <td class="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs hidden lg:table-cell">${escHtml(announced)}</td>
+          <td class="px-3 py-2.5 text-gray-600 whitespace-nowrap text-xs">${escHtml(deadline)}</td>
+          <td class="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs hidden lg:table-cell">${escHtml(budget)}</td>
+          <td class="px-3 py-2.5 whitespace-nowrap">
             <a href="${escHtml(bid.source_url)}" target="_blank" rel="noopener"
               class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">→</a>
           </td>

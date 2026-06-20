@@ -109,6 +109,7 @@
   - GitHub Secrets（`FIREBASE_SERVICE_ACCOUNT`/`QWEN_API_KEY`）**不跨仓库同步**：定时任务靠 workflow 里的 `if: github.repository == 'sherlockafa007/senridoufuu-web'` 护栏，只在源仓库跑。
 - **修改记录**：
   - 2026-06-16：上线（前端 + 爬虫 + 定时任务）。
+  - 2026-06-20：bids 前端表格收紧——容器 `max-w-7xl`→`max-w-6xl`、摘要列设 `w-full`（吸收多余宽度、消除列间空隙、降低行高）、单元格内边距 `px-4 py-3`→`px-3 py-2.5`。原因：表格过宽、列间空隙大、行偏高。
   - 2026-06-20：给 workflow 加仓库护栏 `if: github.repository == ...`——同步到同事仓库 `Eveysnow5/senridf-web` 的副本因缺 secret 每天定时失败、给同事发失败邮件；加护栏后那边的任务直接跳过（不算失败、不发邮件），只在源仓库运行。（排查确认：爬虫本身健康，5 站共解析 138 条，"0 new" 仅因源站无新公告。）
 
 ---
