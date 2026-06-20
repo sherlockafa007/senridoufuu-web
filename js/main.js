@@ -131,6 +131,16 @@ const T = {
     japanese_desc:  '214語の常用動詞を内蔵。五段・一段・不規則動詞の活用を自動生成し、中英双解付き。一覧・フラッシュカード・小テストの3モード対応。',
     japanese_cta:   '学習を始める',
 
+    proofreader_label: 'Live · Qwen-Plus · 会員限定',
+    proofreader_title: '中国語原稿 校正アシスタント',
+    proofreader_desc:  'Wordをアップロードまたはテキストを貼り付けると、誤字・重複文・編集指示の残留・前後の論理矛盾を自動チェックし、分類された校正レポートを出力します。',
+    proofreader_cta:   '校正を始める',
+
+    bids_label: 'Internal · 会員限定',
+    bids_title: '大阪市 入札情報モニタリング',
+    bids_desc:  '大阪市が公表する業務委託・物品供給の入札公告を毎日自動取得し、中国語要約を提供。小規模事業者向けの案件を素早く絞り込めます。',
+    bids_cta:   '入札情報を見る',
+
     /* Blog page */
     blog_page_title:      '千里同風株式会社 — ブログ',
     blog_eyebrow:         'ブログ',
@@ -277,6 +287,16 @@ const T = {
     japanese_desc:  '内置 214 个常用动词词库，自动生成五段・一段・不规则动词变形，含中英双语释义。支持查表、翻牌练习、随机小测试三种模式。',
     japanese_cta:   '开始学习',
 
+    proofreader_label: 'Live · Qwen-Plus · 会员限定',
+    proofreader_title: '中文文稿校对助手',
+    proofreader_desc:  '上传 Word 或粘贴文本，自动检查错别字、重复句、编辑指令残留及前后逻辑冲突，输出分类校对报告。',
+    proofreader_cta:   '开始校对',
+
+    bids_label: 'Internal · 会员限定',
+    bids_title: '大阪市招标信息监控',
+    bids_desc:  '每日自动抓取大阪市政府发布的業務委託与物品供給招标公告，提供中文摘要，便于快速筛选适合小型企业的项目。',
+    bids_cta:   '查看招标信息',
+
     blog_page_title:      '千里同風株式会社 — 博客',
     blog_eyebrow:         '博客',
     blog_title:           '洞察',
@@ -420,6 +440,16 @@ const T = {
     japanese_title: 'Japanese Verb Learning Tool',
     japanese_desc:  'Built-in library of 214 common verbs. Auto-generates conjugations for godan, ichidan, and irregular verbs with bilingual (Chinese/English) definitions. Three modes: reference table, flashcards, and quiz.',
     japanese_cta:   'Start Learning',
+
+    proofreader_label: 'Live · Qwen-Plus · Members',
+    proofreader_title: 'Chinese Manuscript Proofreader',
+    proofreader_desc:  'Upload a Word file or paste text. Automatically detects typos, duplicate sentences, leftover editing marks, and front-to-back logical inconsistencies, then outputs a categorized proofreading report.',
+    proofreader_cta:   'Start Proofreading',
+
+    bids_label: 'Internal · Members',
+    bids_title: 'Osaka City Bid Monitor',
+    bids_desc:  'Automatically scrapes daily service and goods-procurement notices published by Osaka City, with Chinese summaries to quickly filter projects suited to small businesses.',
+    bids_cta:   'View Bids',
 
     blog_page_title:      'Senridoufuu — Blog',
     blog_eyebrow:         'Blog',
