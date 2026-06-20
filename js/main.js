@@ -141,6 +141,12 @@ const T = {
     bids_desc:  '大阪市が公表する業務委託・物品供給の入札公告を毎日自動取得し、中国語要約を提供。小規模事業者向けの案件を素早く絞り込めます。',
     bids_cta:   '入札情報を見る',
 
+    cat_translation: '翻訳',
+    cat_analysis:    '分析',
+    cat_story:       '記録',
+    cat_learning:    '学習',
+    demo_label_frontend: 'Live · 純フロントエンド',
+
     /* Blog page */
     blog_page_title:      '千里同風株式会社 — ブログ',
     blog_eyebrow:         'ブログ',
@@ -297,6 +303,12 @@ const T = {
     bids_desc:  '每日自动抓取大阪市政府发布的業務委託与物品供給招标公告，提供中文摘要，便于快速筛选适合小型企业的项目。',
     bids_cta:   '查看招标信息',
 
+    cat_translation: '翻译',
+    cat_analysis:    '分析',
+    cat_story:       '记录',
+    cat_learning:    '学习',
+    demo_label_frontend: 'Live · 纯前端',
+
     blog_page_title:      '千里同風株式会社 — 博客',
     blog_eyebrow:         '博客',
     blog_title:           '洞察',
@@ -450,6 +462,12 @@ const T = {
     bids_title: 'Osaka City Bid Monitor',
     bids_desc:  'Automatically scrapes daily service and goods-procurement notices published by Osaka City, with Chinese summaries to quickly filter projects suited to small businesses.',
     bids_cta:   'View Bids',
+
+    cat_translation: 'Translation',
+    cat_analysis:    'Analysis',
+    cat_story:       'Story',
+    cat_learning:    'Learning',
+    demo_label_frontend: 'Live · Pure Frontend',
 
     blog_page_title:      'Senridoufuu — Blog',
     blog_eyebrow:         'Blog',
