@@ -7,6 +7,10 @@ on:
 
 jobs:
   scrape:
+    # Only run in the source repo (which has the secrets). In synced copies
+    # like Eveysnow5/senridf-web the job is skipped, not failed — so no
+    # failure emails there.
+    if: github.repository == 'sherlockafa007/senridoufuu-web'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
