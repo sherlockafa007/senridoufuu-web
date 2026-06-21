@@ -1362,12 +1362,11 @@
         item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         speakText(fullText, speakerLang[tgtSpk]);
         voiceHistory.push({
-          marker: currentMarker,  // 发言人标记（"我说"或"对方说"）
-          zh: text,              // 中文转录（当前的 src）
-          ja: fullText,          // 日文翻译（当前的 tl）
-          // 保留 dir 和 spk 作为内部使用的元数据
-          _dir: dir,
-          _spk: spk
+          marker: currentMarker,        // 发言人标记（"我说"/"对方说"）
+          srcLang: speakerLang[spk],    // 实际源语言（ja/zh/en）
+          tgtLang: speakerLang[tgtSpk], // 实际目标语言
+          src: text,                    // 源转录
+          tgt: fullText,                // 译文
         });
         if (voiceHistory.length > 100) {
           voiceHistory.shift();

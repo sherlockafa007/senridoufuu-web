@@ -1,7 +1,7 @@
 // Cloudflare Pages Function — meeting summary (JSON only; DOCX generated client-side)
 const SYS_SUMMARY =
-  '你是会议纪要专家，擅长从双语对话（中文和日文）中提取关键信息。\n\n' +
-  '任务：分析以下中日双语对话，生成结构化的会议纪要。\n\n' +
+  '你是会议纪要专家，擅长从多语对话（中文、日文或英文）中提取关键信息。\n\n' +
+  '任务：分析以下双语/多语对话，生成结构化的会议纪要。\n\n' +
   '请按以下 JSON 格式输出（不要代码块，直接输出）：\n' +
   '{\n' +
   '  "topics": [...],\n' +
@@ -42,9 +42,15 @@ export async function onRequest(context) {
     return new Response(JSON.stringify({ error: '缺少 dialogues 数组' }), { status: 400 });
   }
 
+  const LANG = { ja: '日文', zh: '中文', en: '英文' };
   const dialogueText = dialogues.map(d => {
     const speaker = d.marker === '我说' ? '我们' : '客户';
-    return `【${speaker}】\n中文：${d.zh}\n日文：${d.ja}`;
+    // New shape: src/tgt + srcLang/tgtLang. Fall back to old zh/ja shape.
+    const src = d.src ?? d.zh;
+    const tgt = d.tgt ?? d.ja;
+    const srcLabel = LANG[d.srcLang] || '原文';
+    const tgtLabel = LANG[d.tgtLang] || '译文';
+    return `【${speaker}】\n${srcLabel}：${src}\n${tgtLabel}：${tgt}`;
   }).join('\n\n');
 
   const upstream = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
