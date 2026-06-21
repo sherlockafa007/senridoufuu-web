@@ -846,7 +846,6 @@
               <div class="ci-side-btns">
                 <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceTts" title="朗读 / 朗読">🔊</button>
                 <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceGenSummary" disabled>📝 <span data-i18n="tl_btn_gen_summary">生成纪要</span></button>
-                <button type="button" class="tl-action-btn tl-action-btn--primary" id="voiceSummary" disabled data-i18n="tl_btn_abstract">摘要</button>
                 <button type="button" class="tl-action-btn tl-action-btn--ghost" id="voiceClear" data-i18n="tl_btn_clear">クリア</button>
               </div>
             </div>
@@ -991,7 +990,6 @@
     ════════════════════════════════════════════════════════ */
     const elInterim         = document.getElementById('voiceInterim');
     const elVoiceStream     = document.getElementById('voiceStream');
-    const elVoiceSummary    = document.getElementById('voiceSummary');
     const elVoiceClear      = document.getElementById('voiceClear');
     const elVoiceCount      = document.getElementById('voiceCount');
     const elVoiceStatusDot  = document.getElementById('voiceStatusDot');
@@ -1376,7 +1374,6 @@
           elVoiceStream.firstElementChild?.remove();
         }
         elVoiceCount.textContent = `${voiceHistory.length} 件`;
-        elVoiceSummary.disabled = false;
       } catch (err) {
         errorStreamItem(item, err.message);
       } finally {
@@ -1416,70 +1413,6 @@
       tl.innerHTML = `<span class="cue-error">エラー: ${escapeHtml(msg)}</span>`;
     }
 
-    elVoiceSummary.addEventListener('click', async () => {
-      if (voiceHistory.length === 0) return;
-      elVoiceSummary.disabled = true;
-      setVoiceStatusBusy(true);
-      const transcript = voiceHistory.map(h => {
-        return `[${DIR_LABEL[h._dir] || h._dir}] ${h.zh} → ${h.ja}`;
-      }).join('\n');
-      const prompt = `以下の音声通訳記録の会議まとめを生成してください / 请为以下口译记录生成会议摘要：\n\n${transcript}`;
-
-      // Build and display transcript history with speaker markers
-      const transcriptHistory = voiceHistory.map(h => {
-        const markerColor = h.marker === "我说" ? "#22c55e" : "#3b82f6";
-        const markerLabel = h.marker === "我说" ? "🟢 我说" : "🔵 对方说";
-
-        return `
-          <div class="voice-transcript-item">
-            <div class="voice-transcript-marker" style="background-color: ${markerColor};">
-              ${markerLabel}
-            </div>
-            <div class="voice-transcript-text">
-              <span class="voice-transcript-zh">${escapeHtml(h.zh)}</span>
-              <span class="voice-transcript-ja">${escapeHtml(h.ja)}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-      try {
-        const res = await apiFetch(API_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], mode: 'translate' })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'API error');
-
-        // Display transcript history with speaker markers before summary
-        const historyDiv = document.createElement('div');
-        historyDiv.innerHTML = `
-          <div style="padding: 20px 0; border-bottom: 2px solid var(--c-border); margin-bottom: 20px;">
-            <div style="font-family: var(--f-mono); font-size: 0.5625rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--c-text-3); margin-bottom: 16px;">通訳記録 / 口译记录</div>
-            <div>${transcriptHistory}</div>
-          </div>
-        `;
-        elVoiceStream.appendChild(historyDiv);
-
-        // Display summary
-        const el = document.createElement('div');
-        el.className = 'cue-entry cue-entry--summary';
-        el.innerHTML = `
-          <div class="cue-avatar">∑</div>
-          <div class="cue-body">
-            <div class="cue-name">まとめ / 摘要</div>
-            <div class="cue-tl">${escapeHtml(data.content)}</div>
-          </div>`;
-        elVoiceStream.appendChild(el);
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      } catch (err) {
-        alert(`まとめの生成に失敗しました / 生成摘要失败: ${err.message}`);
-      } finally {
-        elVoiceSummary.disabled = false;
-        setVoiceStatusBusy(false);
-      }
-    });
-
     elVoiceClear.addEventListener('click', () => {
       if (voiceHistory.length > 0 && !confirm('記録をクリアしますか？ / 确认清空记录？')) return;
       if (isRecording) stopRecording();
@@ -1488,7 +1421,6 @@
       elVoiceStream.innerHTML = '';
       elInterim.textContent = '';
       elVoiceCount.textContent = '0 件';
-      elVoiceSummary.disabled = true;
     });
 
     if (isLocal) {
@@ -1908,7 +1840,6 @@
         document.getElementById('voiceStream').innerHTML = '';
         document.getElementById('summaryResultPanel').style.display = 'none';
         elVoiceCount.textContent = '0 件';
-        elVoiceSummary.disabled = true;
         btnGenSummary.disabled = false;
       }
     });

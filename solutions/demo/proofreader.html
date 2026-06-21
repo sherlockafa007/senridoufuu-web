@@ -48,6 +48,16 @@
     </div>
   </div>
 
+  <!-- Approval gate (pending / disabled) -->
+  <div id="gate-msg" class="hidden flex items-center justify-center min-h-screen px-4">
+    <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm text-center">
+      <div id="gate-icon" class="text-4xl mb-4">⏳</div>
+      <h2 id="gate-title" class="text-lg font-semibold text-gray-900 mb-2">审核中</h2>
+      <p id="gate-text" class="text-sm text-gray-500 leading-relaxed mb-5">账号正在审核中，审核通过后即可使用。</p>
+      <button type="button" id="gate-logout" class="text-xs text-gray-400 hover:text-gray-600">退出登录</button>
+    </div>
+  </div>
+
   <!-- App -->
   <div id="app" class="hidden">
 
@@ -152,6 +162,10 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { getFirestore, doc, getDoc }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    const ADMINS = ['sherlockafa@gmail.com', 'yuki.minami@senridf.com'];
 
     const app = initializeApp({
       apiKey: 'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',
@@ -162,6 +176,7 @@
       appId: '1:86494932585:web:185b8ed922cd491a63fcf8',
     });
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
     // Authenticated fetch — attaches the current user's Firebase ID token.
     async function apiFetch(url, opts = {}) {
@@ -192,15 +207,36 @@
       if (e.key === 'Enter') document.getElementById('login-btn').click();
     });
     document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+    document.getElementById('gate-logout').addEventListener('click', () => signOut(auth));
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        loginScreen.classList.add('hidden');
-        appEl.classList.remove('hidden');
-        document.getElementById('user-email').textContent = user.email;
-      } else {
-        loginScreen.classList.remove('hidden');
-        appEl.classList.add('hidden');
+    const gateMsg = document.getElementById('gate-msg');
+
+    function showOnly(el) {
+      [loginScreen, gateMsg, appEl].forEach((e) => e.classList.add('hidden'));
+      el.classList.remove('hidden');
+    }
+
+    function showGate(status) {
+      const disabled = status === 'disabled';
+      document.getElementById('gate-icon').textContent = disabled ? '🚫' : '⏳';
+      document.getElementById('gate-title').textContent = disabled ? '账号已停用' : '审核中';
+      document.getElementById('gate-text').textContent = disabled
+        ? '您的账号已被停用，请联系管理员。'
+        : '账号正在审核中，审核通过后即可使用。';
+      showOnly(gateMsg);
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { showOnly(loginScreen); return; }
+      document.getElementById('user-email').textContent = user.email;
+      if (ADMINS.includes(user.email)) { showOnly(appEl); return; }
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        const status = snap.data()?.status || 'pending';
+        if (status === 'approved') { showOnly(appEl); return; }
+        showGate(status);
+      } catch {
+        showGate('pending');
       }
     });
 

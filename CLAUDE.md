@@ -50,6 +50,16 @@ Navigation and footer are **not in the HTML files**. They are defined as templat
 
 All colors, fonts, and spacing are CSS custom properties in the `:root` block at the top of `css/main.css`. Accent color is `--c-accent: #1D3D2D` (dark green). Font stacks: `--f-serif` for headings, `--f-sans` for body, `--f-mono` for labels/tags.
 
-## Netlify Functions (API Proxy)
+## Backend (Cloudflare Pages Functions)
 
-For pages that call external APIs (e.g. the translation demo), the API key must not appear in frontend code. Place serverless functions under `netlify/functions/`. Update `netlify.toml` to add the functions directory if not yet present. Frontend calls go to `/.netlify/functions/function-name`.
+Server-side API key proxies live in `functions/api/` and are served at `/api/<name>` (e.g. `/api/translate`, `/api/proofread`, `/api/deepgram-token`). Secrets (`QWEN_API_KEY`, `DEEPGRAM_API_KEY`) are configured as Cloudflare Pages environment variables, never in frontend code. Changing an env var requires a redeploy to take effect.
+
+The legacy `netlify/` directory and `netlify.toml` are dead leftovers from before the Cloudflare migration — do not use them.
+
+### Auth on all API routes
+
+`functions/api/_middleware.js` runs before every `/api/*` route and requires a valid Firebase ID token (`Authorization: Bearer <token>`); anonymous requests get 401. The frontend attaches the token via an `apiFetch` helper. On pages where the Firebase auth module is a separate `<script type="module">` from the main logic script, the token is bridged through `window.sdfGetToken` (see translation/lifestory/analysis); single-module pages (proofreader) call `auth.currentUser.getIdToken()` directly.
+
+## Deployment
+
+Static site auto-deployed via Cloudflare Pages. Push to GitHub `main` → a synced fork builds on the connected Cloudflare account → `senridf.com`. Pushes do not go live instantly; the sync + build must run. The bid-scraper workflow is guarded with `if: github.repository == '...'` so only the source repo runs it (synced copies skip it). See `docs/TOOLS.md` for per-tool details.
