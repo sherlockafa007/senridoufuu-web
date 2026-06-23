@@ -1,0 +1,35 @@
+name: Mirror upstream to deploy fork
+
+# Keeps the deploy mirror (Eveysnow5/senridf-web) in lock-step with the
+# source repo (sherlockafa007/senridoufuu-web) so pushes go live without a
+# manual "Sync fork". Guarded to run ONLY in the mirror, never in the source.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # every 30 min
+  workflow_dispatch:           # manual run button
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    if: github.repository == 'Eveysnow5/senridf-web'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fast-forward main to source/main
+        run: |
+          git config user.name  "mirror-bot"
+          git config user.email "mirror-bot@users.noreply.github.com"
+          git remote add source https://github.com/sherlockafa007/senridoufuu-web.git
+          git fetch source main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse source/main)" ]; then
+            echo "Updating mirror to $(git rev-parse --short source/main)"
+            git reset --hard source/main
+            git push --force origin main
+          else
+            echo "Already up to date."
+          fi
