@@ -809,18 +809,18 @@
           <div class="voice-setup-row">
             <div class="voice-spk-cfg">
               <span class="voice-spk-id">甲</span>
-              <select class="voice-lang-sel" id="selA" title="甲方语言">
-                <option value="ja">日本語</option>
+              <select class="voice-lang-sel" id="selA" title="甲方语言（我）">
                 <option value="zh">中文</option>
+                <option value="ja">日本語</option>
                 <option value="en">English</option>
               </select>
             </div>
             <span class="voice-lang-sep">⇄</span>
             <div class="voice-spk-cfg">
               <span class="voice-spk-id">乙</span>
-              <select class="voice-lang-sel" id="selB" title="乙方语言">
-                <option value="zh">中文</option>
+              <select class="voice-lang-sel" id="selB" title="乙方语言（对方）">
                 <option value="ja">日本語</option>
+                <option value="zh">中文</option>
                 <option value="en">English</option>
               </select>
             </div>
@@ -1007,7 +1007,7 @@
     const summaryConfirmOk    = document.getElementById('summaryConfirmOk');
     const summaryConfirmCancel = document.getElementById('summaryConfirmCancel');
 
-    const speakerLang      = { A: 'ja', B: 'zh' };
+    const speakerLang      = { A: 'zh', B: 'ja' };
     let ttsOn              = true;
     let activeSpeaker      = null;
     let pendingNextSpeaker = null;
