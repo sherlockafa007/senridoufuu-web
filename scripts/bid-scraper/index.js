@@ -55,6 +55,30 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Parse a Japanese date in either "2026年6月24日" or "2026/6/24" form → Date | null.
+function parseJpDate(str) {
+  if (!str) return null;
+  let m = str.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+  if (!m) m = str.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+  if (!m) return null;
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// A bid is "closed" if its title carries an ended marker, the detail page was
+// flagged ended, or its deadline is already in the past.
+function isClosed(bid) {
+  if (bid.ended) return true;
+  if (/終了しました|募集を終了|受付を終了|受付終了/.test(bid.title || '')) return true;
+  const dl = parseJpDate(bid.deadline);
+  if (dl) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (dl < today) return true;
+  }
+  return false;
+}
+
 // ── Osaka City ──────────────────────────────────────────────────────────────
 function parseOsakaBids(html, target) {
   const $ = cheerio.load(html);
@@ -115,17 +139,19 @@ function parseSuitaBids(html, target) {
       ? `https://www.city.suita.osaka.jp${href}`
       : new URL(href, target.url).toString();
 
+    // Period cell, e.g. "2026年6月17日～2026年6月24日"
     const period = $(cells[1]).text().trim();
     const bureau = $(cells[2]).text().trim();
 
-    // Filter out expired bids (> 7 days past deadline)
-    const dlMatch = period.match(/～(\d{4})\/(\d+)\/(\d+)/);
-    if (dlMatch) {
-      const dl = new Date(+dlMatch[1], +dlMatch[2] - 1, +dlMatch[3]);
-      if (dl < graceCutoff) return;
-    }
+    // Deadline = the date after "～"; announced = the date before it.
+    const parts = period.split('～');
+    const deadlineDate = parseJpDate(parts[1] || '');
+    const announcedDate = parseJpDate(parts[0] || '');
 
-    const announcedMatch = period.match(/^(\d{4}\/\d+\/\d+)/);
+    // Skip bids whose deadline is more than 7 days past.
+    if (deadlineDate && deadlineDate < graceCutoff) return;
+
+    const fmt = (d) => (d ? `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日` : '');
 
     bids.push({
       title,
@@ -133,8 +159,8 @@ function parseSuitaBids(html, target) {
       city: target.city,
       category: target.category,
       category_label: target.categoryLabel,
-      announcement_date: announcedMatch ? announcedMatch[1] : '',
-      deadline: dlMatch ? `${dlMatch[1]}/${dlMatch[2]}/${dlMatch[3]}` : '',
+      announcement_date: fmt(announcedDate),
+      deadline: fmt(deadlineDate),
       ordering_bureau: bureau,
       budget: '',
     });
@@ -156,15 +182,24 @@ function parseToyonakaLinks(html, target) {
   const links = [];
   const seen = new Set();
 
-  $('a').each((_, el) => {
+  // Scope to the bid-list <ul class="norcor"> only. This excludes the global
+  // mega-nav and the footer (個人情報 / 著作権 / サイトマップ / 組織と業務 /
+  // リンク集), which live in div.footer — a completely separate subtree.
+  // (The page's #CONT / .wysiwyg_wp wrappers get auto-closed early by the
+  // parser due to malformed nesting, so we cannot rely on them.)
+  $('ul.norcor a').each((_, el) => {
     const title = $(el).text().trim();
     let href = $(el).attr('href') || '';
 
     if (!title || title.length < 5) return;
-    if (!href || href.startsWith('#') || href.startsWith('mailto')) return;
+    if (!href || href.startsWith('#') || href.startsWith('mailto') || href.startsWith('javascript')) return;
     if (/\.(pdf|docx?|xlsx?)$/i.test(href)) return;
-    // Skip nav links (index pages, result pages, etc.)
+    // Skip nav / index / result pages.
     if (/index\.html$|nyusatsu_kekka|hacchuyotei|zuiikeiyaku|3gozuikei|open_counter/.test(href)) return;
+    // Skip generic section-index titles (e.g. "公告（委託）") — they are listings, not a single bid.
+    if (/^公告（(委託|工事|物品|建設|役務)）$/.test(title)) return;
+    // Skip the about/sitemap section just in case it ever appears inside the body.
+    if (/\/aboutweb\/|\/sitemap/.test(href)) return;
 
     const resolved = href.startsWith('/')
       ? `https://www.city.toyonaka.osaka.jp${href}`
@@ -204,7 +239,7 @@ async function fetchToyonakaDetail(title, sourceUrl, target) {
   $('tr').each((_, row) => {
     const th = $(row).find('th').text().trim();
     const td = $(row).find('td').text().trim();
-    if (!deadline && /入札書提出|提出期間|締切|受付期間/.test(th)) deadline = td;
+    if (!deadline && /入札書提出|提出期間|締切|受付期間|募集期間/.test(th)) deadline = td;
     if (!announced && /公告日|公開日|告示日/.test(th)) announced = td;
   });
 
@@ -222,6 +257,12 @@ async function fetchToyonakaDetail(title, sourceUrl, target) {
     if (text.length < 25 && /(部|課|室|局)$/.test(text)) bureau = text;
   });
 
+  // Detect "this solicitation has ended" notices on the detail page.
+  const bodyText = $('body').text() || '';
+  const ended =
+    /この案件は募集を終了|募集を終了しています|受付を終了|受付は終了|終了しました/.test(bodyText) ||
+    /終了しました/.test(title);
+
   const { category, categoryLabel } = detectToyonakaCategory(title);
 
   return {
@@ -234,6 +275,7 @@ async function fetchToyonakaDetail(title, sourceUrl, target) {
     deadline,
     ordering_bureau: bureau,
     budget: '',
+    ended,
   };
 }
 
@@ -246,10 +288,12 @@ async function translate(bid) {
 截止日期：${bid.deadline || '未知'}
 类别：${bid.category_label}
 
-【重要】请严格用简体中文输出，禁止出现任何日语假名或汉字日语词汇。按以下格式输出：
+【判断】如果以上内容根本不是一条招标公告（例如是网站导航页、版权说明、站点地图、组织介绍、市役所设施介绍等），请只输出 NOT_A_BID 这一个词，不要输出任何其它内容。
+
+如果确实是招标公告，请严格用简体中文输出，禁止出现任何日语假名或汉字日语词汇。按以下格式输出：
 【内容】用1～2句中文简述招标内容
 【发注元】发注单位的中文译名
-【截标】截止日期（用中文表达，如"2026年3月12日（星期三）下午2时"）`;
+【截标】截止日期（用中文表达，如"2026年3月12日（星期三）下午2时"；若信息中确无截止日期则写"信息未提供"）`;
 
   const res = await axios.post(
     'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
@@ -270,72 +314,150 @@ async function translate(bid) {
   return res.data.choices?.[0]?.message?.content?.trim() || '';
 }
 
+// ── Run report ──────────────────────────────────────────────────────────────
+async function writeRunReport(db, report) {
+  try {
+    await db.collection('meta').doc('scrape_status').set({
+      ...report,
+      finished_at: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log('Run report written to meta/scrape_status');
+  } catch (e) {
+    console.error('Failed to write run report:', e.message);
+  }
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 async function main() {
+  const startedAt = Date.now();
   const db = initFirebase();
   const bidsCol = db.collection('bids');
-  let totalNew = 0;
 
-  for (const target of TARGETS) {
-    console.log(`\n[${target.city}] ${target.url}`);
+  const totals = {
+    found: 0,
+    inserted: 0,
+    skipped_dup: 0,
+    skipped_notbid: 0,
+    closed: 0,
+    failed_fetch: 0,
+    translate_failed: 0,
+  };
+  const sources = [];
 
-    let html;
-    try {
-      const res = await axios.get(target.url, {
-        timeout: 30000,
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BidScraper/1.0)' },
-      });
-      html = res.data;
-    } catch (err) {
-      console.error(`  Fetch failed: ${err.message}`);
-      continue;
-    }
+  try {
+    for (const target of TARGETS) {
+      const srcStat = {
+        city: target.city,
+        category: target.categoryLabel || '混合',
+        found: 0,
+        inserted: 0,
+        closed: 0,
+        error: '',
+      };
+      console.log(`\n[${target.city}] ${target.url}`);
 
-    let bids = [];
-
-    if (target.type === 'osaka') {
-      bids = parseOsakaBids(html, target);
-      console.log(`  ${bids.length} bids parsed`);
-    } else if (target.type === 'suita') {
-      bids = parseSuitaBids(html, target);
-      console.log(`  ${bids.length} active bids parsed`);
-    } else if (target.type === 'toyonaka') {
-      const links = parseToyonakaLinks(html, target);
-      console.log(`  ${links.length} bid links found, fetching details...`);
-      for (const link of links) {
-        const bid = await fetchToyonakaDetail(link.title, link.source_url, target);
-        if (bid) bids.push(bid);
-        await sleep(400);
-      }
-      console.log(`  ${bids.length} bids parsed`);
-    }
-
-    for (const bid of bids) {
-      const hash = urlHash(bid.source_url);
-      const existing = await bidsCol.where('url_hash', '==', hash).limit(1).get();
-      if (!existing.empty) continue;
-
-      let summary = '';
+      let html;
       try {
-        summary = await translate(bid);
+        const res = await axios.get(target.url, {
+          timeout: 30000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BidScraper/1.0)' },
+        });
+        html = res.data;
       } catch (err) {
-        console.error(`  Translation failed for "${bid.title}": ${err.message}`);
+        console.error(`  Fetch failed: ${err.message}`);
+        srcStat.error = `列表抓取失败: ${err.message}`;
+        totals.failed_fetch++;
+        sources.push(srcStat);
+        continue;
       }
 
-      await bidsCol.add({
-        ...bid,
-        url_hash: hash,
-        summary_zh: summary,
-        scraped_at: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      let bids = [];
 
-      console.log(`  + ${bid.title}`);
-      totalNew++;
-      await sleep(600);
+      if (target.type === 'osaka') {
+        bids = parseOsakaBids(html, target);
+        console.log(`  ${bids.length} bids parsed`);
+      } else if (target.type === 'suita') {
+        bids = parseSuitaBids(html, target);
+        console.log(`  ${bids.length} active bids parsed`);
+      } else if (target.type === 'toyonaka') {
+        const links = parseToyonakaLinks(html, target);
+        console.log(`  ${links.length} bid links found, fetching details...`);
+        for (const link of links) {
+          const bid = await fetchToyonakaDetail(link.title, link.source_url, target);
+          if (bid) bids.push(bid);
+          await sleep(400);
+        }
+        console.log(`  ${bids.length} bids parsed`);
+      }
+
+      srcStat.found = bids.length;
+      totals.found += bids.length;
+
+      for (const bid of bids) {
+        const closed = isClosed(bid);
+        bid.status = closed ? 'closed' : 'open';
+        if (closed) {
+          srcStat.closed++;
+          totals.closed++;
+        }
+
+        const hash = urlHash(bid.source_url);
+        const existing = await bidsCol.where('url_hash', '==', hash).limit(1).get();
+        if (!existing.empty) {
+          totals.skipped_dup++;
+          continue;
+        }
+
+        let summary = '';
+        try {
+          summary = await translate(bid);
+        } catch (err) {
+          console.error(`  Translation failed for "${bid.title}": ${err.message}`);
+          totals.translate_failed++;
+        }
+
+        // Drop non-bid pages flagged by the model.
+        if (summary.replace(/[\s　]/g, '').toUpperCase().includes('NOT_A_BID')) {
+          console.log(`  - skip (not a bid): ${bid.title}`);
+          totals.skipped_notbid++;
+          continue;
+        }
+
+        const { ended, ...rest } = bid;
+        await bidsCol.add({
+          ...rest,
+          url_hash: hash,
+          summary_zh: summary,
+          status: bid.status,
+          scraped_at: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(`  + ${bid.title}${closed ? ' (closed)' : ''}`);
+        srcStat.inserted++;
+        totals.inserted++;
+        await sleep(600);
+      }
+
+      sources.push(srcStat);
     }
-  }
 
-  console.log(`\nDone. ${totalNew} new bids added.`);
+    console.log(`\nDone. ${totals.inserted} new bids added.`);
+    await writeRunReport(db, {
+      ok: true,
+      duration_ms: Date.now() - startedAt,
+      totals,
+      sources,
+    });
+  } catch (err) {
+    await writeRunReport(db, {
+      ok: false,
+      error: err.message,
+      duration_ms: Date.now() - startedAt,
+      totals,
+      sources,
+    });
+    throw err;
+  }
 }
 
 main().catch((err) => {

@@ -104,10 +104,11 @@
 - **架构**：
   - 爬虫：`scripts/bid-scraper/index.js`（Node.js + Cheerio + axios）
   - 调度：GitHub Actions `.github/workflows/scrape-bids.yml`，cron `0 17 * * *` UTC（= JST 02:00）
-  - 存储：Firestore `bids` 集合（url_hash 去重，Admin SDK 写入）
-  - 前端：`bids/index.html`，Firebase 登录，城市/类别双筛选
-- **用谁的 API**：**通义千问 Qwen**（qwen-plus，生成中文摘要）。数据源：各市政府网站。
-- **所需设置**：GitHub Secrets（Qwen key、Firebase Admin 凭证）；Firestore 规则。
+  - 存储：Firestore `bids` 集合（url_hash 去重，Admin SDK 写入）；运行报告写 `meta/scrape_status`
+  - 前端：`bids/index.html`，Firebase 登录，城市/类别双筛选，过期项灰显「已结束」
+  - 监控：抓取运行报告显示在管理后台 `solutions/demo/admin.html`「招标抓取监控」卡片
+- **用谁的 API**：**通义千问 Qwen**（qwen-plus，生成中文摘要 + 判断是否为招标）。数据源：各市政府网站。
+- **所需设置**：GitHub Secrets（Qwen key、Firebase Admin 凭证）；Firestore 规则（**管理后台读 `meta/scrape_status` 需允许管理员读 `meta` 集合**）。
 - **维护注意**：
   - 吹田市 URL（`1042102`/`1042103`）是令和8年度专属，每年 4 月新年度需更新。
   - 爬虫**只新增、从不删除**——过期标的会一直留在 Firestore。**决定保留不清理**（数据量小，作为后续分析素材；删除也有误删风险，2026-06-21 决定）。
@@ -117,6 +118,12 @@
   - 2026-06-20：bids 前端表格收紧——容器 `max-w-7xl`→`max-w-6xl`、摘要列设 `w-full`（吸收多余宽度、消除列间空隙、降低行高）、单元格内边距 `px-4 py-3`→`px-3 py-2.5`。原因：表格过宽、列间空隙大、行偏高。
   - 2026-06-20：给 workflow 加仓库护栏 `if: github.repository == ...`——同步到同事仓库 `Eveysnow5/senridf-web` 的副本因缺 secret 每天定时失败、给同事发失败邮件；加护栏后那边的任务直接跳过（不算失败、不发邮件），只在源仓库运行。（排查确认：爬虫本身健康，5 站共解析 138 条，"0 new" 仅因源站无新公告。）
   - 2026-06-23：前端表格重构自适应——桌面表精简为 6 列（#/摘要/城市/类别/截标日/原文），删几乎全空的"发标时间/预期报价"列、"发注局室"折入摘要格、"截标日"改可换行（长日期不再撑爆列致横向溢出），容器收到 `max-w-5xl`。手机端维持卡片布局。
+  - 2026-06-24：抓取质量 + 可观测性大修（本地用线上 HTML 验证后再改）：
+    - **豊中市垃圾页**：原从整页 `$('a')` 抓，把页脚（サイトマップ/著作権/個人情報/組織と業務/リンク集/市役所案内）也收进来。改为只取招标列表容器 `ul.norcor a`（页脚在独立 `div.footer`，天然隔离）；并加标题黑名单（`公告（委託）`等索引页）。注：该站 `#CONT`/`.wysiwyg_wp` 因 HTML 嵌套畸形被 cheerio 提前闭合，不可用。
+    - **吹田市漏抓截标 + 没过滤过期**：原日期正则只认 `2026/6/24` 斜杠格式，但站点是 `2026年6月24日` 年月日格式 → 不匹配致截标空、过期项混入。新增 `parseJpDate()` 同时支持两种格式，恢复截标提取与 7 天过期过滤。
+    - **已结束项**：新增 `isClosed()`（标题含「終了しました」等 / 详情页含「募集を終了しています」/ 截标已过），入库时写 `status:'open'|'closed'`；**不删，累积保留分析素材**；前端对 closed/截标已过项灰显「已结束」标签。
+    - **非招标兜底**：Qwen prompt 增加判定，非招标内容返回 `NOT_A_BID` → 主流程跳过不入库。
+    - **运行报告**：每次跑写 `meta/scrape_status`（完成时间 + 各源 found/inserted/closed/skipped/failed），管理后台新增「招标抓取监控」卡片展示，解决"不知抓没抓全/抓了啥"。
 
 ---
 

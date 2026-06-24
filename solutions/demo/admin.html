@@ -43,7 +43,7 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
 <!-- Header -->
 <header class="bg-white border-b border-gray-200 h-14 flex items-center px-6 sticky top-0 z-10">
   <div class="flex items-center gap-3 flex-1">
-    <span class="text-gray-300 font-light text-lg">千里同風</span>
+    <a href="/" class="text-gray-300 font-light text-lg hover:text-gray-600 transition-colors" title="返回主页">千里同風</a>
     <span class="text-gray-200">·</span>
     <span class="text-gray-700 font-medium text-sm">管理后台</span>
     <span id="lastRefresh" class="text-gray-400 text-xs ml-2"></span>
@@ -93,6 +93,20 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
       <button onclick="loadUsers()" type="button" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">↻ 刷新</button>
     </div>
     <div id="userList">
+      <div class="text-gray-400 text-xs py-2">加载中…</div>
+    </div>
+  </div>
+
+  <!-- Scrape Status -->
+  <div class="card mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="text-sm font-medium text-gray-700">招标抓取监控</div>
+      <div class="flex items-center gap-2">
+        <span id="scrapeWhen" class="text-xs text-gray-400"></span>
+        <button onclick="loadScrapeStatus()" type="button" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">↻ 刷新</button>
+      </div>
+    </div>
+    <div id="scrapeReport">
       <div class="text-gray-400 text-xs py-2">加载中…</div>
     </div>
   </div>
@@ -164,7 +178,7 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {getFirestore,collection,getDocs,query,orderBy,limit,doc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {getFirestore,collection,getDocs,query,orderBy,limit,doc,getDoc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const ADMINS = ['sherlockafa@gmail.com', 'yuki.minami@senridf.com'];
 const PAGE_NAMES = {
@@ -200,6 +214,7 @@ onAuthStateChanged(auth, async u => {
   document.getElementById('gate').style.display = 'none';
   document.getElementById('adminEmail').textContent = u.email;
   loadUsers();
+  loadScrapeStatus();
   await loadData();
 });
 
@@ -364,6 +379,58 @@ window.setUserStatus = async function(uid, status) {
     await loadUsers();
   } catch (err) {
     alert('操作失败：' + err.message);
+  }
+};
+
+// ── Scrape Status (招标抓取监控) ────────────────────────────────────────────────
+const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+window.loadScrapeStatus = async function() {
+  const el = document.getElementById('scrapeReport');
+  const whenEl = document.getElementById('scrapeWhen');
+  if (!el) return;
+  el.innerHTML = '<div class="text-gray-400 text-xs py-2">加载中…</div>';
+  try {
+    const snap = await getDoc(doc(db, 'meta', 'scrape_status'));
+    if (!snap.exists()) {
+      whenEl.textContent = '';
+      el.innerHTML = '<div class="text-gray-400 text-xs py-2">暂无抓取记录（下次定时任务运行后显示）</div>';
+      return;
+    }
+    const r = snap.data();
+    const t = r.finished_at?.toDate?.();
+    const okBadge = r.ok
+      ? '<span class="tag" style="background:#dcfce7;color:#15803d">成功</span>'
+      : '<span class="tag" style="background:#fee2e2;color:#b91c1c">失败</span>';
+    whenEl.innerHTML = (t ? '完成于 ' + t.toLocaleString('zh-CN') : '') + ' ' + okBadge;
+
+    const tt = r.totals || {};
+    const stat = (label, val, color) =>
+      `<div class="text-center"><div class="text-xl font-semibold ${color || 'text-gray-800'}">${val ?? 0}</div><div class="text-xs text-gray-400 mt-0.5">${label}</div></div>`;
+    const totalsHtml = `<div class="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4">
+      ${stat('发现', tt.found)}
+      ${stat('新增', tt.inserted, 'text-green-600')}
+      ${stat('已结束', tt.closed, 'text-gray-500')}
+      ${stat('重复跳过', tt.skipped_dup)}
+      ${stat('非招标', tt.skipped_notbid, tt.skipped_notbid ? 'text-orange-500' : '')}
+      ${stat('抓取失败', tt.failed_fetch, tt.failed_fetch ? 'text-red-500' : '')}
+    </div>`;
+
+    const sources = (r.sources || []).map(s => `
+      <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0 text-xs">
+        <div class="text-gray-700">${esc(s.city)} <span class="text-gray-400">${esc(s.category || '')}</span></div>
+        <div class="flex items-center gap-3">
+          <span class="text-gray-500">发现 ${s.found || 0}</span>
+          <span class="text-green-600">新增 ${s.inserted || 0}</span>
+          ${s.closed ? `<span class="text-gray-400">结束 ${s.closed}</span>` : ''}
+          ${s.error ? `<span class="text-red-500" title="${esc(s.error)}">⚠ 失败</span>` : '<span class="text-green-500">✓</span>'}
+        </div>
+      </div>`).join('');
+
+    el.innerHTML = totalsHtml + (sources || '<div class="text-gray-400 text-xs">无来源数据</div>');
+  } catch (err) {
+    whenEl.textContent = '';
+    el.innerHTML = `<div class="text-red-400 text-xs py-2">读取失败：${esc(err.message)}（可能需在 Firestore 规则中允许管理员读取 meta 集合）</div>`;
   }
 };
 </script>

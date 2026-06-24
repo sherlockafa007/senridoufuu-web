@@ -244,13 +244,15 @@
 
         const deadline = (bid.deadline || '').replace(/令和\d+年/, '').trim() || '—';
         const bureau = (bid.ordering_bureau || '').trim();
+        const closed = bidClosed(bid);
+        const closedTag = '<span class="ml-2 px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-[10px] align-middle">已结束</span>';
 
-        return `<tr class="hover:bg-gray-50 transition-colors align-top">
+        return `<tr class="hover:bg-gray-50 transition-colors align-top${closed ? ' opacity-60' : ''}">
           <td class="px-3 py-2.5 text-gray-400 text-xs">${i + 1}</td>
           <td class="px-3 py-2.5">
             ${summaryHtml}
             ${bureau ? `<div class="text-xs text-gray-500 mt-1.5">📍 ${escHtml(bureau)}</div>` : ''}
-            <div class="text-xs text-gray-400 mt-1 truncate max-w-md" title="${escHtml(bid.title)}">${escHtml(bid.title)}</div>
+            <div class="text-xs text-gray-400 mt-1 truncate max-w-md" title="${escHtml(bid.title)}">${escHtml(bid.title)}${closed ? closedTag : ''}</div>
           </td>
           <td class="px-3 py-2.5 whitespace-nowrap">
             <span class="px-2 py-0.5 rounded text-xs font-medium ${cityClass}">${escHtml(bid.city || '—')}</span>
@@ -273,15 +275,17 @@
         const catClass = catColors[bid.category] || 'bg-gray-50 text-gray-600 border-gray-200';
         const deadline = (bid.deadline || '').replace(/令和\d+年/, '').trim();
         const bureau = (bid.ordering_bureau || '').trim();
+        const closed = bidClosed(bid);
 
         const summaryHtml = summary
           ? summary.split('\n').filter(Boolean).map(escHtml).join('<br/>')
           : '<span class="text-gray-400 italic">（翻译不可用）</span>';
 
-        return `<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+        return `<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4${closed ? ' opacity-60' : ''}">
           <div class="flex items-center gap-2 mb-2 flex-wrap">
             <span class="px-2 py-0.5 rounded text-xs font-medium ${cityClass}">${escHtml(bid.city || '—')}</span>
             <span class="px-2 py-0.5 rounded-full border text-xs font-medium ${catClass}">${escHtml(bid.category_label || bid.category || '—')}</span>
+            ${closed ? '<span class="px-2 py-0.5 rounded bg-gray-100 text-gray-500 text-xs">已结束</span>' : ''}
             ${deadline ? `<span class="text-xs text-gray-400 ml-auto whitespace-nowrap">截标 ${escHtml(deadline)}</span>` : ''}
           </div>
           <div class="text-sm text-gray-800 leading-relaxed mb-1">${summaryHtml}</div>
@@ -299,6 +303,26 @@
       return String(str || '')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Parse "2026年6月24日" or "2026/6/24" → Date | null.
+    function parseJpDate(str) {
+      if (!str) return null;
+      let m = String(str).match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+      if (!m) m = String(str).match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+      if (!m) return null;
+      const d = new Date(+m[1], +m[2] - 1, +m[3]);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // A bid is closed if the scraper marked it, its title carries an ended
+    // marker, or its deadline is already past.
+    function bidClosed(bid) {
+      if (bid.status === 'closed') return true;
+      if (/終了しました|募集を終了|受付を終了|受付終了/.test(bid.title || '')) return true;
+      const dl = parseJpDate(bid.deadline);
+      if (dl) { const t = new Date(); t.setHours(0, 0, 0, 0); if (dl < t) return true; }
+      return false;
     }
 
     // ── Filters ───────────────────────────────────────────────────────────
