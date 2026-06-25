@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>会员中心 · 千里同風</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -19,7 +19,7 @@
       --red:    #ef4444;
     }
     body {
-      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      font-family: 'Noto Sans SC', 'Noto Sans JP', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -27,9 +27,14 @@
       flex-direction: column;
     }
     /* ── Header ── */
-    .hdr { padding: 18px 32px; border-bottom: 1px solid var(--border); background: var(--paper); }
-    .hdr a { font-family: 'Noto Serif SC', serif; font-size: 17px; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: 0.08em; }
-    .hdr a:hover { color: var(--accent); }
+    .hdr { padding: 18px 32px; border-bottom: 1px solid var(--border); background: var(--paper); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .hdr a.brand { font-family: 'Noto Serif SC', serif; font-size: 17px; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: 0.08em; }
+    .hdr a.brand:hover { color: var(--accent); }
+    /* ── Language switch ── */
+    .lang-switch { display: flex; gap: 2px; }
+    .lang-btn { background: none; border: 1px solid var(--border); color: var(--text2); font-family: inherit; font-size: 12px; padding: 4px 9px; border-radius: 7px; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+    .lang-btn:hover { color: var(--text); border-color: #9ca3af; }
+    .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
     /* ── Card ── */
     .wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
     .card { background: var(--paper); border: 1px solid var(--border); border-radius: 16px; padding: 52px 44px; max-width: 420px; width: 100%; text-align: center; }
@@ -100,13 +105,18 @@
     /* ── Password change ── */
     #pw-section { display: none; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 14px; }
     #pw-section.open { display: block; }
-    @media (max-width: 500px) { .card { padding: 36px 24px; } }
+    @media (max-width: 500px) { .card { padding: 36px 24px; } .hdr { padding: 16px 20px; } }
   </style>
 </head>
 <body>
 
 <header class="hdr">
-  <a href="./">千里同風 株式会社</a>
+  <a href="./" class="brand">千里同風 株式会社</a>
+  <div class="lang-switch">
+    <button type="button" class="lang-btn" data-lang="ja">日</button>
+    <button type="button" class="lang-btn" data-lang="zh">中</button>
+    <button type="button" class="lang-btn" data-lang="en">En</button>
+  </div>
 </header>
 
 <div class="wrap">
@@ -115,7 +125,7 @@
     <!-- Loading -->
     <div id="state-loading">
       <div class="icon">⟳</div>
-      <p class="card-desc">正在验证身份…</p>
+      <p class="card-desc" data-i18n="loading">正在验证身份…</p>
     </div>
 
     <!-- Guest (not logged in) -->
@@ -124,32 +134,32 @@
       <!-- Login view -->
       <div id="view-login">
         <div class="icon">🔑</div>
-        <h1 class="card-title">会员中心</h1>
-        <p class="card-desc">登录您的账号，或注册新账号。</p>
+        <h1 class="card-title" data-i18n="login_title">会员中心</h1>
+        <p class="card-desc" data-i18n="login_desc">登录您的账号，或注册新账号。</p>
         <form id="login-form" novalidate>
-          <input id="login-email" type="email" class="form-input" placeholder="邮箱地址" autocomplete="email">
-          <input id="login-password" type="password" class="form-input" placeholder="密码" autocomplete="current-password">
+          <input id="login-email" type="email" class="form-input" data-i18n-ph="ph_email" placeholder="邮箱地址" autocomplete="email">
+          <input id="login-password" type="password" class="form-input" data-i18n-ph="ph_password" placeholder="密码" autocomplete="current-password">
           <div id="login-error" class="form-error"></div>
-          <button type="submit" class="btn-primary">登录</button>
-          <button type="button" id="forgot-btn" class="btn-forgot">忘记密码？</button>
+          <button type="submit" class="btn-primary" data-i18n="btn_login">登录</button>
+          <button type="button" id="forgot-btn" class="btn-forgot" data-i18n="forgot">忘记密码？</button>
         </form>
-        <button type="button" id="to-register" class="btn-secondary">还没有账号？注册</button>
-        <a class="btn-secondary" href="./">← 返回首页</a>
+        <button type="button" id="to-register" class="btn-secondary" data-i18n="to_register">还没有账号？注册</button>
+        <a class="btn-secondary" href="./" data-i18n="back_home">← 返回首页</a>
       </div>
 
       <!-- Register view -->
       <div id="view-register">
         <div class="icon">✉️</div>
-        <h1 class="card-title">注册账号</h1>
-        <p class="card-desc">创建账号后即可使用会员功能。</p>
+        <h1 class="card-title" data-i18n="reg_title">注册账号</h1>
+        <p class="card-desc" data-i18n="reg_desc">创建账号后即可使用会员功能。</p>
         <form id="register-form" novalidate>
-          <input id="reg-email"    type="email"    class="form-input" placeholder="邮箱地址" autocomplete="email">
-          <input id="reg-password" type="password" class="form-input" placeholder="密码（至少 6 位）" autocomplete="new-password">
-          <input id="reg-confirm"  type="password" class="form-input" placeholder="确认密码" autocomplete="new-password">
+          <input id="reg-email"    type="email"    class="form-input" data-i18n-ph="ph_email"     placeholder="邮箱地址" autocomplete="email">
+          <input id="reg-password" type="password" class="form-input" data-i18n-ph="ph_password6" placeholder="密码（至少 6 位）" autocomplete="new-password">
+          <input id="reg-confirm"  type="password" class="form-input" data-i18n-ph="ph_confirm"   placeholder="确认密码" autocomplete="new-password">
           <div id="reg-error" class="form-error"></div>
-          <button type="submit" class="btn-primary">注册</button>
+          <button type="submit" class="btn-primary" data-i18n="btn_register">注册</button>
         </form>
-        <button type="button" id="to-login" class="btn-secondary">已有账号？登录</button>
+        <button type="button" id="to-login" class="btn-secondary" data-i18n="to_login">已有账号？登录</button>
       </div>
 
     </div>
@@ -157,41 +167,41 @@
     <!-- Member (logged in) -->
     <div id="state-member">
       <div class="icon">✦</div>
-      <h1 class="card-title">欢迎回来</h1>
+      <h1 class="card-title" data-i18n="welcome">欢迎回来</h1>
       <p class="member-email" id="member-email"></p>
       <div id="account-status" class="account-status"></div>
       <div id="tool-list">
         <a class="tool-link" id="admin-link" href="solutions/demo/admin.html">
           <div>
-            <div class="tool-link__name">🔧 管理后台</div>
-            <div class="tool-link__desc">访问记录 · 数据统计</div>
+            <div class="tool-link__name" data-i18n="admin_name">🔧 管理后台</div>
+            <div class="tool-link__desc" data-i18n="admin_desc">访问记录 · 数据统计</div>
           </div>
           <span class="tool-link__arrow">→</span>
         </a>
         <a class="tool-link" href="solutions/demo/japanese_learner.html">
           <div>
-            <div class="tool-link__name">日語基礎学習ツール</div>
-            <div class="tool-link__desc">词汇 · 变形引擎 · 小测试</div>
+            <div class="tool-link__name" data-i18n="jp_name">日语基础学习工具</div>
+            <div class="tool-link__desc" data-i18n="jp_desc">词汇 · 变形引擎 · 小测试</div>
           </div>
           <span class="tool-link__arrow">→</span>
         </a>
         <a class="tool-link" href="solutions/demo.html">
           <div>
-            <div class="tool-link__name">全部演示工具</div>
-            <div class="tool-link__desc">翻译 · 文档分析 · 生平故事</div>
+            <div class="tool-link__name" data-i18n="all_name">全部演示工具</div>
+            <div class="tool-link__desc" data-i18n="all_desc">翻译 · 文档分析 · 生平故事</div>
           </div>
           <span class="tool-link__arrow">→</span>
         </a>
       </div>
       <div id="pw-section">
-        <input id="pw-old"     type="password" class="form-input" placeholder="当前密码" autocomplete="current-password">
-        <input id="pw-new"     type="password" class="form-input" placeholder="新密码（至少 6 位）" autocomplete="new-password">
-        <input id="pw-confirm" type="password" class="form-input" placeholder="确认新密码" autocomplete="new-password">
+        <input id="pw-old"     type="password" class="form-input" data-i18n-ph="ph_pw_old"     placeholder="当前密码" autocomplete="current-password">
+        <input id="pw-new"     type="password" class="form-input" data-i18n-ph="ph_pw_new"     placeholder="新密码（至少 6 位）" autocomplete="new-password">
+        <input id="pw-confirm" type="password" class="form-input" data-i18n-ph="ph_pw_confirm" placeholder="确认新密码" autocomplete="new-password">
         <div id="pw-msg" class="form-error"></div>
-        <button id="pw-submit" type="button" class="btn-primary">确认修改</button>
+        <button id="pw-submit" type="button" class="btn-primary" data-i18n="btn_pw_submit">确认修改</button>
       </div>
-      <button id="pw-toggle" type="button" class="btn-forgot">修改密码</button>
-      <button id="logout-btn" type="button" class="btn-danger">退出登录</button>
+      <button id="pw-toggle" type="button" class="btn-forgot" data-i18n="pw_toggle">修改密码</button>
+      <button id="logout-btn" type="button" class="btn-danger" data-i18n="logout">退出登录</button>
     </div>
 
   </div>
@@ -207,6 +217,197 @@
   import { getFirestore, doc, setDoc, getDoc, serverTimestamp }
     from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
+  /* ── i18n ───────────────────────────────────────────────────────────── */
+  const T = {
+    ja: {
+      loading: '本人確認中…',
+      login_title: '会員センター',
+      login_desc: 'ログイン、または新規登録してください。',
+      ph_email: 'メールアドレス',
+      ph_password: 'パスワード',
+      btn_login: 'ログイン',
+      forgot: 'パスワードをお忘れですか？',
+      to_register: 'アカウントをお持ちでない方は登録',
+      back_home: '← トップへ戻る',
+      reg_title: '新規登録',
+      reg_desc: 'アカウント作成後、会員機能をご利用いただけます。',
+      ph_password6: 'パスワード（6文字以上）',
+      ph_confirm: 'パスワード（確認）',
+      btn_register: '登録',
+      to_login: 'アカウントをお持ちの方はログイン',
+      welcome: 'おかえりなさい',
+      admin_name: '🔧 管理ダッシュボード',
+      admin_desc: 'アクセス記録 · データ統計',
+      jp_name: '日本語基礎学習ツール',
+      jp_desc: '語彙 · 活用エンジン · ミニテスト',
+      all_name: 'すべてのデモツール',
+      all_desc: '翻訳 · 文書分析 · ライフストーリー',
+      ph_pw_old: '現在のパスワード',
+      ph_pw_new: '新しいパスワード（6文字以上）',
+      ph_pw_confirm: '新しいパスワード（確認）',
+      btn_pw_submit: '変更を確定',
+      pw_toggle: 'パスワード変更',
+      logout: 'ログアウト',
+      st_disabled: 'アカウントが停止されています。管理者にお問い合わせください。',
+      st_pending: 'アカウントは審査中です。承認後に各ツールをご利用いただけます。',
+      st_load_fail: 'アカウント状態の読み込みに失敗しました。再読み込みしてください。',
+      err_login: 'メールアドレスまたはパスワードが正しくありません。',
+      err_need_email: '先にメールアドレスを入力してください。',
+      reset_sent: 'パスワード再設定メールを送信しました。ご確認ください。',
+      reset_fail: '送信に失敗しました。メールアドレスをご確認ください。',
+      err_all_fields: 'すべての項目を入力してください。',
+      err_pw_len: 'パスワードは6文字以上にしてください。',
+      err_pw_mismatch: 'パスワードが一致しません。',
+      err_email_in_use: 'このメールアドレスは登録済みです。ログインしてください。',
+      err_email_invalid: 'メールアドレスの形式が正しくありません。',
+      err_register: '登録に失敗しました。しばらくしてから再度お試しください。',
+      err_pw_new_len: '新しいパスワードは6文字以上にしてください。',
+      err_pw_new_mismatch: '新しいパスワードが一致しません。',
+      pw_updated: 'パスワードを更新しました。',
+      err_pw_old: '現在のパスワードが正しくありません。',
+      err_pw_fail: '変更に失敗しました。しばらくしてから再度お試しください。',
+    },
+    zh: {
+      loading: '正在验证身份…',
+      login_title: '会员中心',
+      login_desc: '登录您的账号，或注册新账号。',
+      ph_email: '邮箱地址',
+      ph_password: '密码',
+      btn_login: '登录',
+      forgot: '忘记密码？',
+      to_register: '还没有账号？注册',
+      back_home: '← 返回首页',
+      reg_title: '注册账号',
+      reg_desc: '创建账号后即可使用会员功能。',
+      ph_password6: '密码（至少 6 位）',
+      ph_confirm: '确认密码',
+      btn_register: '注册',
+      to_login: '已有账号？登录',
+      welcome: '欢迎回来',
+      admin_name: '🔧 管理后台',
+      admin_desc: '访问记录 · 数据统计',
+      jp_name: '日语基础学习工具',
+      jp_desc: '词汇 · 变形引擎 · 小测试',
+      all_name: '全部演示工具',
+      all_desc: '翻译 · 文档分析 · 生平故事',
+      ph_pw_old: '当前密码',
+      ph_pw_new: '新密码（至少 6 位）',
+      ph_pw_confirm: '确认新密码',
+      btn_pw_submit: '确认修改',
+      pw_toggle: '修改密码',
+      logout: '退出登录',
+      st_disabled: '您的账号已被停用，请联系管理员。',
+      st_pending: '账号正在审核中，审核通过后即可使用各项工具。',
+      st_load_fail: '账号状态加载失败，请刷新重试。',
+      err_login: '邮箱或密码错误，请重试。',
+      err_need_email: '请先填写邮箱地址。',
+      reset_sent: '重置密码邮件已发送，请查收。',
+      reset_fail: '发送失败，请检查邮箱地址。',
+      err_all_fields: '请填写所有字段。',
+      err_pw_len: '密码至少 6 位。',
+      err_pw_mismatch: '两次密码不一致。',
+      err_email_in_use: '该邮箱已注册，请直接登录。',
+      err_email_invalid: '邮箱格式不正确。',
+      err_register: '注册失败，请稍后再试。',
+      err_pw_new_len: '新密码至少 6 位。',
+      err_pw_new_mismatch: '两次输入的新密码不一致。',
+      pw_updated: '密码已更新。',
+      err_pw_old: '当前密码错误，请重试。',
+      err_pw_fail: '修改失败，请稍后再试。',
+    },
+    en: {
+      loading: 'Verifying…',
+      login_title: 'Member Center',
+      login_desc: 'Sign in to your account, or register a new one.',
+      ph_email: 'Email address',
+      ph_password: 'Password',
+      btn_login: 'Sign in',
+      forgot: 'Forgot password?',
+      to_register: "Don't have an account? Register",
+      back_home: '← Back to home',
+      reg_title: 'Create account',
+      reg_desc: 'After registering you can use member features.',
+      ph_password6: 'Password (min. 6 characters)',
+      ph_confirm: 'Confirm password',
+      btn_register: 'Register',
+      to_login: 'Already have an account? Sign in',
+      welcome: 'Welcome back',
+      admin_name: '🔧 Admin dashboard',
+      admin_desc: 'Visit logs · Statistics',
+      jp_name: 'Japanese Basics Tool',
+      jp_desc: 'Vocabulary · Conjugation · Quiz',
+      all_name: 'All demo tools',
+      all_desc: 'Translation · Document analysis · Life story',
+      ph_pw_old: 'Current password',
+      ph_pw_new: 'New password (min. 6 characters)',
+      ph_pw_confirm: 'Confirm new password',
+      btn_pw_submit: 'Confirm change',
+      pw_toggle: 'Change password',
+      logout: 'Sign out',
+      st_disabled: 'Your account has been disabled. Please contact the administrator.',
+      st_pending: 'Your account is under review. You can use the tools once approved.',
+      st_load_fail: 'Failed to load account status. Please refresh and try again.',
+      err_login: 'Incorrect email or password. Please try again.',
+      err_need_email: 'Please enter your email address first.',
+      reset_sent: 'Password reset email sent. Please check your inbox.',
+      reset_fail: 'Failed to send. Please check the email address.',
+      err_all_fields: 'Please fill in all fields.',
+      err_pw_len: 'Password must be at least 6 characters.',
+      err_pw_mismatch: 'Passwords do not match.',
+      err_email_in_use: 'This email is already registered. Please sign in.',
+      err_email_invalid: 'Invalid email format.',
+      err_register: 'Registration failed. Please try again later.',
+      err_pw_new_len: 'New password must be at least 6 characters.',
+      err_pw_new_mismatch: 'New passwords do not match.',
+      pw_updated: 'Password updated.',
+      err_pw_old: 'Current password is incorrect. Please try again.',
+      err_pw_fail: 'Change failed. Please try again later.',
+    },
+  };
+
+  let currentLang = localStorage.getItem('sdf_lang') || 'ja';
+  const dict = () => T[currentLang] || T.ja;
+  const t = (key) => dict()[key] ?? key;
+
+  function applyLang(lang) {
+    currentLang = T[lang] ? lang : 'ja';
+    localStorage.setItem('sdf_lang', currentLang);
+    document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : currentLang;
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const v = dict()[el.dataset.i18n];
+      if (v != null) el.textContent = v;
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
+      const v = dict()[el.dataset.i18nPh];
+      if (v != null) el.placeholder = v;
+    });
+    // Re-translate any active message (login error, status, etc.)
+    document.querySelectorAll('[data-msg-key]').forEach((el) => {
+      el.textContent = t(el.dataset.msgKey);
+    });
+    document.querySelectorAll('.lang-btn').forEach((b) => {
+      b.classList.toggle('active', b.dataset.lang === currentLang);
+    });
+  }
+
+  // Set / clear translatable message elements (records the key for re-translation).
+  function showMsg(el, key, klass) {
+    el.className = klass;
+    el.dataset.msgKey = key;
+    el.textContent = t(key);
+  }
+  function clearMsg(el, klass) {
+    el.className = klass;
+    el.textContent = '';
+    delete el.dataset.msgKey;
+  }
+
+  document.querySelectorAll('.lang-btn').forEach((b) => {
+    b.addEventListener('click', () => applyLang(b.dataset.lang));
+  });
+  applyLang(currentLang);
+
+  /* ── Firebase ───────────────────────────────────────────────────────── */
   const app = initializeApp({
     apiKey:            'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',
     authDomain:        'senridfauthentication.firebaseapp.com',
@@ -237,24 +438,23 @@
           const snap = await getDoc(doc(db, 'users', user.uid));
           const status = snap.data()?.status || 'pending';
           if (status === 'approved') {
+            clearMsg(statusEl, 'account-status');
             statusEl.style.display = 'none';
           } else {
-            statusEl.textContent = status === 'disabled'
-              ? '您的账号已被停用，请联系管理员。'
-              : '账号正在审核中，审核通过后即可使用各项工具。';
-            statusEl.className = 'account-status ' + (status === 'disabled' ? 'disabled' : 'pending');
+            showMsg(statusEl, status === 'disabled' ? 'st_disabled' : 'st_pending',
+              'account-status ' + (status === 'disabled' ? 'disabled' : 'pending'));
             statusEl.style.display = 'block';
             document.getElementById('tool-list').style.display = 'none';
           }
         } catch {
-          statusEl.textContent = '账号状态加载失败，请刷新重试。';
-          statusEl.className = 'account-status pending';
+          showMsg(statusEl, 'st_load_fail', 'account-status pending');
           statusEl.style.display = 'block';
         }
       }
       show('state-member');
     } else {
       localStorage.removeItem('sdf_user_email');
+      clearMsg(document.getElementById('account-status'), 'account-status');
       document.getElementById('account-status').style.display = 'none';
       document.getElementById('tool-list').style.display = '';
       show('state-guest');
@@ -266,28 +466,24 @@
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
     const errEl = document.getElementById('login-error');
-    errEl.className = 'form-error';
-    errEl.textContent = '';
+    clearMsg(errEl, 'form-error');
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch {
-      errEl.className = 'form-error err';
-      errEl.textContent = '邮箱或密码错误，请重试。';
+      showMsg(errEl, 'err_login', 'form-error err');
     }
   });
 
   document.getElementById('forgot-btn').addEventListener('click', async () => {
     const email = document.getElementById('login-email').value.trim();
     const errEl = document.getElementById('login-error');
-    errEl.className = 'form-error';
-    if (!email) { errEl.className = 'form-error err'; errEl.textContent = '请先填写邮箱地址。'; return; }
+    clearMsg(errEl, 'form-error');
+    if (!email) { showMsg(errEl, 'err_need_email', 'form-error err'); return; }
     try {
       await sendPasswordResetEmail(auth, email);
-      errEl.className = 'form-error ok';
-      errEl.textContent = '重置密码邮件已发送，请查收。';
+      showMsg(errEl, 'reset_sent', 'form-error ok');
     } catch {
-      errEl.className = 'form-error err';
-      errEl.textContent = '发送失败，请检查邮箱地址。';
+      showMsg(errEl, 'reset_fail', 'form-error err');
     }
   });
 
@@ -299,11 +495,11 @@
     document.getElementById('view-register').style.display = name === 'register' ? 'block' : 'none';
   }
   document.getElementById('to-register').addEventListener('click', () => {
-    document.getElementById('login-error').textContent = '';
+    clearMsg(document.getElementById('login-error'), 'form-error');
     showView('register');
   });
   document.getElementById('to-login').addEventListener('click', () => {
-    document.getElementById('reg-error').textContent = '';
+    clearMsg(document.getElementById('reg-error'), 'form-error');
     showView('login');
   });
 
@@ -314,17 +510,11 @@
     const password = document.getElementById('reg-password').value;
     const confirm  = document.getElementById('reg-confirm').value;
     const errEl    = document.getElementById('reg-error');
-    errEl.className = 'form-error';
+    clearMsg(errEl, 'form-error');
 
-    if (!email || !password || !confirm) {
-      errEl.className = 'form-error err'; errEl.textContent = '请填写所有字段。'; return;
-    }
-    if (password.length < 6) {
-      errEl.className = 'form-error err'; errEl.textContent = '密码至少 6 位。'; return;
-    }
-    if (password !== confirm) {
-      errEl.className = 'form-error err'; errEl.textContent = '两次密码不一致。'; return;
-    }
+    if (!email || !password || !confirm) { showMsg(errEl, 'err_all_fields', 'form-error err'); return; }
+    if (password.length < 6) { showMsg(errEl, 'err_pw_len', 'form-error err'); return; }
+    if (password !== confirm) { showMsg(errEl, 'err_pw_mismatch', 'form-error err'); return; }
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await setDoc(doc(db, 'users', cred.user.uid), {
@@ -333,12 +523,10 @@
         createdAt: serverTimestamp()
       });
     } catch (err) {
-      errEl.className = 'form-error err';
-      errEl.textContent = err.code === 'auth/email-already-in-use'
-        ? '该邮箱已注册，请直接登录。'
-        : err.code === 'auth/invalid-email'
-          ? '邮箱格式不正确。'
-          : '注册失败，请稍后再试。';
+      const key = err.code === 'auth/email-already-in-use' ? 'err_email_in_use'
+        : err.code === 'auth/invalid-email' ? 'err_email_invalid'
+        : 'err_register';
+      showMsg(errEl, key, 'form-error err');
     }
   });
 
@@ -346,7 +534,7 @@
   document.getElementById('pw-toggle').addEventListener('click', () => {
     const sec = document.getElementById('pw-section');
     sec.classList.toggle('open');
-    document.getElementById('pw-msg').textContent = '';
+    clearMsg(document.getElementById('pw-msg'), 'form-error');
     ['pw-old','pw-new','pw-confirm'].forEach(id => document.getElementById(id).value = '');
   });
 
@@ -355,30 +543,21 @@
     const newPw  = document.getElementById('pw-new').value;
     const confirm = document.getElementById('pw-confirm').value;
     const msg = document.getElementById('pw-msg');
-    msg.className = 'form-error';
+    clearMsg(msg, 'form-error');
 
-    if (!oldPw || !newPw || !confirm) {
-      msg.className = 'form-error err'; msg.textContent = '请填写所有字段。'; return;
-    }
-    if (newPw.length < 6) {
-      msg.className = 'form-error err'; msg.textContent = '新密码至少 6 位。'; return;
-    }
-    if (newPw !== confirm) {
-      msg.className = 'form-error err'; msg.textContent = '两次输入的新密码不一致。'; return;
-    }
+    if (!oldPw || !newPw || !confirm) { showMsg(msg, 'err_all_fields', 'form-error err'); return; }
+    if (newPw.length < 6) { showMsg(msg, 'err_pw_new_len', 'form-error err'); return; }
+    if (newPw !== confirm) { showMsg(msg, 'err_pw_new_mismatch', 'form-error err'); return; }
 
     const user = auth.currentUser;
     try {
       const cred = EmailAuthProvider.credential(user.email, oldPw);
       await reauthenticateWithCredential(user, cred);
       await updatePassword(user, newPw);
-      msg.className = 'form-error ok'; msg.textContent = '密码已更新。';
+      showMsg(msg, 'pw_updated', 'form-error ok');
       ['pw-old','pw-new','pw-confirm'].forEach(id => document.getElementById(id).value = '');
     } catch (err) {
-      msg.className = 'form-error err';
-      msg.textContent = err.code === 'auth/invalid-credential'
-        ? '当前密码错误，请重试。'
-        : '修改失败，请稍后再试。';
+      showMsg(msg, err.code === 'auth/invalid-credential' ? 'err_pw_old' : 'err_pw_fail', 'form-error err');
     }
   });
 </script>
