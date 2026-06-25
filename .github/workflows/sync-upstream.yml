@@ -22,6 +22,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false   # don't let GITHUB_TOKEN's extraheader override the PAT
       - name: Force-push main to deploy repo
         env:
           MIRROR_PAT: ${{ secrets.MIRROR_PAT }}
