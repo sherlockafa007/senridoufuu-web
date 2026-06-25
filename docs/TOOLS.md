@@ -8,13 +8,17 @@
 ## 0. 全站部署与架构总览
 
 - **类型**：纯静态站（HTML + 单一 CSS + 单一 JS），无构建步骤、无框架。
-- **部署链路（重要，易踩坑）**：
+- **部署链路（重要结构，易踩坑）**：
   1. 我（sherlockafa007）`git push` 到 **我的 GitHub：`sherlockafa007/senridoufuu-web`**
-  2. 同事的仓库 **`Eveysnow5/senridf-web`** 镜像我的 main —— 由 `.github/workflows/sync-upstream.yml` **每 30 分钟自动强制同步**（该 workflow 在我仓库，`if: github.repository == 'Eveysnow5/senridf-web'` 守卫，只在她仓库运行）。
-  3. **同事的 Cloudflare 账号**从他的仓库构建 → 上线 `senridf.com`
-  - ⏱️ 我 push 后**最多约 30 分钟自动上线**（也可让同事在 Actions 手动 Run "Mirror upstream to deploy fork" 立即同步）。
-  - ⚠️ 历史坑（2026-06-23 前）：同步靠手动 Sync fork，常卡住 → 线上落后好几个提交、"修了没生效"。自动镜像就是为根治此问题。
-  - ✅ 验证线上到底是哪个版本：直接 `curl` 线上文件 grep 标志性改动比对（比看 Cloudflare 面板快准；注意 `.html` 会 308 跳无扩展名 URL，需 `-L`）。
+  2. **自动镜像**到同事仓库 **`Eveysnow5/senridf-web`** —— `.github/workflows/sync-upstream.yml`，`on: push` 在**我的仓库**触发，用 secret `MIRROR_PAT` 把 main `--force` 推到同事仓库（守卫 `if: github.repository == 'sherlockafa007/senridoufuu-web'`；没 secret 时自动跳过、不报错）。
+  3. 同事仓库一更新 → **同事的 Cloudflare 账号**自动构建 → 上线 `senridf.com`
+  - ✅ **2026-06-25 起 push 即自动上线，同事无需再手动 Sync fork。**
+  - 🔑 `MIRROR_PAT`：同事建的 **fine-grained PAT**，仅 `Eveysnow5/senridf-web`，权限 **Contents: R/W + Workflows: R/W**，存我的仓库 Secrets。**有效期 1 年（约 2026-07-25 到期，需续期/重建并更新 secret）**。
+  - ⚠️ 两个踩过的坑（已修，别再犯）：
+    - `actions/checkout` 默认把 `GITHUB_TOKEN` 持久化成 github.com 的 `http.extraheader`，会**覆盖** URL 里的 PAT 导致 403 → 必须 `persist-credentials: false`。
+    - fine-grained PAT 推送**含 `.github/workflows/` 改动**的提交需 **Workflows** 权限，否则整个 push 被拒。
+  - ⚠️ 历史坑：2026-06-23 前靠手动 Sync fork，常卡住 → 线上落后好几个提交、"修了没生效"；曾试"定时在她 fork 跑"的镜像，但 **GitHub 默认禁用 fork 里的 scheduled workflow**，跑不起来，故改 push 触发在源仓库跑。
+  - ✅ 验证线上版本：`curl` 线上文件 grep 标志性改动比对（`.html` 会 308 跳无扩展名 URL，需 `-L`）；或 curl 两仓库 `commits/main` 的 sha 看是否一致。比看 Cloudflare 面板快准。
 - **后端**：Cloudflare Pages Functions，目录 `functions/api/`，前端调 `/api/*`。
   - （`netlify.toml`、`netlify/` 是迁移前遗留的死文件，现已不用。CLAUDE.md 里"Netlify Functions"的描述也已过时。）
 - **鉴权**：Firebase Auth（邮箱/密码）+ Firestore。
