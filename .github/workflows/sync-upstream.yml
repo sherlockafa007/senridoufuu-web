@@ -1,35 +1,35 @@
-name: Mirror upstream to deploy fork
+name: Mirror to deploy repo
 
-# Keeps the deploy mirror (Eveysnow5/senridf-web) in lock-step with the
-# source repo (sherlockafa007/senridoufuu-web) so pushes go live without a
-# manual "Sync fork". Guarded to run ONLY in the mirror, never in the source.
+# Runs in the SOURCE repo (sherlockafa007/senridoufuu-web) on every push to
+# main and force-mirrors main into the deploy repo (Eveysnow5/senridf-web).
+# The deploy repo's update fires the colleague's Cloudflare Pages build, so a
+# push goes live with no manual "Sync fork".
+#
+# Setup: add a repository secret MIRROR_PAT = a fine-grained PAT scoped to
+# Eveysnow5/senridf-web with "Contents: Read and write".
+# Until that secret exists the job skips cleanly (no failure, no email).
 
 on:
-  schedule:
-    - cron: '*/30 * * * *'   # every 30 min
-  workflow_dispatch:           # manual run button
-
-permissions:
-  contents: write
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   mirror:
-    if: github.repository == 'Eveysnow5/senridf-web'
+    if: github.repository == 'sherlockafa007/senridoufuu-web'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Fast-forward main to source/main
+      - name: Force-push main to deploy repo
+        env:
+          MIRROR_PAT: ${{ secrets.MIRROR_PAT }}
         run: |
-          git config user.name  "mirror-bot"
-          git config user.email "mirror-bot@users.noreply.github.com"
-          git remote add source https://github.com/sherlockafa007/senridoufuu-web.git
-          git fetch source main
-          if [ "$(git rev-parse HEAD)" != "$(git rev-parse source/main)" ]; then
-            echo "Updating mirror to $(git rev-parse --short source/main)"
-            git reset --hard source/main
-            git push --force origin main
-          else
-            echo "Already up to date."
+          if [ -z "$MIRROR_PAT" ]; then
+            echo "MIRROR_PAT not set — skipping mirror (set the secret to enable auto-deploy)."
+            exit 0
           fi
+          echo "Mirroring $(git rev-parse --short HEAD) to Eveysnow5/senridf-web ..."
+          git push --force "https://x-access-token:${MIRROR_PAT}@github.com/Eveysnow5/senridf-web.git" HEAD:main
+          echo "Done."
