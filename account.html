@@ -295,8 +295,8 @@
 
   /* ── Login / Register view toggle ── */
   function showView(name) {
-    document.getElementById('view-login').style.display    = name === 'login'    ? '' : 'none';
-    document.getElementById('view-register').style.display = name === 'register' ? '' : 'none';
+    document.getElementById('view-login').style.display    = name === 'login'    ? 'block' : 'none';
+    document.getElementById('view-register').style.display = name === 'register' ? 'block' : 'none';
   }
   document.getElementById('to-register').addEventListener('click', () => {
     document.getElementById('login-error').textContent = '';
