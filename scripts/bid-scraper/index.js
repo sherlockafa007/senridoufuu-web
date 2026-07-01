@@ -426,12 +426,7 @@ async function main() {
         }
 
         // Drop non-bid pages flagged by the model.
-        if (
-          summary
-            .replace(/[\s　]/g, '')
-            .toUpperCase()
-            .includes('NOT_A_BID')
-        ) {
+        if (summary.replace(/\s/g, '').toUpperCase().includes('NOT_A_BID')) {
           console.log(`  - skip (not a bid): ${bid.title}`);
           totals.skipped_notbid++;
           continue;
