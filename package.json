@@ -1,0 +1,22 @@
+{
+  "name": "senridoufuu-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "千里同風 官网 —— 纯静态站（开发期工具，不进部署产物）",
+  "type": "commonjs",
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test",
+    "qa": "node scripts/qa/scan.js",
+    "check": "npm run lint && npm run format:check && npm run test && npm run qa"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "cheerio": "^1.0.0",
+    "eslint": "^9.13.0",
+    "globals": "^15.11.0",
+    "prettier": "^3.3.3"
+  }
+}
