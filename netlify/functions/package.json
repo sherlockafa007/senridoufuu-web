@@ -1,9 +1,0 @@
-{
-  "name": "senridoufuu-netlify-functions",
-  "version": "1.0.0",
-  "description": "Netlify serverless functions for senridoufuu-web",
-  "main": "index.js",
-  "dependencies": {
-    "docx": "^8.5.0"
-  }
-}
