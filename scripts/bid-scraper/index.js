@@ -91,11 +91,13 @@ function parseOsakaBids(html, target) {
     if (!title || !sourceUrl) return;
 
     const fields = {};
-    $(el).find('table.table01 tr').each((_, row) => {
-      const key = $(row).find('th').text().trim();
-      const val = $(row).find('td').text().trim();
-      if (key && val) fields[key] = val;
-    });
+    $(el)
+      .find('table.table01 tr')
+      .each((_, row) => {
+        const key = $(row).find('th').text().trim();
+        const val = $(row).find('td').text().trim();
+        if (key && val) fields[key] = val;
+      });
 
     const budgetRaw = fields['予定価格'] || fields['上限額'] || fields['予算額'] || '';
     const itemCat = fields['種目'] || '';
@@ -192,10 +194,12 @@ function parseToyonakaLinks(html, target) {
     let href = $(el).attr('href') || '';
 
     if (!title || title.length < 5) return;
-    if (!href || href.startsWith('#') || href.startsWith('mailto') || href.startsWith('javascript')) return;
+    if (!href || href.startsWith('#') || href.startsWith('mailto') || href.startsWith('javascript'))
+      return;
     if (/\.(pdf|docx?|xlsx?)$/i.test(href)) return;
     // Skip nav / index / result pages.
-    if (/index\.html$|nyusatsu_kekka|hacchuyotei|zuiikeiyaku|3gozuikei|open_counter/.test(href)) return;
+    if (/index\.html$|nyusatsu_kekka|hacchuyotei|zuiikeiyaku|3gozuikei|open_counter/.test(href))
+      return;
     // Skip generic section-index titles (e.g. "公告（委託）") — they are listings, not a single bid.
     if (/^公告（(委託|工事|物品|建設|役務)）$/.test(title)) return;
     // Skip the about/sitemap section just in case it ever appears inside the body.
@@ -204,8 +208,8 @@ function parseToyonakaLinks(html, target) {
     const resolved = href.startsWith('/')
       ? `https://www.city.toyonaka.osaka.jp${href}`
       : href.startsWith('http')
-      ? href
-      : new URL(href, target.url).toString();
+        ? href
+        : new URL(href, target.url).toString();
 
     // Only include pages on toyonaka.osaka.jp
     if (!resolved.includes('toyonaka.osaka.jp')) return;
@@ -246,7 +250,9 @@ async function fetchToyonakaDetail(title, sourceUrl, target) {
   if (!announced) {
     $('p, div').each((_, el) => {
       if (announced) return;
-      const m = $(el).text().match(/更新日[：:]\s*(\d{4}年\d+月\d+日)/);
+      const m = $(el)
+        .text()
+        .match(/更新日[：:]\s*(\d{4}年\d+月\d+日)/);
       if (m) announced = m[1];
     });
   }
@@ -308,7 +314,7 @@ async function translate(bid) {
         'Content-Type': 'application/json',
       },
       timeout: 30000,
-    }
+    },
   );
 
   return res.data.choices?.[0]?.message?.content?.trim() || '';
@@ -317,10 +323,13 @@ async function translate(bid) {
 // ── Run report ──────────────────────────────────────────────────────────────
 async function writeRunReport(db, report) {
   try {
-    await db.collection('meta').doc('scrape_status').set({
-      ...report,
-      finished_at: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    await db
+      .collection('meta')
+      .doc('scrape_status')
+      .set({
+        ...report,
+        finished_at: admin.firestore.FieldValue.serverTimestamp(),
+      });
     console.log('Run report written to meta/scrape_status');
   } catch (e) {
     console.error('Failed to write run report:', e.message);
@@ -417,7 +426,12 @@ async function main() {
         }
 
         // Drop non-bid pages flagged by the model.
-        if (summary.replace(/[\s　]/g, '').toUpperCase().includes('NOT_A_BID')) {
+        if (
+          summary
+            .replace(/[\s　]/g, '')
+            .toUpperCase()
+            .includes('NOT_A_BID')
+        ) {
           console.log(`  - skip (not a bid): ${bid.title}`);
           totals.skipped_notbid++;
           continue;

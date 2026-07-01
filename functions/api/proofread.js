@@ -1,6 +1,8 @@
 const MAX_CHARS = 20000;
 
-const buildPrompt = (text) => `你是一名专业的中文新闻稿校对助手。请仔细阅读以下文稿，检查五类问题并以Markdown格式输出报告。
+const buildPrompt = (
+  text,
+) => `你是一名专业的中文新闻稿校对助手。请仔细阅读以下文稿，检查五类问题并以Markdown格式输出报告。
 
 ## 检查项目
 
@@ -41,12 +43,16 @@ export async function onRequest(context) {
   try {
     body = await context.request.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
+    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+      status: 400,
+    });
   }
 
   const text = (body.text || '').trim();
   if (!text) {
-    return new Response(JSON.stringify({ error: '未提供文本' }), { status: 400 });
+    return new Response(JSON.stringify({ error: '未提供文本' }), {
+      status: 400,
+    });
   }
 
   const truncated = text.length > MAX_CHARS;
@@ -65,19 +71,20 @@ export async function onRequest(context) {
         messages: [{ role: 'user', content: buildPrompt(input) }],
         max_tokens: 6000,
       }),
-    }
+    },
   );
 
   if (!qwenRes.ok) {
     const err = await qwenRes.text();
-    return new Response(JSON.stringify({ error: `AI 服务错误：${err}` }), { status: 502 });
+    return new Response(JSON.stringify({ error: `AI 服务错误：${err}` }), {
+      status: 502,
+    });
   }
 
   const data = await qwenRes.json();
   const result = data.choices?.[0]?.message?.content?.trim() || '';
 
-  return new Response(
-    JSON.stringify({ result, truncated, char_count: text.length }),
-    { headers: { 'Content-Type': 'application/json' } }
-  );
+  return new Response(JSON.stringify({ result, truncated, char_count: text.length }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
 }

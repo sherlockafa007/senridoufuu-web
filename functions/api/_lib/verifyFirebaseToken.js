@@ -21,14 +21,17 @@ async function getKeys() {
   const { keys } = await res.json();
   const maxAge = parseInt(
     (res.headers.get('cache-control') || '').match(/max-age=(\d+)/)?.[1] || '3600',
-    10
+    10,
   );
   _jwkCache = { keys, exp: Date.now() + maxAge * 1000 };
   return keys;
 }
 
 function b64urlToBytes(s) {
-  const b64 = s.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(s.length / 4) * 4, '=');
+  const b64 = s
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+    .padEnd(Math.ceil(s.length / 4) * 4, '=');
   const bin = atob(b64);
   return Uint8Array.from(bin, (c) => c.charCodeAt(0));
 }
@@ -53,13 +56,13 @@ export async function verifyFirebaseToken(idToken) {
     jwk,
     { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
-    ['verify']
+    ['verify'],
   );
   const valid = await crypto.subtle.verify(
     'RSASSA-PKCS1-v1_5',
     key,
     b64urlToBytes(s),
-    new TextEncoder().encode(`${h}.${p}`)
+    new TextEncoder().encode(`${h}.${p}`),
   );
   if (!valid) throw new Error('bad signature');
 

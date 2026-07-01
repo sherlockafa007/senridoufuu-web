@@ -4,20 +4,27 @@ export async function onRequest(context) {
 
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
-      status: 405, headers: { 'Content-Type': 'application/json' }
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   const apiKey = env.QWEN_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ error: 'QWEN_API_KEY not configured.' }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   let body;
-  try { body = await request.json(); }
-  catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 }); }
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+      status: 400,
+    });
+  }
 
   const { messages } = body;
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -52,25 +59,32 @@ Sole exception: if the user's message is explicitly a meeting-summary request (i
 
 Use formal, precise language. Never skip the 【回訳】 step for Chinese or Japanese input. Output nothing outside the specified format.`;
 
-  const upstream = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: 'qwen-plus',
-      messages: [{ role: 'system', content: systemPrompt }, ...messages],
-      max_tokens: 2000,
-      temperature: 0.2,
-    }),
-  });
+  const upstream = await fetch(
+    'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'qwen-plus',
+        messages: [{ role: 'system', content: systemPrompt }, ...messages],
+        max_tokens: 2000,
+        temperature: 0.2,
+      }),
+    },
+  );
 
   const data = await upstream.json();
   if (!upstream.ok) {
     return new Response(JSON.stringify({ error: data.error?.message || 'Qwen API error' }), {
-      status: upstream.status, headers: { 'Content-Type': 'application/json' }
+      status: upstream.status,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   return new Response(JSON.stringify({ content: data.choices[0].message.content }), {
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
   });
 }

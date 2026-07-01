@@ -22,67 +22,90 @@ export async function onRequest(context) {
 
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
-      status: 405, headers: { 'Content-Type': 'application/json' }
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   const apiKey = env.QWEN_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ error: '未配置 API Key' }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   let body;
-  try { body = await request.json(); }
-  catch { return new Response(JSON.stringify({ error: '请求格式错误' }), { status: 400 }); }
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: '请求格式错误' }), {
+      status: 400,
+    });
+  }
 
   const { dialogues } = body;
   if (!Array.isArray(dialogues) || dialogues.length === 0) {
-    return new Response(JSON.stringify({ error: '缺少 dialogues 数组' }), { status: 400 });
+    return new Response(JSON.stringify({ error: '缺少 dialogues 数组' }), {
+      status: 400,
+    });
   }
 
   const LANG = { ja: '日文', zh: '中文', en: '英文' };
-  const dialogueText = dialogues.map(d => {
-    const speaker = d.marker === '我说' ? '我们' : '客户';
-    // New shape: src/tgt + srcLang/tgtLang. Fall back to old zh/ja shape.
-    const src = d.src ?? d.zh;
-    const tgt = d.tgt ?? d.ja;
-    const srcLabel = LANG[d.srcLang] || '原文';
-    const tgtLabel = LANG[d.tgtLang] || '译文';
-    return `【${speaker}】\n${srcLabel}：${src}\n${tgtLabel}：${tgt}`;
-  }).join('\n\n');
+  const dialogueText = dialogues
+    .map((d) => {
+      const speaker = d.marker === '我说' ? '我们' : '客户';
+      // New shape: src/tgt + srcLang/tgtLang. Fall back to old zh/ja shape.
+      const src = d.src ?? d.zh;
+      const tgt = d.tgt ?? d.ja;
+      const srcLabel = LANG[d.srcLang] || '原文';
+      const tgtLabel = LANG[d.tgtLang] || '译文';
+      return `【${speaker}】\n${srcLabel}：${src}\n${tgtLabel}：${tgt}`;
+    })
+    .join('\n\n');
 
-  const upstream = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: 'qwen-plus',
-      messages: [
-        { role: 'system', content: SYS_SUMMARY },
-        { role: 'user', content: `以下是会议对话：\n\n${dialogueText}` },
-      ],
-      max_tokens: 1500,
-      temperature: 0.5,
-    }),
-  });
+  const upstream = await fetch(
+    'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'qwen-plus',
+        messages: [
+          { role: 'system', content: SYS_SUMMARY },
+          { role: 'user', content: `以下是会议对话：\n\n${dialogueText}` },
+        ],
+        max_tokens: 1500,
+        temperature: 0.5,
+      }),
+    },
+  );
 
   const data = await upstream.json();
   if (!upstream.ok) {
     return new Response(JSON.stringify({ error: data.error?.message || 'Qwen API error' }), {
-      status: upstream.status, headers: { 'Content-Type': 'application/json' }
+      status: upstream.status,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   const raw = data.choices[0].message.content.trim();
   let summary;
   try {
-    summary = JSON.parse(raw.replace(/```(?:json)?\n?/g, '').replace(/```/g, '').trim());
+    summary = JSON.parse(
+      raw
+        .replace(/```(?:json)?\n?/g, '')
+        .replace(/```/g, '')
+        .trim(),
+    );
   } catch {
     summary = { topics: [], feedback: [], actions: [] };
   }
 
   return new Response(JSON.stringify({ summary }), {
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
   });
 }

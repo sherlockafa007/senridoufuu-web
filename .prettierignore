@@ -1,0 +1,11 @@
+node_modules
+package-lock.json
+# 跳过标记语言与样式，避免大规模重排既有手工排版
+**/*.html
+**/*.css
+**/*.md
+**/*.yml
+**/*.yaml
+# 本地工具与资源目录，不纳入格式化
+tools
+assets

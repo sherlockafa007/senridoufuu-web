@@ -23,17 +23,21 @@ export async function checkRateLimit(uid, idToken) {
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          writes: [{
-            transform: {
-              document: docPath,
-              fieldTransforms: [{
-                fieldPath: 'count',
-                increment: { integerValue: '1' },
-              }],
+          writes: [
+            {
+              transform: {
+                document: docPath,
+                fieldTransforms: [
+                  {
+                    fieldPath: 'count',
+                    increment: { integerValue: '1' },
+                  },
+                ],
+              },
             },
-          }],
+          ],
         }),
-      }
+      },
     );
 
     if (!res.ok) return false; // fail open
@@ -41,7 +45,7 @@ export async function checkRateLimit(uid, idToken) {
     const data = await res.json();
     const newCount = parseInt(
       data.writeResults?.[0]?.transformResults?.[0]?.integerValue ?? '1',
-      10
+      10,
     );
 
     return newCount > RATE_LIMIT; // true = blocked

@@ -7,9 +7,7 @@ import { checkRateLimit } from './_lib/rateLimiter.js';
 const ALLOWED_ORIGIN = 'https://www.senridf.com';
 
 function corsHeaders(origin) {
-  const allowed =
-    origin === ALLOWED_ORIGIN ||
-    /^http:\/\/localhost(:\d+)?$/.test(origin);
+  const allowed = origin === ALLOWED_ORIGIN || /^http:\/\/localhost(:\d+)?$/.test(origin);
   if (!allowed) return null;
   return {
     'Access-Control-Allow-Origin': origin,

@@ -4,10 +4,16 @@ const QWEN_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/complet
 async function qwen(apiKey, system, user, maxTokens = 800, temp = 0.7) {
   const res = await fetch(QWEN_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
       model: 'qwen-plus',
-      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
       max_tokens: maxTokens,
       temperature: temp,
     }),
@@ -66,20 +72,27 @@ export async function onRequest(context) {
 
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
-      status: 405, headers: { 'Content-Type': 'application/json' }
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   const apiKey = env.QWEN_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ error: '未配置 API Key' }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 
   let body;
-  try { body = await request.json(); }
-  catch { return new Response(JSON.stringify({ error: '请求格式错误' }), { status: 400 }); }
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: '请求格式错误' }), {
+      status: 400,
+    });
+  }
 
   const { action } = body;
   const h = { 'Content-Type': 'application/json' };
@@ -88,9 +101,15 @@ export async function onRequest(context) {
     if (action === 'analyze') {
       const { question, answer, recentHistory = [], knownTags = [] } = body;
       if (!question || !answer) {
-        return new Response(JSON.stringify({ error: '缺少 question/answer' }), { status: 400, headers: h });
+        return new Response(JSON.stringify({ error: '缺少 question/answer' }), {
+          status: 400,
+          headers: h,
+        });
       }
-      const histText = recentHistory.slice(-4).map(a => `问：${a.question}\n答：${a.answer}`).join('\n\n');
+      const histText = recentHistory
+        .slice(-4)
+        .map((a) => `问：${a.question}\n答：${a.answer}`)
+        .join('\n\n');
       const userPrompt = [
         histText ? `最近的对话：\n${histText}\n\n` : '',
         `当前问答：\n问：${question}\n答：${answer}`,
@@ -100,9 +119,21 @@ export async function onRequest(context) {
       const raw = await qwen(apiKey, SYS_ANALYZE, userPrompt, 450, 0.2);
       let analysis;
       try {
-        analysis = JSON.parse(raw.replace(/```(?:json)?\n?/g, '').replace(/```/g, '').trim());
+        analysis = JSON.parse(
+          raw
+            .replace(/```(?:json)?\n?/g, '')
+            .replace(/```/g, '')
+            .trim(),
+        );
       } catch {
-        analysis = { tags: [], year: null, location: null, isEvasion: false, evasionType: null, softLanding: null };
+        analysis = {
+          tags: [],
+          year: null,
+          location: null,
+          isEvasion: false,
+          evasionType: null,
+          softLanding: null,
+        };
       }
       return new Response(JSON.stringify({ analysis }), { headers: h });
     }
@@ -110,31 +141,56 @@ export async function onRequest(context) {
     if (action === 'bridge') {
       const { lastAnswer, nextQuestion } = body;
       if (!lastAnswer || !nextQuestion) {
-        return new Response(JSON.stringify({ error: '缺少 lastAnswer/nextQuestion' }), { status: 400, headers: h });
+        return new Response(JSON.stringify({ error: '缺少 lastAnswer/nextQuestion' }), {
+          status: 400,
+          headers: h,
+        });
       }
-      const bridge = await qwen(apiKey, SYS_BRIDGE,
+      const bridge = await qwen(
+        apiKey,
+        SYS_BRIDGE,
         `用户刚才的回答：\n${lastAnswer}\n\n即将提出的下一个问题：\n${nextQuestion}\n\n请输出衔接语：`,
-        100, 0.6);
-      return new Response(JSON.stringify({ bridge: bridge.trim() }), { headers: h });
+        100,
+        0.6,
+      );
+      return new Response(JSON.stringify({ bridge: bridge.trim() }), {
+        headers: h,
+      });
     }
 
     if (action === 'story') {
       const { answers } = body;
       if (!answers?.length) {
-        return new Response(JSON.stringify({ error: '缺少 answers' }), { status: 400, headers: h });
+        return new Response(JSON.stringify({ error: '缺少 answers' }), {
+          status: 400,
+          headers: h,
+        });
       }
-      const qaText = answers.map(a =>
-        a.privacy ? `问：${a.question}\n答：[用户选择不分享]` : `问：${a.question}\n答：${a.answer}`
-      ).join('\n\n');
-      const story = await qwen(apiKey, SYS_STORY,
+      const qaText = answers
+        .map((a) =>
+          a.privacy
+            ? `问：${a.question}\n答：[用户选择不分享]`
+            : `问：${a.question}\n答：${a.answer}`,
+        )
+        .join('\n\n');
+      const story = await qwen(
+        apiKey,
+        SYS_STORY,
         `以下是受访者亲口说出的所有信息。请严格基于这些内容撰写，禁止添加任何未提及的细节。标记为 [用户选择不分享] 的部分保持空白。\n\n${qaText}`,
-        3000, 0.5);
+        3000,
+        0.5,
+      );
       return new Response(JSON.stringify({ story }), { headers: h });
     }
 
-    return new Response(JSON.stringify({ error: '未知操作' }), { status: 400, headers: h });
-
+    return new Response(JSON.stringify({ error: '未知操作' }), {
+      status: 400,
+      headers: h,
+    });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: h });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: h,
+    });
   }
 }
