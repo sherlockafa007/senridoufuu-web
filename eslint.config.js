@@ -19,9 +19,9 @@ module.exports = [
     },
   },
 
-  // js/tracking.js 是 ES 模块（<script type="module">）
+  // js/tracking.js 与 js/shared/* 是 ES 模块（<script type="module"> / import）
   {
-    files: ['js/tracking.js'],
+    files: ['js/tracking.js', 'js/shared/**/*.js'],
     languageOptions: { sourceType: 'module' },
   },
 
