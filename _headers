@@ -1,0 +1,14 @@
+# Cloudflare Pages 安全响应头（对所有路径生效）。
+# 说明：
+# - X-Content-Type-Options: 禁止浏览器猜测 MIME，防 MIME 混淆攻击
+# - X-Frame-Options: 禁止被其它站点用 iframe 嵌入（防点击劫持）
+# - Referrer-Policy: 跨站跳转时不泄露完整 URL
+# - Permissions-Policy: 关闭定位/摄像头；麦克风仅允许本站（翻译语音需要）
+# - Strict-Transport-Security: 强制 HTTPS 一年（本站 Cloudflare 全 HTTPS）
+# 注：CSP（内容安全策略）暂不加——站点内联脚本 + 多 CDN，需单独做来源审计后再上，避免白屏。
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), camera=(), microphone=(self)
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
