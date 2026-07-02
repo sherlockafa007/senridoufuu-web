@@ -1022,12 +1022,10 @@ if (state.answers.length > 0) {
 document.getElementById('q-ta').addEventListener('input', updateCount);
 </script>
 <script type="module">
-import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {getFirestore,collection,doc,getDoc,addDoc,updateDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
-const ADMINS=['sherlockafa@gmail.com','yuki.minami@senridf.com'];
-const app=initializeApp({apiKey:'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',authDomain:'senridfauthentication.firebaseapp.com',projectId:'senridfauthentication',storageBucket:'senridfauthentication.firebasestorage.app',messagingSenderId:'86494932585',appId:'1:86494932585:web:185b8ed922cd491a63fcf8'});
-const auth=getAuth(app);const db=getFirestore(app);
+import { auth, db } from '/js/shared/firebase-init.js';
+import { ADMINS } from '/js/shared/admins.js';
+import {onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {collection,doc,getDoc,addDoc,updateDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 window.sdfGetToken=()=>auth.currentUser?.getIdToken();
 const _start=Date.now();let _ref=null,_logged=false;
 function _anonId(){let i=localStorage.getItem('sdf_anon_id');if(!i){i='anon_'+Math.random().toString(36).slice(2,9);localStorage.setItem('sdf_anon_id',i);}return i;}
