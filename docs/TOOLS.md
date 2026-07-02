@@ -135,8 +135,9 @@
 
 | 文件 | 作用 | 用谁的 API |
 |------|------|-----------|
-| `_middleware.js` | **拦截所有 `/api/*`**，校验 Firebase ID token，匿名返回 401 | — |
+| `_middleware.js` | **拦截所有 `/api/*`**：校验 Firebase ID token（匿名 401）+ 每用户 120 次/分钟限流（超限 429） | — |
 | `_lib/verifyFirebaseToken.js` | 纯 Web Crypto 验证 Firebase ID token（RS256 + aud/iss/exp） | Google 公钥端点 |
+| `_lib/rateLimiter.js` | 限流：Firestore 原子自增按 `rate_limits/{uid}_{分钟}` 计数，故障放行 | Firestore REST |
 | `translate.js` / `translate-stream.js` | 翻译（普通 / 流式） | Qwen qwen-plus |
 | `summary.js` | 会议纪要（结构化 JSON） | Qwen qwen-plus |
 | `proofread.js` | 中文校对 | Qwen qwen-plus |
@@ -146,3 +147,19 @@
 
 **后端修改记录**：
 - 2026-06-19：新增 `_middleware.js` + `_lib/verifyFirebaseToken.js`，给所有 `/api/*` 加 Firebase 鉴权（此前全部裸奔，任何人可 curl 白嫖）；`deepgram-token.js` 从"直接返回主密钥"改为"签发临时 token"（此前主密钥对任何 GET 请求泄露）。commit 6e8c9e2。
+- 2026-07-01：`_middleware.js` 接入 `_lib/rateLimiter.js`，每用户 120 次/分钟限流（护成本+安全）。**依赖 Firestore `rate_limits` 规则**（允许用户写 `{uid}_{分钟}` 桶），已加；未加时故障放行（不生效但无害）。TODO：`rate_limits` 集合配 TTL。
+
+---
+
+## 前端共享模块（`js/shared/`，2026-07-02 Phase 2 去重）
+
+- `firebase-init.js` — 唯一 Firebase 配置 + init，导出 `app/auth/db`（SDK 10.14.1）。9 个鉴权页面统一 import，不再各自 `initializeApp`。
+- `admins.js` — 唯一 `ADMINS` 名单 + `isAdmin(user)`。
+- **改 Firebase 配置 / 加管理员：只动这两个文件。**
+- 例外：`js/tracking.js` 用命名 app `'tracking'`（匿名访问统计），与真实登录隔离，故意不并入。
+
+## 开发期工具链（Phase 1，不进部署产物）
+
+- `package.json` 的 `npm run check` = ESLint + Prettier(--check) + `node --test` + `scripts/qa/scan.js`（死链/缺alt，懂 `<base href>`）。
+- CI：`.github/workflows/ci.yml` 每次 push 自动跑 `npm run check`。**但测不了浏览器登录**，鉴权改动仍需线上人工验证。
+- 爬虫纯解析在 `scripts/bid-scraper/parse.js`（有 `tests/` 测试）；`index.js` 只在直接运行时执行 `main()`。
