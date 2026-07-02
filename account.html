@@ -210,11 +210,12 @@
 <footer class="foot">© 2024 千里同風株式会社</footer>
 
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
+  import { auth, db } from '/js/shared/firebase-init.js';
+  import { ADMINS } from '/js/shared/admins.js';
+  import { onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
            createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider }
     from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-  import { getFirestore, doc, setDoc, getDoc, serverTimestamp }
+  import { doc, setDoc, getDoc, serverTimestamp }
     from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
   /* ── i18n ───────────────────────────────────────────────────────────── */
@@ -407,18 +408,7 @@
   });
   applyLang(currentLang);
 
-  /* ── Firebase ───────────────────────────────────────────────────────── */
-  const app = initializeApp({
-    apiKey:            'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',
-    authDomain:        'senridfauthentication.firebaseapp.com',
-    projectId:         'senridfauthentication',
-    storageBucket:     'senridfauthentication.firebasestorage.app',
-    messagingSenderId: '86494932585',
-    appId:             '1:86494932585:web:185b8ed922cd491a63fcf8'
-  });
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const ADMINS = ['sherlockafa@gmail.com', 'yuki.minami@senridf.com'];
+  /* ── Firebase: app/auth/db 来自 /js/shared/firebase-init.js ─────────── */
 
   function show(id) {
     ['state-loading','state-guest','state-member'].forEach(s => {

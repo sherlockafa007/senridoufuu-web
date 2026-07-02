@@ -116,23 +116,11 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
-      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { getFirestore, collection, query, orderBy, limit, getDocs }
-      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-    const app = initializeApp({
-      apiKey: 'AIzaSyCjtAqIrGkiqDiETUqxcmkhyBVoa2IHQNM',
-      authDomain: 'senridfauthentication.firebaseapp.com',
-      projectId: 'senridfauthentication',
-      storageBucket: 'senridfauthentication.firebasestorage.app',
-      messagingSenderId: '86494932585',
-      appId: '1:86494932585:web:185b8ed922cd491a63fcf8',
-    });
-
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    import { auth, db } from '/js/shared/firebase-init.js';
+    import { signInWithEmailAndPassword, onAuthStateChanged, signOut }
+      from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+    import { collection, query, orderBy, limit, getDocs }
+      from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
     // ── Auth ──────────────────────────────────────────────────────────────
     const loginScreen = document.getElementById('login-screen');
