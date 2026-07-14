@@ -27,25 +27,13 @@
     .fb-input:focus { border-color: var(--accent); }
     .fb-err { font-size: 13px; color: var(--red); min-height: 18px; margin-bottom: 10px; }
 
-    /* ── Login ── */
-    #login {
-      min-height: 100vh; display: none; align-items: center; justify-content: center; padding: 24px;
-    }
+    /* ── Login card（Firebase 登录用） ── */
     .login-card {
       background: var(--paper); border: 1px solid var(--border); border-radius: 16px;
       padding: 48px 40px; max-width: 420px; width: 100%; text-align: center;
     }
     .login-logo { font-size: 28px; font-weight: 700; letter-spacing: .1em; margin-bottom: 6px; }
     .login-sub { font-size: 13px; color: var(--text3); margin-bottom: 32px; }
-    .login-label { display: block; text-align: left; font-size: 13px; color: var(--text2); margin-bottom: 6px; }
-    .login-input {
-      display: block; width: 100%; padding: 11px 14px; border: 1px solid var(--border);
-      border-radius: 8px; font-size: 14px; font-family: monospace; outline: none;
-      transition: border-color .15s;
-    }
-    .login-input:focus { border-color: var(--accent); }
-    .login-hint { font-size: 12px; color: var(--text3); text-align: left; margin-top: 8px; margin-bottom: 24px; line-height: 1.7; }
-    .login-hint a { color: var(--accent); }
     .btn-primary {
       display: block; width: 100%; padding: 13px; background: var(--accent); color: #fff;
       border: none; border-radius: 10px; font-size: 15px; font-family: inherit;
@@ -53,7 +41,6 @@
     }
     .btn-primary:hover { opacity: .88; }
     .btn-primary:disabled { opacity: .5; cursor: default; }
-    .login-err { font-size: 13px; color: var(--red); margin-top: 12px; min-height: 18px; }
 
     /* ── Editor ── */
     #editor { display: none; }
@@ -65,6 +52,13 @@
     }
     .top-bar__title { font-weight: 500; font-size: 15px; }
     .top-bar__right { display: flex; align-items: center; gap: 10px; }
+    .top-bar__left { display: flex; align-items: center; gap: 18px; }
+    .top-bar__logo { font-weight: 700; letter-spacing: .08em; color: var(--text); text-decoration: none; }
+    .top-bar__nav { display: flex; gap: 14px; font-size: 13px; }
+    .top-bar__nav-current { color: var(--accent); border-bottom: 2px solid var(--accent); padding: 4px 0; }
+    .top-bar__nav-soon { color: var(--text3); cursor: default; }
+    .top-bar__nav-link { color: var(--text2); text-decoration: none; }
+    .top-bar__nav-link:hover { color: var(--text); }
     .status { font-size: 12px; color: var(--text3); }
     .status.ok { color: var(--green); }
     .status.err { color: var(--red); }
@@ -154,31 +148,21 @@
   </div>
 </div>
 
-<!-- ══ Login ══════════════════════════════════════════════════════════ -->
-<div id="login">
-  <div class="login-card">
-    <div class="login-logo">千里同風</div>
-    <div class="login-sub">内容管理后台</div>
-    <label class="login-label">GitHub Personal Access Token</label>
-    <input id="pat-input" class="login-input" type="password" placeholder="ghp_xxxxxxxxxxxxxxxx" autocomplete="off">
-    <p class="login-hint">
-      前往 <a href="https://github.com/settings/tokens/new" target="_blank" rel="noopener">GitHub → Settings → Tokens</a>，
-      生成 Fine-grained token，勾选仓库 <code>senridoufuu-web</code>，权限选 <strong>Contents: Read and write</strong>。
-      Token 只保存在本浏览器，不会上传。
-    </p>
-    <button type="button" class="btn-primary" id="connect-btn" onclick="connect()">连接</button>
-    <div class="login-err" id="login-err"></div>
-  </div>
-</div>
-
 <!-- ══ Editor ═════════════════════════════════════════════════════════ -->
 <div id="editor">
   <div class="top-bar">
-    <span class="top-bar__title">千里同風 · 内容管理</span>
+    <div class="top-bar__left">
+      <a href="/" class="top-bar__logo" title="返回网站主页">千里同風</a>
+      <nav class="top-bar__nav">
+        <span class="top-bar__nav-current">网站内容</span>
+        <span class="top-bar__nav-soon" title="二期开通">Blog（即将上线）</span>
+        <a href="/solutions/demo/admin.html" class="top-bar__nav-link">运行监控</a>
+      </nav>
+    </div>
     <div class="top-bar__right">
       <span class="status" id="status"></span>
       <button type="button" class="btn-save" id="save-btn" onclick="save()">保存并发布</button>
-      <button type="button" class="btn-link" onclick="disconnect()">断开连接</button>
+      <button type="button" class="btn-link" onclick="fbLogout()">退出登录</button>
     </div>
   </div>
 
@@ -198,9 +182,6 @@
 </div>
 
 <script>
-const REPO = 'sherlockafa007/senridoufuu-web';
-const FILE = 'content.json';
-
 const SECTIONS = [
   { id:'hero', label:'首页 · Hero', fields:[
     { key:'hero_tagline', label:'主标语', multiline:true }
@@ -286,65 +267,7 @@ const IMAGE_FIELDS = [
   { key:'og_image',    label:'社交分享图',  hint:'分享到微信、Twitter 时显示的预览图，建议 1200×630px' }
 ];
 
-let pat = '';
-let fileSha = '';
 let currentOverrides = {};
-
-/* ── Auth ──────────────────────────────────────────────────────────── */
-async function connect() {
-  const val = document.getElementById('pat-input').value.trim();
-  if (!val) return;
-  const btn = document.getElementById('connect-btn');
-  btn.disabled = true;
-  btn.textContent = '连接中…';
-  document.getElementById('login-err').textContent = '';
-  try {
-    const res = await ghGet();
-    if (res.status === 401 || res.status === 403) throw new Error('Token 无效或权限不足，请检查后重试。');
-    pat = val;
-    localStorage.setItem('sdf_admin_pat', pat);
-    if (res.status === 200) {
-      const data = await res.json();
-      fileSha = data.sha;
-      currentOverrides = JSON.parse(atob(data.content.replace(/\n/g, '')));
-    }
-    buildEditor();
-    document.getElementById('login').style.display = 'none';
-    document.getElementById('editor').style.display = 'block';
-  } catch(e) {
-    document.getElementById('login-err').textContent = e.message || '连接失败，请检查 Token。';
-    btn.disabled = false;
-    btn.textContent = '连接';
-  }
-}
-
-function disconnect() {
-  localStorage.removeItem('sdf_admin_pat');
-  pat = ''; fileSha = ''; currentOverrides = {};
-  document.getElementById('editor').style.display = 'none';
-  document.getElementById('login').style.display = 'flex';
-  document.getElementById('pat-input').value = '';
-}
-
-/* ── GitHub API ─────────────────────────────────────────────────────── */
-function ghGet() {
-  const v = document.getElementById('pat-input').value.trim() || pat;
-  return fetch(`https://api.github.com/repos/${REPO}/contents/${FILE}`, {
-    headers: { Authorization: `Bearer ${v}`, Accept: 'application/vnd.github+json' }
-  });
-}
-
-async function ghPut(content, sha) {
-  const body = { message: 'Update content via admin panel', content: btoa(unescape(encodeURIComponent(content))) };
-  if (sha) body.sha = sha;
-  const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE}`, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${pat}`, 'Content-Type': 'application/json', Accept: 'application/vnd.github+json' },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(`GitHub API 错误 ${res.status}`);
-  return res.json();
-}
 
 /* ── Build editor ───────────────────────────────────────────────────── */
 function buildEditor() {
@@ -433,60 +356,103 @@ function setTab(name) {
   document.getElementById(`pane-${name}`).classList.add('active');
 }
 
-/* ── Save ───────────────────────────────────────────────────────────── */
-async function save() {
-  const btn = document.getElementById('save-btn');
-  const statusEl = document.getElementById('status');
-  btn.disabled = true; btn.textContent = '保存中…';
-  statusEl.className = 'status'; statusEl.textContent = '';
-  try {
-    const ov = { ja:{}, zh:{}, en:{}, images:{} };
-    ['zh','ja','en'].forEach(lang => {
-      SECTIONS.forEach(sec => {
-        sec.fields.forEach(f => {
-          const el = document.getElementById(`${lang}__${f.key}`);
-          const v = el ? el.value.trim() : '';
-          if (v) ov[lang][f.key] = v;
-        });
+/* ── 收集表单里的覆盖值（保存逻辑在下方 module 脚本） ──────────────── */
+function collectOverrides() {
+  const ov = { ja:{}, zh:{}, en:{}, images:{} };
+  ['zh','ja','en'].forEach(lang => {
+    SECTIONS.forEach(sec => {
+      sec.fields.forEach(f => {
+        const el = document.getElementById(`${lang}__${f.key}`);
+        const v = el ? el.value.trim() : '';
+        if (v) ov[lang][f.key] = v;
       });
     });
-    IMAGE_FIELDS.forEach(f => {
-      const el = document.getElementById(`img__${f.key}`);
-      const v = el ? el.value.trim() : '';
-      if (v) ov.images[f.key] = v;
-    });
-    const json = JSON.stringify(ov, null, 2);
-    const res = await ghPut(json, fileSha || undefined);
-    fileSha = res.content.sha;
-    currentOverrides = ov;
-    statusEl.className = 'status ok'; statusEl.textContent = '✓ 已保存，部署中…';
-    setTimeout(() => { statusEl.textContent = ''; }, 5000);
-  } catch(e) {
-    statusEl.className = 'status err'; statusEl.textContent = '✗ 保存失败：' + e.message;
-  }
-  btn.disabled = false; btn.textContent = '保存并发布';
-}
-
-/* ── Auto-login (PAT) ───────────────────────────────────────────────── */
-function tryAutoPat() {
-  const saved = localStorage.getItem('sdf_admin_pat');
-  if (saved) { document.getElementById('pat-input').value = saved; connect(); }
-  else {
-    document.getElementById('login').style.display = 'flex';
-  }
+  });
+  IMAGE_FIELDS.forEach(f => {
+    const el = document.getElementById(`img__${f.key}`);
+    const v = el ? el.value.trim() : '';
+    if (v) ov.images[f.key] = v;
+  });
+  return ov;
 }
 </script>
 
 <script type="module">
 import { auth } from '/js/shared/firebase-init.js';
 import { isAdmin } from '/js/shared/admins.js';
-import { onAuthStateChanged, signInWithEmailAndPassword }
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+
+// 保存通道：站长自己 CF 账号下的 sdf-admin Worker（服务端持有 GitHub 令牌）
+const WORKER_URL = 'https://sdf-admin.sherlockafa.workers.dev';
+// 发布后轮询镜像仓库 HEAD 确认上线（镜像 HEAD == 本次 commit 即同步完成）
+const MIRROR_API = 'https://api.github.com/repos/Eveysnow5/senridf-web/commits/main';
+
+async function api(method, path, body) {
+  const idToken = await auth.currentUser.getIdToken(); // SDK 自动续期
+  const res = await fetch(WORKER_URL + path, {
+    method,
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  let data = {};
+  try { data = await res.json(); } catch { /* 非 JSON 响应按状态码报错 */ }
+  if (!res.ok) throw new Error(data.error || `请求失败（${res.status}）`);
+  return data;
+}
+
+async function loadContent() {
+  const { content } = await api('GET', '/content');
+  currentOverrides = content || {};
+  buildEditor();
+  document.getElementById('editor').style.display = 'block';
+}
+
+async function waitForDeploy(commitSha, statusEl) {
+  statusEl.className = 'status'; statusEl.textContent = '✓ 已保存，同步部署中…（约2-3分钟）';
+  for (let i = 0; i < 15; i++) {
+    await new Promise(r => setTimeout(r, 20000));
+    try {
+      const res = await fetch(MIRROR_API);
+      const data = await res.json();
+      if (data.sha === commitSha) {
+        statusEl.className = 'status ok';
+        statusEl.textContent = '✓ 已上线（如未见变化，等约1分钟后刷新网站）';
+        return;
+      }
+    } catch { /* 网络抖动，继续轮询 */ }
+  }
+  statusEl.textContent = '已保存；上线状态未确认，稍后可直接查看网站';
+}
+
+window.save = async function() {
+  const btn = document.getElementById('save-btn');
+  const statusEl = document.getElementById('status');
+  btn.disabled = true; btn.textContent = '保存中…';
+  statusEl.className = 'status'; statusEl.textContent = '';
+  try {
+    const ov = collectOverrides();
+    const { commitSha } = await api('PUT', '/content', { content: ov });
+    currentOverrides = ov;
+    waitForDeploy(commitSha, statusEl);
+  } catch(e) {
+    statusEl.className = 'status err'; statusEl.textContent = '✗ 保存失败：' + e.message;
+  }
+  btn.disabled = false; btn.textContent = '保存并发布';
+};
+
+window.fbLogout = () => signOut(auth).then(() => location.reload());
 
 onAuthStateChanged(auth, user => {
   if (isAdmin(user)) {
     document.getElementById('fb-login').style.display = 'none';
-    tryAutoPat();
+    loadContent().catch(e => {
+      document.getElementById('fb-login').style.display = 'flex';
+      document.getElementById('fb-err').textContent = '内容加载失败：' + e.message;
+    });
   } else if (user) {
     document.getElementById('fb-err').textContent = '该账号无管理员权限。';
   } else {
