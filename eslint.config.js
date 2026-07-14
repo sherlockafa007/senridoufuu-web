@@ -68,6 +68,34 @@ module.exports = [
     },
   },
 
+  // sdf-admin Worker：ESM + Workers 运行时全局（fetch/Response/crypto…）
+  {
+    files: ['workers/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: { ...globals.serviceworker },
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      'no-unused-vars': ['warn', { ignoreRestSiblings: true }],
+    },
+  },
+
+  // ESM 测试文件（Worker 源码是 ESM，测试也得用 ESM）
+  {
+    files: ['tests/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      'no-unused-vars': ['warn', { ignoreRestSiblings: true }],
+    },
+  },
+
   // 允许空 catch（如 tracking.js 故意吞掉非关键错误，不让埋点拖垮页面）
   {
     rules: { 'no-empty': ['error', { allowEmptyCatch: true }] },
