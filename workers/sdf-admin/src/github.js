@@ -50,7 +50,13 @@ export async function putFile(repo, path, text, message, token) {
       return { commitSha: data.commit.sha };
     }
     if (res.status !== 409 && res.status !== 422) {
-      throw new Error(`GitHub 写入失败（${res.status}）`);
+      let detail = '';
+      try {
+        detail = (await res.json()).message || '';
+      } catch {
+        /* 响应非 JSON 时只报状态码 */
+      }
+      throw new Error(`GitHub 写入失败（${res.status}${detail ? `：${detail}` : ''}）`);
     }
   }
   throw new Error('保存冲突，请刷新页面重试');
