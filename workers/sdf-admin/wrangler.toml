@@ -1,0 +1,6 @@
+# sdf-admin Worker 配置。部署：cd workers/sdf-admin && npx wrangler deploy
+name = "sdf-admin"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+# secret（不在此文件）：GITHUB_TOKEN —— 在 Cloudflare 面板该 Worker 的
+# Settings → Variables and Secrets 里设置（细粒度 PAT，仅本仓库 Contents:RW）
