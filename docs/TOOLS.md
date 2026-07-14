@@ -151,6 +151,24 @@
 
 ---
 
+## 7. admin/ — 管理后台（内容编辑，2026-07-14 一期上线）
+
+- **入口**：`https://www.senridf.com/admin/`，Firebase 登录 + `ADMINS` 名单双重校验。顶栏：网站内容｜Blog（二期）｜运行监控（暂链去 `solutions/demo/admin.html`）。
+- **功能**：编辑约 40 个关键文字字段（中/日/英三个标签页）+ 图片 URL 字段；「保存并发布」后自动 commit → 镜像 → Cloudflare 构建，约 2-3 分钟上线，界面轮询镜像 HEAD 显示「已上线」。字段留空 = 用页面内置原文（`content.json` 是覆盖层，`js/main.js` 每页加载时 fetch 合并进 `T`）。
+- **架构（写入通道，与网站主体分离）**：
+  ```
+  浏览器 /admin/（Firebase 登录）
+    → sdf-admin Worker（站长自己的 CF 账号 sherlockafa@gmail.com，地址 https://sdf-admin.sherlockafa.workers.dev）
+      服务端验 Firebase ID token + ADMINS + 内存限流 30 次/分钟；CORS 白名单 senridf.com/localhost
+    → GitHub Contents API 提交 content.json 到 sherlockafa007/senridoufuu-web
+    → 现有镜像链自动上线
+  ```
+- **代码**：`workers/sdf-admin/`（`src/index.js` 入口、`validate.js`/`rateLimit.js` 纯函数有测试、`github.js` IO 含 sha 冲突重试）。直接 import 主仓库的 `verifyFirebaseToken.js` 和 `js/shared/admins.js`——**改 ADMINS 名单后 Worker 要重新 `cd workers/sdf-admin && npx wrangler deploy`**（名单打包进部署产物）。
+- **所需设置**：Worker secret `GITHUB_TOKEN`（细粒度 PAT `sdf-admin-worker`，仅本仓库 Contents:RW，**2027-07 到期**，续期：GitHub Regenerate → CF 面板 sdf-admin → Settings → Variables and Secrets 更新）。wrangler 已在本机 OAuth 登录（账号 sherlockafa@gmail.com）。
+- **修改记录**：
+  - 2026-07-14：一期上线（Worker 通道 + 内容编辑）。**废除旧"浏览器粘贴 GitHub PAT"通道**（令牌暴露 localStorage，非技术用户不可用）。踩坑：①CF 账号首次用 Workers 需注册 workers.dev 子域名（用了 `sherlockafa`）；②细粒度 PAT 创建时默认零权限，必须手动加 Repository access + Contents:RW，否则读公开仓库成功但写 403（极具迷惑性）；③报错要透传 GitHub 的 message，只报状态码没法排障。
+  - 二期计划：Blog（一语写作→Qwen 翻三语→静态文章页）；三期：图片上传。spec 见 `docs/specs/2026-07-14-admin-cms-design.md`。
+
 ## 前端共享模块（`js/shared/`，2026-07-02 Phase 2 去重）
 
 - `firebase-init.js` — 唯一 Firebase 配置 + init，导出 `app/auth/db`（SDK 10.14.1）。9 个鉴权页面统一 import，不再各自 `initializeApp`。
