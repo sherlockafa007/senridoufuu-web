@@ -45,10 +45,11 @@ body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
   <div class="flex items-center gap-3 flex-1">
     <a href="/" class="text-gray-300 font-light text-lg hover:text-gray-600 transition-colors" title="返回主页">千里同風</a>
     <span class="text-gray-200">·</span>
-    <span class="text-gray-700 font-medium text-sm">管理后台</span>
+    <span class="text-gray-700 font-medium text-sm">管理后台 · 运行监控</span>
     <span id="lastRefresh" class="text-gray-400 text-xs ml-2"></span>
   </div>
   <div class="flex items-center gap-3">
+    <a href="/admin/" class="text-xs px-3 py-1.5 rounded border border-blue-200 text-blue-500 hover:bg-blue-50 transition-colors">✎ 内容编辑</a>
     <button onclick="loadData()" type="button" id="refreshBtn" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">↻ 刷新</button>
     <span id="adminEmail" class="text-xs text-gray-400 hidden sm:block"></span>
     <button id="logoutBtn" type="button" class="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors">退出</button>
