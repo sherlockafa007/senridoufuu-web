@@ -6,7 +6,8 @@
   <title>生平故事 · 千里同風</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" integrity="sha384-/TQbtLCAerC3jgaim+N78RZSDYV7ryeoBCVqTuzRrFec2akfBkHS7ACQ3PQhvMVi" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.12/dist/purify.min.js" integrity="sha384-piCcpDdJ7qVeK4Tv8Z6Hpcr3ZBIgP16TxQTPVfsLFdZ5uDgwc3Y8Ho7oUnqf12qu" crossorigin="anonymous"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -788,8 +789,12 @@ function showPrevStory() {
 }
 
 function renderStory(md) {
-  document.getElementById('story-wrap').innerHTML =
-    `<div class="story-body">${marked.parse(md)}</div>`;
+  // AI 输出转 HTML 后必须过 DOMPurify 消毒再进 innerHTML（防 XSS）
+  const html =
+    typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined'
+      ? DOMPurify.sanitize(marked.parse(md))
+      : String(md).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+  document.getElementById('story-wrap').innerHTML = `<div class="story-body">${html}</div>`;
 }
 
 function exportData() {

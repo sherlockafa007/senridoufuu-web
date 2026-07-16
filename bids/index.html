@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>大阪府招标信息 — 千里同風</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet" />
@@ -250,7 +250,7 @@
           </td>
           <td class="px-3 py-2.5 text-gray-600 text-xs w-28">${escHtml(deadline)}</td>
           <td class="px-3 py-2.5 whitespace-nowrap">
-            <a href="${escHtml(bid.source_url)}" target="_blank" rel="noopener"
+            <a href="${escHtml(safeUrl(bid.source_url))}" target="_blank" rel="noopener"
               class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">→</a>
           </td>
         </tr>`;
@@ -280,11 +280,16 @@
           <div class="text-xs text-gray-400 truncate mb-3" title="${escHtml(bid.title)}">${escHtml(bid.title)}</div>
           <div class="flex items-center justify-between gap-2">
             <span class="text-xs text-gray-500 truncate">${escHtml(bureau)}</span>
-            <a href="${escHtml(bid.source_url)}" target="_blank" rel="noopener"
+            <a href="${escHtml(safeUrl(bid.source_url))}" target="_blank" rel="noopener"
               class="text-indigo-600 hover:text-indigo-800 text-xs font-medium shrink-0">原文 →</a>
           </div>
         </div>`;
       }).join('');
+    }
+
+    // 抓取来的链接只放行 http(s)，挡 javascript: 等伪协议
+    function safeUrl(url) {
+      return /^https?:\/\//i.test(url || '') ? url : '#';
     }
 
     function escHtml(str) {
