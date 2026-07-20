@@ -776,9 +776,21 @@ function initScrollAnimations() {
   document.querySelectorAll('[data-animate]').forEach((el) => observer.observe(el));
 }
 
+/* === Cloudflare Web Analytics ===
+   隐私优先、无 cookie 的访问统计（替代手搓 Firestore 统计的更好仪表盘）。
+   token 是公开的客户端标识，非密钥。动态注入以覆盖所有加载 main.js 的页面。 */
+function injectAnalytics() {
+  const s = document.createElement('script');
+  s.defer = true;
+  s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+  s.setAttribute('data-cf-beacon', '{"token": "8bcffe16aa9b4adb8c0a7fd9516ac2d8"}');
+  document.head.appendChild(s);
+}
+
 /* === INIT === */
 document.addEventListener('DOMContentLoaded', () => {
   injectShared();
+  injectAnalytics();
   fetch('/content.json')
     .then((r) => (r.ok ? r.json() : {}))
     .then((ov) => {
