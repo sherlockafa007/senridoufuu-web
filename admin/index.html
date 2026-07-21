@@ -72,66 +72,37 @@
     .btn-link { background: none; border: none; font-size: 12px; color: var(--text3); cursor: pointer; }
     .btn-link:hover { color: var(--red); }
 
-    /* ── Tabs ── */
-    .tab-bar {
+    /* ── Page switcher ── */
+    .page-bar {
       display: flex; gap: 0; border-bottom: 1px solid var(--border);
       padding: 0 24px; background: var(--paper);
     }
-    .tab-btn {
+    .page-btn {
       padding: 12px 18px; font-size: 13px; font-family: inherit; background: none; border: none;
       border-bottom: 2px solid transparent; cursor: pointer; color: var(--text3);
       transition: color .15s, border-color .15s;
     }
-    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .tab-btn:hover:not(.active) { color: var(--text2); }
+    .page-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .page-btn:hover:not(.active) { color: var(--text2); }
 
-    /* ── Content area ── */
-    .content-area { max-width: 860px; margin: 0 auto; padding: 24px; }
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; }
-
-    /* ── Section ── */
-    .section-block { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-    .section-hd {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 18px; cursor: pointer; background: var(--paper);
-      -webkit-user-select: none; user-select: none;
+    /* ── Pending changes bar ── */
+    .changes-bar {
+      display: flex; align-items: center; gap: 14px;
+      padding: 10px 24px; background: #eef2ff; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--text2);
     }
-    .section-hd:hover { background: #faf9f7; }
-    .section-hd__title { font-size: 13px; font-weight: 500; color: var(--text2); }
-    .section-hd__arrow { font-size: 11px; color: var(--text3); transition: transform .2s; }
-    .section-hd__arrow.open { transform: rotate(90deg); }
-    .section-body { padding: 16px 18px 18px; border-top: 1px solid var(--border); background: var(--bg); }
-    .section-body.collapsed { display: none; }
-
-    /* ── Field ── */
-    .field-row { margin-bottom: 14px; }
-    .field-row:last-child { margin-bottom: 0; }
-    .field-label { font-size: 12px; color: var(--text3); margin-bottom: 5px; }
-    .field-input, .field-textarea {
-      width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px;
-      font-size: 13px; font-family: inherit; background: var(--paper); color: var(--text);
-      outline: none; transition: border-color .15s; resize: vertical;
+    .btn-sync {
+      padding: 6px 14px; background: var(--accent); color: #fff; border: none;
+      border-radius: 7px; font-size: 12px; font-family: inherit; cursor: pointer;
+      transition: opacity .15s;
     }
-    .field-input:focus, .field-textarea:focus { border-color: var(--accent); }
-    .field-textarea { min-height: 72px; line-height: 1.65; }
+    .btn-sync:hover { opacity: .88; }
+    .btn-sync:disabled { opacity: .5; cursor: default; }
 
-    /* ── Images ── */
-    .img-field { margin-bottom: 18px; }
-    .img-field:last-child { margin-bottom: 0; }
-    .img-label { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-    .img-hint { font-size: 12px; color: var(--text3); margin-bottom: 8px; }
-    .img-row { display: flex; gap: 10px; align-items: flex-start; }
-    .img-input {
-      flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px;
-      font-size: 13px; font-family: monospace; background: var(--paper); color: var(--text);
-      outline: none; transition: border-color .15s;
+    /* ── Preview iframe ── */
+    #preview-frame {
+      width: 100%; height: calc(100vh - 101px); border: none; display: block; background: #fff;
     }
-    .img-input:focus { border-color: var(--accent); }
-    .img-preview { width: 56px; height: 56px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); display: none; }
-
-    /* ── Empty state ── */
-    .empty { text-align: center; padding: 48px 0; color: var(--text3); font-size: 14px; }
   </style>
 </head>
 <body>
@@ -166,214 +137,159 @@
     </div>
   </div>
 
-  <div class="tab-bar">
-    <button type="button" class="tab-btn active" onclick="setTab('zh')">中文</button>
-    <button type="button" class="tab-btn" onclick="setTab('ja')">日本語</button>
-    <button type="button" class="tab-btn" onclick="setTab('en')">English</button>
-    <button type="button" class="tab-btn" onclick="setTab('images')">图片</button>
+  <div class="page-bar">
+    <button type="button" class="page-btn active" data-page="home" onclick="switchPage('home')">首页</button>
+    <button type="button" class="page-btn" data-page="about" onclick="switchPage('about')">关于我们</button>
+    <button type="button" class="page-btn" data-page="milestones" onclick="switchPage('milestones')">大事记</button>
+    <button type="button" class="page-btn" data-page="solutions" onclick="switchPage('solutions')">解决方案</button>
   </div>
 
-  <div class="content-area">
-    <div id="pane-zh" class="tab-pane active"></div>
-    <div id="pane-ja" class="tab-pane"></div>
-    <div id="pane-en" class="tab-pane"></div>
-    <div id="pane-images" class="tab-pane"></div>
+  <div class="changes-bar" id="changes-bar" hidden>
+    <span id="changes-count">已改 0 处</span>
+    <button type="button" class="btn-sync" id="sync-btn" onclick="syncTranslate()">✨ 一键同步日英</button>
   </div>
+
+  <iframe id="preview-frame" title="页面内容预览编辑"></iframe>
 </div>
 
 <script>
-const SECTIONS = [
-  { id:'hero', label:'首页 · Hero', fields:[
-    { key:'hero_tagline', label:'主标语', multiline:true }
-  ]},
-  { id:'mission', label:'首页 · 使命', fields:[
-    { key:'mission_eyebrow', label:'眉标（小标题）' },
-    { key:'mission_title',   label:'标题', multiline:true },
-    { key:'mission_body',    label:'正文', multiline:true }
-  ]},
-  { id:'vision', label:'首页 · 愿景', fields:[
-    { key:'vision_eyebrow', label:'眉标' },
-    { key:'vision_title',   label:'标题', multiline:true },
-    { key:'vision_body',    label:'正文', multiline:true }
-  ]},
-  { id:'values', label:'首页 · 价值观', fields:[
-    { key:'values_eyebrow', label:'眉标' },
-    { key:'values_title',   label:'标题' },
-    { key:'val1_name', label:'价值观 01 名称' },
-    { key:'val1_desc', label:'价值观 01 描述', multiline:true },
-    { key:'val2_name', label:'价值观 02 名称' },
-    { key:'val2_desc', label:'价值观 02 描述', multiline:true },
-    { key:'val3_name', label:'价值观 03 名称' },
-    { key:'val3_desc', label:'价值观 03 描述', multiline:true }
-  ]},
-  { id:'about_teaser', label:'首页 · 关于预览', fields:[
-    { key:'about_teaser_eyebrow', label:'眉标' },
-    { key:'about_teaser_title',   label:'标题', multiline:true },
-    { key:'about_teaser_body',    label:'正文', multiline:true }
-  ]},
-  { id:'footer', label:'页脚', fields:[
-    { key:'footer_tagline', label:'品牌标语', multiline:true },
-    { key:'addr_street',    label:'街道地址' },
-    { key:'addr_city',      label:'城市' }
-  ]},
-  { id:'team', label:'关于我们 · 团队', fields:[
-    { key:'team_eyebrow', label:'眉标' },
-    { key:'team_title',   label:'标题' },
-    { key:'team_body',    label:'简介', multiline:true },
-    { key:'team1_role',   label:'成员 1 职位' },
-    { key:'team1_bio',    label:'成员 1 简介', multiline:true },
-    { key:'team2_role',   label:'成员 2 职位' },
-    { key:'team2_bio',    label:'成员 2 简介', multiline:true }
-  ]},
-  { id:'milestones', label:'关于我们 · 大事记', fields:[
-    { key:'milestones_eyebrow', label:'眉标' },
-    { key:'milestones_title',   label:'标题' },
-    { key:'milestones_body',    label:'简介', multiline:true },
-    { key:'ms1_event', label:'里程碑 1 事件' },
-    { key:'ms1_desc',  label:'里程碑 1 描述', multiline:true },
-    { key:'ms2_event', label:'里程碑 2 事件' },
-    { key:'ms2_desc',  label:'里程碑 2 描述', multiline:true },
-    { key:'ms3_event', label:'里程碑 3 事件' },
-    { key:'ms3_desc',  label:'里程碑 3 描述', multiline:true }
-  ]},
-  { id:'solutions', label:'解决方案 · 概述', fields:[
-    { key:'solutions_eyebrow', label:'眉标' },
-    { key:'solutions_title',   label:'标题' },
-    { key:'solutions_body',    label:'正文', multiline:true }
-  ]},
-  { id:'services', label:'解决方案 · 服务', fields:[
-    { key:'services_eyebrow', label:'眉标' },
-    { key:'services_title',   label:'标题' },
-    { key:'srv1_name', label:'服务 1 名称' },
-    { key:'srv1_desc', label:'服务 1 描述', multiline:true },
-    { key:'srv2_name', label:'服务 2 名称' },
-    { key:'srv2_desc', label:'服务 2 描述', multiline:true },
-    { key:'srv3_name', label:'服务 3 名称' },
-    { key:'srv3_desc', label:'服务 3 描述', multiline:true }
-  ]},
-  { id:'products', label:'解决方案 · 产品', fields:[
-    { key:'product1_name', label:'产品 1 名称' },
-    { key:'product1_desc', label:'产品 1 描述', multiline:true },
-    { key:'product2_name', label:'产品 2 名称' },
-    { key:'product2_desc', label:'产品 2 描述', multiline:true },
-    { key:'product3_name', label:'产品 3 名称' },
-    { key:'product3_desc', label:'产品 3 描述', multiline:true }
-  ]}
-];
+/* ── 可编辑页面清单：字段本身不再手工维护，改由 data-i18n 属性自动发现 ── */
+const PAGES = {
+  home:       { label: '首页',     url: '/' },
+  about:      { label: '关于我们', url: '/about/' },
+  milestones: { label: '大事记',   url: '/about/milestones.html' },
+  solutions:  { label: '解决方案', url: '/solutions/' },
+};
 
-const IMAGE_FIELDS = [
-  { key:'team1_photo', label:'成员 1 照片', hint:'团队页面照片，建议正方形，JPG/PNG/WebP' },
-  { key:'team2_photo', label:'成员 2 照片', hint:'团队页面照片，建议正方形' },
-  { key:'og_image',    label:'社交分享图',  hint:'分享到微信、Twitter 时显示的预览图，建议 1200×630px' }
-];
+let currentOverrides = {}; // 已发布的基线（GET /content 结果），module script 的 loadContent/save 读写
+let pendingZh = {};
+let pendingJa = {};
+let pendingEn = {};
+let editingEl = null;
+let editingOriginal = '';
 
-let currentOverrides = {};
-
-/* ── Build editor ───────────────────────────────────────────────────── */
-function buildEditor() {
-  ['zh','ja','en'].forEach(lang => {
-    const pane = document.getElementById(`pane-${lang}`);
-    pane.innerHTML = SECTIONS.map(sec => buildSection(sec, lang)).join('');
-    // open first section by default
-    const firstBody = pane.querySelector('.section-body');
-    const firstArrow = pane.querySelector('.section-hd__arrow');
-    if (firstBody) { firstBody.classList.remove('collapsed'); firstArrow.classList.add('open'); }
-  });
-  buildImages();
-  // restore saved values
-  const ov = currentOverrides;
-  ['zh','ja','en'].forEach(lang => {
-    if (!ov[lang]) return;
-    for (const [key, val] of Object.entries(ov[lang])) {
-      const el = document.getElementById(`${lang}__${key}`);
-      if (el) el.value = val;
-    }
-  });
-  if (ov.images) {
-    for (const [key, val] of Object.entries(ov.images)) {
-      const el = document.getElementById(`img__${key}`);
-      if (el) { el.value = val; updateImgPreview(key, val); }
-    }
+const FRAME_STYLE = `
+  [data-i18n]:hover { outline: 1px dashed #2563eb; outline-offset: 2px; cursor: text; }
+  [data-i18n][contenteditable="true"] { outline: 2px solid #2563eb; outline-offset: 2px; cursor: text; background: #eef2ff; }
+  .cms-pill {
+    position: absolute; z-index: 999999; display: flex; gap: 6px;
+    background: #1f1c17; border-radius: 8px; padding: 5px 7px; box-shadow: 0 4px 14px rgba(0,0,0,.25);
   }
+  .cms-pill button {
+    border: none; border-radius: 5px; font-size: 12px; font-family: system-ui, sans-serif;
+    padding: 4px 9px; cursor: pointer;
+  }
+  .cms-pill .cms-ok { background: #10b981; color: #fff; }
+  .cms-pill .cms-cancel { background: #4b5563; color: #fff; }
+`;
+
+function updateChangesBar() {
+  const count = Object.keys(pendingZh).length;
+  const bar = document.getElementById('changes-bar');
+  bar.hidden = count === 0;
+  document.getElementById('changes-count').textContent = `已改 ${count} 处`;
 }
 
-function buildSection(sec, lang) {
-  const fields = sec.fields.map(f => {
-    const id = `${lang}__${f.key}`;
-    const input = f.multiline
-      ? `<textarea id="${id}" class="field-textarea" rows="3" placeholder="留空则使用默认值"></textarea>`
-      : `<input id="${id}" class="field-input" type="text" placeholder="留空则使用默认值">`;
-    return `<div class="field-row"><div class="field-label">${f.label}</div>${input}</div>`;
-  }).join('');
-  return `
-    <div class="section-block">
-      <div class="section-hd" onclick="toggleSection(this)">
-        <span class="section-hd__title">${sec.label}</span>
-        <span class="section-hd__arrow">▶</span>
-      </div>
-      <div class="section-body collapsed">${fields}</div>
-    </div>`;
+/* ── 页面切换 ── */
+function switchPage(key) {
+  document.querySelectorAll('.page-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.page === key);
+  });
+  const frame = document.getElementById('preview-frame');
+  frame.onload = () => initEditableFrame(frame);
+  frame.src = PAGES[key].url + '?lang=zh';
 }
 
-function buildImages() {
-  const pane = document.getElementById('pane-images');
-  pane.innerHTML = `<div style="padding:4px 0">` + IMAGE_FIELDS.map(f => `
-    <div class="img-field">
-      <div class="img-label">${f.label}</div>
-      <div class="img-hint">${f.hint}</div>
-      <div class="img-row">
-        <input id="img__${f.key}" class="img-input" type="url" placeholder="https://…" oninput="updateImgPreview('${f.key}', this.value)">
-        <img id="imgprev__${f.key}" class="img-preview" alt="">
-      </div>
-    </div>`).join('') + `</div>`;
+/* ── 让 iframe 里的 [data-i18n] 元素可点击就地编辑（同源，直接操作 contentDocument） ── */
+function initEditableFrame(frame) {
+  const doc = frame.contentDocument;
+  if (!doc) return;
+
+  const style = doc.createElement('style');
+  style.textContent = FRAME_STYLE;
+  doc.head.appendChild(style);
+
+  // 把本次会话里已改但未发布的值，重新套到刚加载的页面上——
+  // 否则切走标签再切回来，看到的是发布前的旧文字，像是改动丢了。
+  doc.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.dataset.i18n;
+    if (pendingZh[key] !== undefined) el.textContent = pendingZh[key];
+  });
+
+  editingEl = null;
+
+  doc.addEventListener(
+    'click',
+    (e) => {
+      const el = e.target.closest('[data-i18n]');
+      if (el && el.isContentEditable) return; // 已在编辑中，交给浏览器处理光标定位
+      e.preventDefault(); // 预览态下不允许真的跳转
+      if (el) startEdit(doc, el);
+    },
+    true,
+  );
 }
 
-function updateImgPreview(key, url) {
-  const img = document.getElementById(`imgprev__${key}`);
-  if (!img) return;
-  if (url && url.startsWith('http')) {
-    img.src = url; img.style.display = 'block';
-    img.onerror = () => { img.style.display = 'none'; };
+/* ── 开始编辑一个字段 ── */
+function startEdit(doc, el) {
+  if (editingEl && editingEl !== el) finishEdit(true); // 切到新字段前，先确认上一个
+
+  editingEl = el;
+  editingOriginal = el.textContent;
+  el.contentEditable = 'true';
+  el.focus();
+
+  el.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || doc.defaultView.clipboardData).getData('text/plain');
+    doc.execCommand('insertText', false, text);
+  });
+
+  const range = doc.createRange();
+  range.selectNodeContents(el);
+  const sel = doc.defaultView.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  const pill = doc.createElement('div');
+  pill.className = 'cms-pill';
+  pill.id = 'cms-active-pill';
+  pill.innerHTML =
+    '<button type="button" class="cms-ok">✓ 完成</button><button type="button" class="cms-cancel">✕ 取消</button>';
+  doc.body.appendChild(pill);
+  const rect = el.getBoundingClientRect();
+  pill.style.top = `${Math.max(0, rect.top - 40)}px`;
+  pill.style.left = `${rect.left}px`;
+  pill.querySelector('.cms-ok').onclick = (e) => {
+    e.preventDefault();
+    finishEdit(true);
+  };
+  pill.querySelector('.cms-cancel').onclick = (e) => {
+    e.preventDefault();
+    finishEdit(false);
+  };
+}
+
+/* ── 结束编辑：commit=true 确认保留，false 撤销还原 ── */
+function finishEdit(commit) {
+  if (!editingEl) return;
+  const doc = editingEl.ownerDocument;
+  const key = editingEl.dataset.i18n;
+
+  if (commit) {
+    const newVal = editingEl.innerText.trim();
+    if (newVal && newVal !== editingOriginal.trim()) {
+      pendingZh[key] = newVal;
+      updateChangesBar();
+    }
   } else {
-    img.style.display = 'none';
+    editingEl.textContent = editingOriginal;
   }
-}
 
-/* ── Section toggle ─────────────────────────────────────────────────── */
-function toggleSection(hd) {
-  const body = hd.nextElementSibling;
-  const arrow = hd.querySelector('.section-hd__arrow');
-  body.classList.toggle('collapsed');
-  arrow.classList.toggle('open');
-}
-
-/* ── Tab switch ─────────────────────────────────────────────────────── */
-function setTab(name) {
-  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-    btn.classList.toggle('active', ['zh','ja','en','images'][i] === name);
-  });
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.getElementById(`pane-${name}`).classList.add('active');
-}
-
-/* ── 收集表单里的覆盖值（保存逻辑在下方 module 脚本） ──────────────── */
-function collectOverrides() {
-  const ov = { ja:{}, zh:{}, en:{}, images:{} };
-  ['zh','ja','en'].forEach(lang => {
-    SECTIONS.forEach(sec => {
-      sec.fields.forEach(f => {
-        const el = document.getElementById(`${lang}__${f.key}`);
-        const v = el ? el.value.trim() : '';
-        if (v) ov[lang][f.key] = v;
-      });
-    });
-  });
-  IMAGE_FIELDS.forEach(f => {
-    const el = document.getElementById(`img__${f.key}`);
-    const v = el ? el.value.trim() : '';
-    if (v) ov.images[f.key] = v;
-  });
-  return ov;
+  editingEl.contentEditable = 'false';
+  const pill = doc.getElementById('cms-active-pill');
+  if (pill) pill.remove();
+  editingEl = null;
 }
 </script>
 
@@ -407,8 +323,8 @@ async function api(method, path, body) {
 async function loadContent() {
   const { content } = await api('GET', '/content');
   currentOverrides = content || {};
-  buildEditor();
   document.getElementById('editor').style.display = 'block';
+  switchPage('home');
 }
 
 async function waitForDeploy(commitSha, statusEl) {
@@ -428,20 +344,52 @@ async function waitForDeploy(commitSha, statusEl) {
   statusEl.textContent = '已保存；上线状态未确认，稍后可直接查看网站';
 }
 
-window.save = async function() {
+window.save = async function () {
   const btn = document.getElementById('save-btn');
   const statusEl = document.getElementById('status');
-  btn.disabled = true; btn.textContent = '保存中…';
-  statusEl.className = 'status'; statusEl.textContent = '';
+  btn.disabled = true;
+  btn.textContent = '保存中…';
+  statusEl.className = 'status';
+  statusEl.textContent = '';
   try {
-    const ov = collectOverrides();
+    const ov = {
+      zh: { ...currentOverrides.zh, ...pendingZh },
+      ja: { ...currentOverrides.ja, ...pendingJa },
+      en: { ...currentOverrides.en, ...pendingEn },
+      images: { ...currentOverrides.images },
+    };
     const { commitSha } = await api('PUT', '/content', { content: ov });
     currentOverrides = ov;
+    pendingZh = {};
+    pendingJa = {};
+    pendingEn = {};
+    updateChangesBar();
     waitForDeploy(commitSha, statusEl);
-  } catch(e) {
-    statusEl.className = 'status err'; statusEl.textContent = '✗ 保存失败：' + e.message;
+  } catch (e) {
+    statusEl.className = 'status err';
+    statusEl.textContent = '✗ 保存失败：' + e.message;
   }
-  btn.disabled = false; btn.textContent = '保存并发布';
+  btn.disabled = false;
+  btn.textContent = '保存并发布';
+};
+
+window.syncTranslate = async function () {
+  const fields = Object.entries(pendingZh).map(([key, zh]) => ({ key, zh }));
+  if (fields.length === 0) return;
+  const btn = document.getElementById('sync-btn');
+  btn.disabled = true;
+  btn.textContent = '同步中…';
+  try {
+    const result = await api('POST', '/translate', { fields });
+    Object.assign(pendingJa, result.ja || {});
+    Object.assign(pendingEn, result.en || {});
+    const synced = Object.keys(result.ja || {}).length;
+    btn.textContent =
+      synced >= fields.length ? '✓ 已同步日英' : `已同步 ${synced}/${fields.length} 处，可重试补齐`;
+  } catch (e) {
+    btn.textContent = '同步失败，点击重试';
+  }
+  btn.disabled = false;
 };
 
 window.fbLogout = () => signOut(auth).then(() => location.reload());
