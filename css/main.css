@@ -366,6 +366,7 @@ main { padding-top: var(--nav-h); }
   line-height: 2.1;
   letter-spacing: 0.1em;
   color: var(--c-text-2);
+  white-space: pre-line;
   max-width: 580px;
   opacity: 0;
   animation: fadeUp 1000ms var(--ease-out) 1.4s forwards;
@@ -449,6 +450,7 @@ main { padding-top: var(--nav-h); }
   line-height: 2;
   letter-spacing: 0.03em;
   color: var(--c-text-2);
+  white-space: pre-line;
   max-width: 540px;
 }
 .section__lead {
@@ -458,6 +460,7 @@ main { padding-top: var(--nav-h); }
   line-height: 2;
   letter-spacing: 0.03em;
   color: var(--c-text-2);
+  white-space: pre-line;
   max-width: 680px;
   margin-bottom: 64px;
 }
@@ -522,6 +525,7 @@ main { padding-top: var(--nav-h); }
   line-height: 1.95;
   letter-spacing: 0.02em;
   color: var(--c-text-2);
+  white-space: pre-line;
 }
 
 /* === CTA LINK === */
@@ -613,6 +617,7 @@ main { padding-top: var(--nav-h); }
   line-height: 2;
   letter-spacing: 0.02em;
   color: var(--c-text-2);
+  white-space: pre-line;
 }
 
 /* === TIMELINE (Milestones) === */
@@ -664,6 +669,7 @@ main { padding-top: var(--nav-h); }
   font-weight: 300;
   line-height: 2;
   color: var(--c-text-2);
+  white-space: pre-line;
   max-width: 560px;
 }
 
@@ -720,6 +726,7 @@ main { padding-top: var(--nav-h); }
   font-weight: 300;
   line-height: 1.9;
   color: var(--c-text-2);
+  white-space: pre-line;
 }
 
 /* === DEMO CARDS === */
@@ -873,6 +880,7 @@ main { padding-top: var(--nav-h); }
   line-height: 1.9;
   letter-spacing: 0.06em;
   color: var(--c-text-2);
+  white-space: pre-line;
   max-width: 300px;
 }
 .footer__col-heading {
