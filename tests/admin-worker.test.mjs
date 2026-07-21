@@ -118,6 +118,20 @@ test('parseTranslateResponse 过滤非字符串值，容忍缺 ja 或缺 en', ()
   assert.deepEqual(r2, { ja: { a: 'あ' }, en: {} });
 });
 
+test('parseTranslateResponse 过滤模型凭空发明的字段名（不在 validKeys 里）', () => {
+  // 真实踩坑复现：多行内容被模型拆成 ms3_desc + 凭空发明的 ms3_desc2
+  const r = parseTranslateResponse(
+    '{"ja":{"ms3_desc":"あ","ms3_desc2":"い"},"en":{"ms3_desc":"A","ms3_desc2":"B"}}',
+    ['ms3_desc'],
+  );
+  assert.deepEqual(r, { ja: { ms3_desc: 'あ' }, en: { ms3_desc: 'A' } });
+});
+
+test('parseTranslateResponse 不传 validKeys 时不过滤（向后兼容）', () => {
+  const r = parseTranslateResponse('{"ja":{"a":"あ","b":"い"},"en":{}}');
+  assert.deepEqual(r, { ja: { a: 'あ', b: 'い' }, en: {} });
+});
+
 test('parseTranslateResponse 非法输入返回 null（表示翻译异常）', () => {
   assert.equal(parseTranslateResponse(''), null);
   assert.equal(parseTranslateResponse(null), null);

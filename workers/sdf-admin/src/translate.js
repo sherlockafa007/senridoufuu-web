@@ -29,17 +29,26 @@ export function buildTranslatePrompt(fields) {
   const list = fields.map((f) => `- ${f.key}: ${f.zh}`).join('\n');
   return `你是专业的中文-日语-英语翻译。下面是网站上若干段中文文字，每条前面是它的字段名（不要翻译字段名本身，只翻译冒号后的内容）。
 
+重要：有些字段的内容包含多行文本（用空行分隔的多个段落）。请把同一个字段的全部内容当作一个整体翻译，
+保留其中的换行和段落结构（原文换行符位置在译文里用同样的换行符表示），翻译结果仍然放在同一个字段名下——
+绝对不要把一个字段拆成多个字段，也不要发明任何新的字段名。
+
 请把每一条分别翻译成日语和英语，严格只输出一个 JSON 对象，不要输出任何解释或 Markdown 代码块，格式如下：
 {"ja": {"字段名": "日语翻译", ...}, "en": {"字段名": "English translation", ...}}
 
-要求：保持原文语气和信息完整，不要增删内容，不要输出与原文无关的解释；如果字段名有明显语境提示
-（如包含 title 表示标题、desc/body 表示正文），据此把握合适的正式程度。
+要求：
+- 输出的字段名必须和输入的字段名完全一致（不多不少，不改名）
+- 保持原文语气和信息完整，不要增删内容，不要输出与原文无关的解释
+- 如果字段名有明显语境提示（如包含 title 表示标题、desc/body 表示正文），据此把握合适的正式程度
 
 待翻译内容：
 ${list}`;
 }
 
-export function parseTranslateResponse(responseText) {
+// validKeys：本次请求实际要翻译的字段名列表。模型有时会把一段多行内容拆成额外的
+// 字段（如把 ms3_desc 拆出一个凭空发明的 ms3_desc2），这里过滤掉任何不在请求范围内
+// 的字段名，双保险——不完全依赖提示词约束模型的输出。
+export function parseTranslateResponse(responseText, validKeys) {
   if (!responseText || typeof responseText !== 'string') return null;
   let s = responseText.trim();
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -54,11 +63,16 @@ export function parseTranslateResponse(responseText) {
     return null;
   }
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
+  const allowed = Array.isArray(validKeys) ? new Set(validKeys) : null;
   const ja = obj.ja && typeof obj.ja === 'object' ? obj.ja : {};
   const en = obj.en && typeof obj.en === 'object' ? obj.en : {};
   const cleanJa = {};
   const cleanEn = {};
-  for (const [k, v] of Object.entries(ja)) if (typeof v === 'string' && v) cleanJa[k] = v;
-  for (const [k, v] of Object.entries(en)) if (typeof v === 'string' && v) cleanEn[k] = v;
+  for (const [k, v] of Object.entries(ja)) {
+    if (typeof v === 'string' && v && (!allowed || allowed.has(k))) cleanJa[k] = v;
+  }
+  for (const [k, v] of Object.entries(en)) {
+    if (typeof v === 'string' && v && (!allowed || allowed.has(k))) cleanEn[k] = v;
+  }
   return { ja: cleanJa, en: cleanEn };
 }

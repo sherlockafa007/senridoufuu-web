@@ -113,7 +113,10 @@ export default {
         );
         if (!qwenRes.ok) return json(502, { error: '翻译服务暂时不可用，请稍后重试' }, cors);
         const data = await qwenRes.json();
-        const parsed = parseTranslateResponse(data.choices?.[0]?.message?.content || '');
+        const parsed = parseTranslateResponse(
+          data.choices?.[0]?.message?.content || '',
+          body.fields.map((f) => f.key),
+        );
         if (!parsed) return json(502, { error: '翻译服务返回格式异常，可重试' }, cors);
         return json(200, parsed, cors);
       }
