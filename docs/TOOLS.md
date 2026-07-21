@@ -152,23 +152,26 @@
 
 ---
 
-## 7. admin/ — 管理后台（内容编辑，2026-07-14 一期上线）
+## 7. admin/ — 管理后台（内容编辑，2026-07-14 一期上线，2026-07-21 改就地编辑器）
 
 - **入口**：`https://www.senridf.com/admin/`，Firebase 登录 + `ADMINS` 名单双重校验。顶栏：网站内容｜Blog（二期）｜运行监控（暂链去 `solutions/demo/admin.html`）。
-- **功能**：编辑约 40 个关键文字字段（中/日/英三个标签页）+ 图片 URL 字段；「保存并发布」后自动 commit → 镜像 → Cloudflare 构建，约 2-3 分钟上线，界面轮询镜像 HEAD 显示「已上线」。字段留空 = 用页面内置原文（`content.json` 是覆盖层，`js/main.js` 每页加载时 fetch 合并进 `T`）。
+- **功能（就地可视化编辑，2026-07-21 起）**：后台内嵌四个真实页面（首页/关于我们/大事记/解决方案，同源 iframe，`?lang=zh` 强制中文），鼠标悬浮虚线高亮、点文字直接改（`contentEditable`），改完顶部「已改 N 处」。**字段从页面 `data-i18n` 属性自动发现**，不再手工维护清单（修复了旧表单遗漏的约 27 处字段，如导航/页脚文案）。写中文 → 点「✨ 一键同步日英」（Qwen 批量翻译）→「保存并发布」自动 commit → 镜像 → Cloudflare 构建，约 2-3 分钟上线，轮询镜像 HEAD 显示「已上线」。旧的"图片 URL 表单标签"已删除（从未真正接到渲染逻辑，纯摆设）。
 - **架构（写入通道，与网站主体分离）**：
   ```
-  浏览器 /admin/（Firebase 登录）
+  浏览器 /admin/（Firebase 登录，就地编辑真实页面）
     → sdf-admin Worker（站长自己的 CF 账号 sherlockafa@gmail.com，地址 https://sdf-admin.sherlockafa.workers.dev）
       服务端验 Firebase ID token + ADMINS + 内存限流 30 次/分钟；CORS 白名单 senridf.com/localhost
-    → GitHub Contents API 提交 content.json 到 sherlockafa007/senridoufuu-web
+      /content  GET/PUT → GitHub Contents API 提交 content.json
+      /translate POST   → 批量中文→日英（Qwen qwen-plus），供本次编辑器与未来 Blog 复用
     → 现有镜像链自动上线
   ```
-- **代码**：`workers/sdf-admin/`（`src/index.js` 入口、`validate.js`/`rateLimit.js` 纯函数有测试、`github.js` IO 含 sha 冲突重试）。直接 import 主仓库的 `verifyFirebaseToken.js` 和 `js/shared/admins.js`——**改 ADMINS 名单后 Worker 要重新 `cd workers/sdf-admin && npx wrangler deploy`**（名单打包进部署产物）。
-- **所需设置**：Worker secret `GITHUB_TOKEN`（细粒度 PAT `sdf-admin-worker`，仅本仓库 Contents:RW，**2027-07 到期**，续期：GitHub Regenerate → CF 面板 sdf-admin → Settings → Variables and Secrets 更新）。wrangler 已在本机 OAuth 登录（账号 sherlockafa@gmail.com）。
+- **代码**：`workers/sdf-admin/`（`src/index.js` 入口、`validate.js`/`rateLimit.js`/`translate.js` 纯函数有测试、`github.js` IO 含 sha 冲突重试）。直接 import 主仓库的 `verifyFirebaseToken.js` 和 `js/shared/admins.js`——**改 ADMINS 名单后 Worker 要重新 `cd workers/sdf-admin && npx wrangler deploy`**（名单打包进部署产物）。
+- **所需设置**：Worker secret `GITHUB_TOKEN`（细粒度 PAT `sdf-admin-worker`，仅本仓库 Contents:RW，**2027-07 到期**）+ `QWEN_API_KEY`（和网站主环境变量用同一个通义千问密钥，2026-07-21 起单独在 sdf-admin 也配了一份）。两者都在 CF 面板 sdf-admin → Settings → Variables and Secrets，**必须选 Secret 类型**（不是 Text——Text 是明文可读，wrangler deploy 时还会把明文值打进对比日志里，2026-07-21 踩过一次）。wrangler 已在本机 OAuth 登录（账号 sherlockafa@gmail.com）。
+- **换行显示**：多行字段（`.section__body`/`.section__lead`/`.value-card__desc`/`.team-member__bio`/`.timeline__desc`/`.product-card__desc`/`.hero__tagline`/`.footer__tagline`）的 CSS 都加了 `white-space: pre-line`，`content.json` 里的 `\n` 才会正确显示为换行（2026-07-21 前是死 bug，换行会被浏览器悄悄吃掉）。
 - **修改记录**：
-  - 2026-07-14：一期上线（Worker 通道 + 内容编辑）。**废除旧"浏览器粘贴 GitHub PAT"通道**（令牌暴露 localStorage，非技术用户不可用）。踩坑：①CF 账号首次用 Workers 需注册 workers.dev 子域名（用了 `sherlockafa`）；②细粒度 PAT 创建时默认零权限，必须手动加 Repository access + Contents:RW，否则读公开仓库成功但写 403（极具迷惑性）；③报错要透传 GitHub 的 message，只报状态码没法排障。
-  - 二期计划：Blog（一语写作→Qwen 翻三语→静态文章页）；三期：图片上传。spec 见 `docs/specs/2026-07-14-admin-cms-design.md`。
+  - 2026-07-14：一期上线（Worker 通道 + 表单式内容编辑）。**废除旧"浏览器粘贴 GitHub PAT"通道**（令牌暴露 localStorage，非技术用户不可用）。踩坑：①CF 账号首次用 Workers 需注册 workers.dev 子域名（用了 `sherlockafa`）；②细粒度 PAT 创建时默认零权限，必须手动加 Repository access + Contents:RW，否则读公开仓库成功但写 403（极具迷惑性）；③报错要透传 GitHub 的 message，只报状态码没法排障。
+  - 2026-07-21：**改造为就地可视化编辑器**（废弃表单/SECTIONS 清单，字段自动发现），新增 `/translate` 批量翻译路由，修换行 bug，删死图片标签页。踩坑：①**点"保存/同步"按钮时若还有字段处于编辑中（没点"✓完成"）会被无声漏掉**——`save()`/`syncTranslate()` 现在都先自动确认当前编辑（`commitActiveEdit()`），不强制用户手动点完成；②**Qwen 翻译多行字段时会把内容拆成多个字段、凭空发明新字段名**（如 `ms3_desc` 拆出 `ms3_desc2`），发明的字段没有对应页面元素、翻译内容悄悄丢失——修法是提示词讲清楚"不许拆字段/发明字段名"+ `parseTranslateResponse` 硬过滤：只认请求时给的字段名，模型返回的其它一律丢弃（双保险，不能只靠提示词管住模型）。
+  - 二期计划：Blog（一语写作→Qwen 翻三语→静态文章页，复用 `/translate` 路由）；三期：图片上传。spec 见 `docs/specs/2026-07-14-admin-cms-design.md`（一期架构）+ `docs/specs/2026-07-21-inplace-editor-design.md`（就地编辑器，取代原 spec 第 6 节）。
 
 ## 前端共享模块（`js/shared/`，2026-07-02 Phase 2 去重）
 
