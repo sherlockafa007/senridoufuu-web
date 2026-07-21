@@ -17,6 +17,9 @@ Thumbs.db
 .vscode/
 *.swp
 
+# Claude Code 个人本地设置（不共享给同事）
+.claude/settings.local.json
+
 # Local tool config (contains API keys)
 tools/document-analyzer/config.json
 
