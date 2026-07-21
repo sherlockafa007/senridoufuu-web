@@ -659,7 +659,11 @@ const FOOTER_HTML = `
 `;
 
 /* === LANGUAGE STATE === */
-let currentLang = localStorage.getItem('sdf_lang') || 'ja';
+// 后台就地编辑器用 ?lang= 强制页面语言（不写 localStorage，不影响站长本人正常浏览的语言偏好）
+const LANG_PARAM = new URLSearchParams(location.search).get('lang');
+const VALID_LANGS = ['ja', 'zh', 'en'];
+let currentLang =
+  (VALID_LANGS.includes(LANG_PARAM) && LANG_PARAM) || localStorage.getItem('sdf_lang') || 'ja';
 
 /* === APPLY TRANSLATIONS === */
 function applyTranslations(lang) {
