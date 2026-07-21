@@ -8,6 +8,11 @@ import { isAdmin } from '../../../js/shared/admins.js';
 import { allowedOrigin, validateContentPayload } from './validate.js';
 import { createRateLimiter } from './rateLimit.js';
 import { getFile, putFile } from './github.js';
+import {
+  validateTranslateFields,
+  buildTranslatePrompt,
+  parseTranslateResponse,
+} from './translate.js';
 
 const REPO = 'sherlockafa007/senridoufuu-web';
 const CONTENT_PATH = 'content.json';
@@ -28,7 +33,7 @@ export default {
     const cors = allowedOrigin(origin)
       ? {
           'Access-Control-Allow-Origin': origin,
-          'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
           'Access-Control-Max-Age': '86400',
         }
@@ -79,6 +84,38 @@ export default {
           env.GITHUB_TOKEN,
         );
         return json(200, { ok: true, commitSha }, cors);
+      }
+
+      if (url.pathname === '/translate' && request.method === 'POST') {
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return json(400, { error: '请求格式错误' }, cors);
+        }
+        const check = validateTranslateFields(body.fields);
+        if (!check.ok) return json(400, { error: check.error }, cors);
+
+        const qwenRes = await fetch(
+          'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${env.QWEN_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'qwen-plus',
+              messages: [{ role: 'user', content: buildTranslatePrompt(body.fields) }],
+              max_tokens: 4000,
+            }),
+          },
+        );
+        if (!qwenRes.ok) return json(502, { error: '翻译服务暂时不可用，请稍后重试' }, cors);
+        const data = await qwenRes.json();
+        const parsed = parseTranslateResponse(data.choices?.[0]?.message?.content || '');
+        if (!parsed) return json(502, { error: '翻译服务返回格式异常，可重试' }, cors);
+        return json(200, parsed, cors);
       }
     } catch (e) {
       return json(502, { error: e.message || '保存服务出错，请稍后重试' }, cors);
