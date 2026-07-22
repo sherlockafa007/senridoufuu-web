@@ -7,15 +7,23 @@ import { verifyFirebaseToken } from '../../../functions/api/_lib/verifyFirebaseT
 import { isAdmin } from '../../../js/shared/admins.js';
 import { allowedOrigin, validateContentPayload } from './validate.js';
 import { createRateLimiter } from './rateLimit.js';
-import { getFile, putFile } from './github.js';
+import { getFile, putFile, deleteFile } from './github.js';
 import {
   validateTranslateFields,
   buildTranslatePrompt,
   parseTranslateResponse,
 } from './translate.js';
+import {
+  generateSlug,
+  validatePublishPayload,
+  upsertPost,
+  removePost,
+  renderArticleHtml,
+} from './blog.js';
 
 const REPO = 'sherlockafa007/senridoufuu-web';
 const CONTENT_PATH = 'content.json';
+const POSTS_PATH = 'solutions/blog/posts.json';
 
 const isLimited = createRateLimiter({ limit: 30 });
 
@@ -119,6 +127,108 @@ export default {
         );
         if (!parsed) return json(502, { error: '翻译服务返回格式异常，可重试' }, cors);
         return json(200, parsed, cors);
+      }
+
+      if (url.pathname === '/blog/posts' && request.method === 'GET') {
+        const { text } = await getFile(REPO, POSTS_PATH, env.GITHUB_TOKEN);
+        return json(200, { posts: text ? JSON.parse(text) : [] }, cors);
+      }
+
+      if (url.pathname === '/blog/publish' && request.method === 'POST') {
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return json(400, { error: '请求格式错误' }, cors);
+        }
+        const check = validatePublishPayload(body);
+        if (!check.ok) return json(400, { error: check.error }, cors);
+
+        const slug = body.slug || generateSlug(body.date);
+        const { text: postsText } = await getFile(REPO, POSTS_PATH, env.GITHUB_TOKEN);
+        const posts = postsText ? JSON.parse(postsText) : [];
+        const existing = posts.find((p) => p.slug === slug);
+
+        let coverPath = existing ? existing.cover : null;
+        if (body.cover) {
+          coverPath = `assets/images/blog/${slug}-cover.webp`;
+          const base64Data = body.cover.replace(/^data:image\/\w+;base64,/, '');
+          await putFile(
+            REPO,
+            coverPath,
+            base64Data,
+            'blog: publish cover image',
+            env.GITHUB_TOKEN,
+            { alreadyBase64: true },
+          );
+        }
+
+        const html = renderArticleHtml({
+          slug,
+          date: body.date,
+          tag: body.tag,
+          title: body.title,
+          body: body.body,
+          cover: coverPath,
+        });
+        await putFile(
+          REPO,
+          `solutions/blog/${slug}.html`,
+          html,
+          'blog: publish article',
+          env.GITHUB_TOKEN,
+        );
+
+        const entry = {
+          slug,
+          date: body.date,
+          tag: body.tag,
+          title: body.title,
+          body: body.body,
+          cover: coverPath,
+        };
+        const updated = upsertPost(posts, entry);
+        const { commitSha } = await putFile(
+          REPO,
+          POSTS_PATH,
+          JSON.stringify(updated, null, 2) + '\n',
+          'blog: update posts.json',
+          env.GITHUB_TOKEN,
+        );
+
+        return json(200, { ok: true, slug, commitSha }, cors);
+      }
+
+      if (url.pathname === '/blog/unpublish' && request.method === 'POST') {
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return json(400, { error: '请求格式错误' }, cors);
+        }
+        if (!body.slug || typeof body.slug !== 'string') {
+          return json(400, { error: '缺少 slug' }, cors);
+        }
+
+        await deleteFile(
+          REPO,
+          `solutions/blog/${body.slug}.html`,
+          'blog: unpublish article',
+          env.GITHUB_TOKEN,
+        );
+
+        const { text } = await getFile(REPO, POSTS_PATH, env.GITHUB_TOKEN);
+        const posts = text ? JSON.parse(text) : [];
+        const updated = removePost(posts, body.slug);
+        const { commitSha } = await putFile(
+          REPO,
+          POSTS_PATH,
+          JSON.stringify(updated, null, 2) + '\n',
+          'blog: remove from posts.json',
+          env.GITHUB_TOKEN,
+        );
+
+        return json(200, { ok: true, commitSha }, cors);
       }
     } catch (e) {
       return json(502, { error: e.message || '保存服务出错，请稍后重试' }, cors);
