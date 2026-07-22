@@ -9,6 +9,14 @@ import {
   buildTranslatePrompt,
   parseTranslateResponse,
 } from '../workers/sdf-admin/src/translate.js';
+import {
+  generateSlug,
+  validatePublishPayload,
+  upsertPost,
+  removePost,
+  renderArticleHtml,
+  escapeHtml,
+} from '../workers/sdf-admin/src/blog.js';
 
 test('allowedOrigin 只放行正式域与 localhost', () => {
   assert.equal(allowedOrigin('https://www.senridf.com'), true);
@@ -137,4 +145,138 @@ test('parseTranslateResponse 非法输入返回 null（表示翻译异常）', (
   assert.equal(parseTranslateResponse(null), null);
   assert.equal(parseTranslateResponse('抱歉我无法完成'), null);
   assert.equal(parseTranslateResponse('[1,2,3]'), null);
+});
+
+test('generateSlug 格式为 日期-4位十六进制', () => {
+  const s = generateSlug('2026-07-22', () => 0.5);
+  assert.match(s, /^2026-07-22-[0-9a-f]{4}$/);
+});
+
+test('generateSlug 不同随机数产出不同短码', () => {
+  const a = generateSlug('2026-07-22', () => 0.1);
+  const b = generateSlug('2026-07-22', () => 0.9);
+  assert.notEqual(a, b);
+});
+
+test('validatePublishPayload 接受合法载荷', () => {
+  const ok = validatePublishPayload({
+    tag: 'AI',
+    date: '2026-07-22',
+    title: { ja: 'あ', zh: '中', en: 'A' },
+    body: { ja: 'あ本文', zh: '中文正文', en: 'Body' },
+  });
+  assert.equal(ok.ok, true);
+});
+
+test('validatePublishPayload 拒绝缺字段/格式错误', () => {
+  assert.equal(validatePublishPayload(null).ok, false);
+  assert.equal(validatePublishPayload({}).ok, false);
+  assert.equal(
+    validatePublishPayload({ tag: 'AI', date: '2026/07/22', title: {}, body: {} }).ok,
+    false,
+  ); // 日期格式必须 YYYY-MM-DD
+  assert.equal(
+    validatePublishPayload({
+      tag: 'AI',
+      date: '2026-07-22',
+      title: { ja: 'あ', zh: '', en: 'A' },
+      body: { ja: 'x', zh: 'x', en: 'x' },
+    }).ok,
+    false,
+  ); // zh 标题为空
+});
+
+test('validatePublishPayload 接受不带封面图，拒绝超大封面图', () => {
+  const base = {
+    tag: 'AI',
+    date: '2026-07-22',
+    title: { ja: 'a', zh: 'a', en: 'a' },
+    body: { ja: 'a', zh: 'a', en: 'a' },
+  };
+  assert.equal(validatePublishPayload(base).ok, true);
+  const huge = { ...base, cover: 'data:image/webp;base64,' + 'A'.repeat(700_000) };
+  assert.equal(validatePublishPayload(huge).ok, false);
+});
+
+test('upsertPost 插入新文章并按日期倒序', () => {
+  const posts = [{ slug: 'a', date: '2026-07-01' }];
+  const updated = upsertPost(posts, { slug: 'b', date: '2026-07-20' });
+  assert.deepEqual(
+    updated.map((p) => p.slug),
+    ['b', 'a'],
+  );
+});
+
+test('upsertPost 按 slug 更新已有文章（不重复）', () => {
+  const posts = [{ slug: 'a', date: '2026-07-01', tag: '旧' }];
+  const updated = upsertPost(posts, { slug: 'a', date: '2026-07-01', tag: '新' });
+  assert.equal(updated.length, 1);
+  assert.equal(updated[0].tag, '新');
+});
+
+test('removePost 按 slug 移除，找不到则原样返回', () => {
+  const posts = [{ slug: 'a' }, { slug: 'b' }];
+  assert.deepEqual(
+    removePost(posts, 'a').map((p) => p.slug),
+    ['b'],
+  );
+  assert.deepEqual(
+    removePost(posts, 'zzz').map((p) => p.slug),
+    ['a', 'b'],
+  );
+});
+
+test('escapeHtml 转义特殊字符', () => {
+  assert.equal(escapeHtml('<a>&"</a>'), '&lt;a&gt;&amp;&quot;&lt;/a&gt;');
+});
+
+test('renderArticleHtml 包含三语数据、正确转义标题、marked/DOMPurify 引用', () => {
+  const html = renderArticleHtml({
+    slug: '2026-07-22-a3f8',
+    date: '2026-07-22',
+    tag: 'AI',
+    title: { ja: '<script>', zh: '中文标题', en: 'Title' },
+    body: { ja: 'あ', zh: '中', en: 'body' },
+    cover: null,
+  });
+  assert.ok(html.includes('marked@12.0.2'));
+  assert.ok(html.includes('dompurify@3.4.12'));
+  assert.ok(html.includes('&lt;script&gt;')); // <title> 标签里转义
+  assert.ok(!html.includes('</script><script>')); // 不能因标题里的 <script> 提前截断
+  assert.ok(html.includes('"zh":{"title":"中文标题"'));
+  assert.ok(html.includes('<base href="../../">'));
+});
+
+test('renderArticleHtml 防止正文里的 </script> 提前截断内嵌数据脚本', () => {
+  const html = renderArticleHtml({
+    slug: 's',
+    date: '2026-07-22',
+    tag: 'AI',
+    title: { ja: 'a', zh: 'a', en: 'a' },
+    body: { ja: 'x</script>alert(1)', zh: 'a', en: 'a' },
+    cover: null,
+  });
+  assert.ok(!html.includes('</script>alert(1)'));
+  assert.ok(html.includes('\\u003c/script>alert(1)'));
+});
+
+test('renderArticleHtml 有封面图时插入 img 标签，无封面图时不插入', () => {
+  const withCover = renderArticleHtml({
+    slug: 's',
+    date: '2026-07-22',
+    tag: 'AI',
+    title: { ja: 'a', zh: 'a', en: 'a' },
+    body: { ja: 'a', zh: 'a', en: 'a' },
+    cover: 'assets/images/blog/s-cover.webp',
+  });
+  assert.ok(withCover.includes('assets/images/blog/s-cover.webp'));
+  const noCover = renderArticleHtml({
+    slug: 's',
+    date: '2026-07-22',
+    tag: 'AI',
+    title: { ja: 'a', zh: 'a', en: 'a' },
+    body: { ja: 'a', zh: 'a', en: 'a' },
+    cover: null,
+  });
+  assert.ok(!noCover.includes('blog-post__cover'));
 });
