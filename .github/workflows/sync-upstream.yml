@@ -21,6 +21,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main                    # always mirror main's CURRENT tip, not the commit that
+                                        # triggered this run — a single admin action (e.g. blog
+                                        # publish) can create several rapid commits, each firing
+                                        # its own run; pinning to github.sha lets an older run
+                                        # finish last and force-push a stale state, silently
+                                        # erasing newer commits from the mirror.
           fetch-depth: 0
           persist-credentials: false   # don't let GITHUB_TOKEN's extraheader override the PAT
       - name: Force-push main to deploy repo
