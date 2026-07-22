@@ -33,27 +33,7 @@
     <!-- Blog List -->
     <section class="section">
 
-      <!--
-        === BLOG POSTS ===
-        To add a post, copy the block below and fill in the details.
-        Create a new file at /solutions/blog/[post-slug].html for each post.
-
-      <a href="/solutions/blog/your-post-slug.html" class="blog-item" data-animate>
-        <div class="blog-item__date">
-          2025<br>01.15
-        </div>
-        <div>
-          <div class="blog-item__tag">AI · ハードウェア</div>
-          <h2 class="blog-item__title">記事のタイトルをここに入れてください</h2>
-          <p class="blog-item__excerpt">
-            記事の要約文。2〜3文程度で内容を説明します。
-          </p>
-        </div>
-      </a>
-
-      -->
-
-      <!-- Empty state -->
+      <!-- Empty state（无文章时天然显示；有文章时下方脚本会移除它并插入卡片） -->
       <div class="blog-empty" data-animate>
         <p data-i18n="blog_empty">記事は近日公開予定です。</p>
       </div>
@@ -66,5 +46,61 @@
 
   <script src="js/main.js"></script>
   <script type="module" src="js/tracking.js"></script>
+  <script>
+    let blogPostsCache = [];
+
+    function escapeHtmlList(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function renderBlogCards(lang) {
+      const container = document.querySelector('.section');
+      if (!container) return;
+      const validLang = ['ja', 'zh', 'en'].includes(lang) ? lang : 'ja';
+      container.querySelectorAll('.blog-item').forEach((el) => el.remove());
+      const emptyEl = container.querySelector('.blog-empty');
+      if (blogPostsCache.length === 0) {
+        if (emptyEl) emptyEl.style.display = '';
+        return;
+      }
+      if (emptyEl) emptyEl.style.display = 'none';
+      const html = blogPostsCache
+        .map((p) => {
+          const d = p[validLang] || p.ja;
+          const [y, m, day] = p.date.split('-');
+          const excerpt = (d.body || '')
+            .replace(/[#*_`]/g, '')
+            .replace(/\n+/g, ' ')
+            .trim()
+            .slice(0, 80);
+          return `<a href="/solutions/blog/${p.slug}.html" class="blog-item" data-animate>
+          <div class="blog-item__date">${y}<br>${m}.${day}</div>
+          <div>
+            <div class="blog-item__tag">${escapeHtmlList(p.tag)}</div>
+            <h2 class="blog-item__title">${escapeHtmlList(d.title)}</h2>
+            <p class="blog-item__excerpt">${escapeHtmlList(excerpt)}…</p>
+          </div>
+        </a>`;
+        })
+        .join('');
+      container.insertAdjacentHTML('beforeend', html);
+    }
+
+    fetch('/solutions/blog/posts.json')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((posts) => {
+        blogPostsCache = Array.isArray(posts) ? posts : [];
+        renderBlogCards(currentLang);
+      })
+      .catch(() => {});
+
+    // main.js 的语言按钮通过 addEventListener(() => switchLang(...)) 调用时才查找
+    // window.switchLang，可以安全包一层而不改 main.js。
+    const _switchLang = window.switchLang;
+    window.switchLang = function (lang) {
+      _switchLang(lang);
+      renderBlogCards(lang);
+    };
+  </script>
 </body>
 </html>
