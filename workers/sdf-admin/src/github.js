@@ -35,10 +35,12 @@ export async function getFile(repo, path, token) {
 }
 
 // 写文件：每次现取最新 sha 再提交；409/422 视为并发冲突，重取一次再试。
-export async function putFile(repo, path, text, message, token) {
+// content 默认当文本处理（UTF-8→base64）；alreadyBase64=true 时按图片等二进制数据处理，
+// content 本身已经是算好的 base64 字符串，直接透传给 GitHub API。
+export async function putFile(repo, path, content, message, token, { alreadyBase64 = false } = {}) {
   for (let attempt = 0; attempt < 2; attempt++) {
     const { sha } = await getFile(repo, path, token);
-    const body = { message, content: b64encodeUtf8(text) };
+    const body = { message, content: alreadyBase64 ? content : b64encodeUtf8(content) };
     if (sha) body.sha = sha;
     const res = await fetch(`${GH}/repos/${repo}/contents/${path}`, {
       method: 'PUT',
@@ -60,4 +62,25 @@ export async function putFile(repo, path, text, message, token) {
     }
   }
   throw new Error('保存冲突，请刷新页面重试');
+}
+
+// 删除文件（下架文章用）。文件已不存在时视为已删除，幂等返回。
+export async function deleteFile(repo, path, message, token) {
+  const { sha } = await getFile(repo, path, token);
+  if (!sha) return { deleted: false };
+  const res = await fetch(`${GH}/repos/${repo}/contents/${path}`, {
+    method: 'DELETE',
+    headers: { ...ghHeaders(token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, sha }),
+  });
+  if (!res.ok) {
+    let detail = '';
+    try {
+      detail = (await res.json()).message || '';
+    } catch {
+      /* 响应非 JSON 时只报状态码 */
+    }
+    throw new Error(`GitHub 删除失败（${res.status}${detail ? `：${detail}` : ''}）`);
+  }
+  return { deleted: true };
 }
