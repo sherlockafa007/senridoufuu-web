@@ -18,6 +18,7 @@
     - `actions/checkout` 默认把 `GITHUB_TOKEN` 持久化成 github.com 的 `http.extraheader`，会**覆盖** URL 里的 PAT 导致 403 → 必须 `persist-credentials: false`。
     - fine-grained PAT 推送**含 `.github/workflows/` 改动**的提交需 **Workflows** 权限，否则整个 push 被拒。
   - ⚠️ 历史坑：2026-06-23 前靠手动 Sync fork，常卡住 → 线上落后好几个提交、"修了没生效"；曾试"定时在她 fork 跑"的镜像，但 **GitHub 默认禁用 fork 里的 scheduled workflow**，跑不起来，故改 push 触发在源仓库跑。
+  - ⚠️ **2026-07-22 修的并发坑**：`actions/checkout` 默认签出**触发这次 workflow 的那个提交**（`github.sha`），不是 `main` 当时的最新状态。管理后台的一次"发布"操作会连续产生多个提交（如 Blog 发布：文章页 + `posts.json` 两次提交），每次都各自触发一次镜像 workflow；如果这几次并发执行、**完成顺序和提交顺序不一致**，"旧提交触发的那次"后完成会把镜像仓库强推回旧状态，**悄悄冲掉后面提交的内容**（实测症状：文章页上线了，但 `posts.json` 在镜像上 404）。修法：`actions/checkout` 加 `ref: main`，让每次运行都签出 `main` 分支**当时的最新状态**而非固定提交，不管几次并发谁先谁后完成，结果都一致。
   - ✅ 验证线上版本：`curl` 线上文件 grep 标志性改动比对（`.html` 会 308 跳无扩展名 URL，需 `-L`）；或 curl 两仓库 `commits/main` 的 sha 看是否一致。比看 Cloudflare 面板快准。
 - **后端**：Cloudflare Pages Functions，目录 `functions/api/`，前端调 `/api/*`。
   - （`netlify.toml`、`netlify/` 是迁移前遗留的死文件，现已不用。CLAUDE.md 里"Netlify Functions"的描述也已过时。）
@@ -152,9 +153,9 @@
 
 ---
 
-## 7. admin/ — 管理后台（内容编辑，2026-07-14 一期上线，2026-07-21 改就地编辑器）
+## 7. admin/ — 管理后台（内容编辑一期 2026-07-14 → 就地编辑器 2026-07-21 → Blog 二期 2026-07-22）
 
-- **入口**：`https://www.senridf.com/admin/`，Firebase 登录 + `ADMINS` 名单双重校验。顶栏：网站内容｜Blog（二期）｜运行监控（暂链去 `solutions/demo/admin.html`）。
+- **入口**：`https://www.senridf.com/admin/`，Firebase 登录 + `ADMINS` 名单双重校验。顶栏：网站内容｜**Blog**（2026-07-22 起可用）｜运行监控（暂链去 `solutions/demo/admin.html`）。
 - **功能（就地可视化编辑，2026-07-21 起）**：后台内嵌四个真实页面（首页/关于我们/大事记/解决方案，同源 iframe，`?lang=zh` 强制中文），鼠标悬浮虚线高亮、点文字直接改（`contentEditable`），改完顶部「已改 N 处」。**字段从页面 `data-i18n` 属性自动发现**，不再手工维护清单（修复了旧表单遗漏的约 27 处字段，如导航/页脚文案）。写中文 → 点「✨ 一键同步日英」（Qwen 批量翻译）→「保存并发布」自动 commit → 镜像 → Cloudflare 构建，约 2-3 分钟上线，轮询镜像 HEAD 显示「已上线」。旧的"图片 URL 表单标签"已删除（从未真正接到渲染逻辑，纯摆设）。
 - **架构（写入通道，与网站主体分离）**：
   ```
@@ -162,16 +163,23 @@
     → sdf-admin Worker（站长自己的 CF 账号 sherlockafa@gmail.com，地址 https://sdf-admin.sherlockafa.workers.dev）
       服务端验 Firebase ID token + ADMINS + 内存限流 30 次/分钟；CORS 白名单 senridf.com/localhost
       /content  GET/PUT → GitHub Contents API 提交 content.json
-      /translate POST   → 批量中文→日英（Qwen qwen-plus），供本次编辑器与未来 Blog 复用
+      /translate POST   → 批量中文→日英（Qwen qwen-plus），内容编辑器与 Blog 共用
+      /blog/posts    GET  → 读 solutions/blog/posts.json（文章清单，含完整三语标题+正文）
+      /blog/publish  POST → 发布/编辑文章：可选提交封面图 → 生成并提交文章页 → 更新 posts.json（最多 3 次提交）
+      /blog/unpublish POST → 删除文章页 + 从 posts.json 移除（2 次提交）
     → 现有镜像链自动上线
   ```
-- **代码**：`workers/sdf-admin/`（`src/index.js` 入口、`validate.js`/`rateLimit.js`/`translate.js` 纯函数有测试、`github.js` IO 含 sha 冲突重试）。直接 import 主仓库的 `verifyFirebaseToken.js` 和 `js/shared/admins.js`——**改 ADMINS 名单后 Worker 要重新 `cd workers/sdf-admin && npx wrangler deploy`**（名单打包进部署产物）。
+- **代码**：`workers/sdf-admin/`（`src/index.js` 入口、`validate.js`/`rateLimit.js`/`translate.js`/`blog.js` 纯函数有测试、`github.js` IO 含 sha 冲突重试 + `deleteFile`）。直接 import 主仓库的 `verifyFirebaseToken.js` 和 `js/shared/admins.js`——**改 ADMINS 名单后 Worker 要重新 `cd workers/sdf-admin && npx wrangler deploy`**（名单打包进部署产物）。
+- **Blog 数据结构**：`solutions/blog/posts.json` 是数组，每篇文章 `{slug, date, tag, title:{ja,zh,en}, body:{ja,zh,en}, cover}`——**title/body 是"字段名在外、语言在内"**（`p.title.zh`），不是"语言在外"（不存在 `p.ja.title` 这种结构）。`solutions/blog/index.html`（列表页）和文章页模板都读这个清单；`admin/index.html` 的撰写面板独立于就地编辑器（新文章没有已渲染页面可点，走标题+正文的表单式撰写，写完中文一键调 `/translate` 出日英）。正文 Markdown 子集，客户端用 marked+DOMPurify 渲染（SRI 锁版本，同 analysis.html/lifestory.html 的写法），Worker 不做服务端渲染（Workers 运行时没有现成 DOM 环境）。封面图浏览器端 canvas 压缩转 WebP（≤500KB，超限自动降质重试），随发布请求一起提交，不开单独接口。草稿自动存 Firestore `blog_drafts/current`（仅存文字，不存图，2 秒防抖），仅一个"当前草稿"槽位。
 - **所需设置**：Worker secret `GITHUB_TOKEN`（细粒度 PAT `sdf-admin-worker`，仅本仓库 Contents:RW，**2027-07 到期**）+ `QWEN_API_KEY`（和网站主环境变量用同一个通义千问密钥，2026-07-21 起单独在 sdf-admin 也配了一份）。两者都在 CF 面板 sdf-admin → Settings → Variables and Secrets，**必须选 Secret 类型**（不是 Text——Text 是明文可读，wrangler deploy 时还会把明文值打进对比日志里，2026-07-21 踩过一次）。wrangler 已在本机 OAuth 登录（账号 sherlockafa@gmail.com）。
 - **换行显示**：多行字段（`.section__body`/`.section__lead`/`.value-card__desc`/`.team-member__bio`/`.timeline__desc`/`.product-card__desc`/`.hero__tagline`/`.footer__tagline`）的 CSS 都加了 `white-space: pre-line`，`content.json` 里的 `\n` 才会正确显示为换行（2026-07-21 前是死 bug，换行会被浏览器悄悄吃掉）。
 - **修改记录**：
   - 2026-07-14：一期上线（Worker 通道 + 表单式内容编辑）。**废除旧"浏览器粘贴 GitHub PAT"通道**（令牌暴露 localStorage，非技术用户不可用）。踩坑：①CF 账号首次用 Workers 需注册 workers.dev 子域名（用了 `sherlockafa`）；②细粒度 PAT 创建时默认零权限，必须手动加 Repository access + Contents:RW，否则读公开仓库成功但写 403（极具迷惑性）；③报错要透传 GitHub 的 message，只报状态码没法排障。
   - 2026-07-21：**改造为就地可视化编辑器**（废弃表单/SECTIONS 清单，字段自动发现），新增 `/translate` 批量翻译路由，修换行 bug，删死图片标签页。踩坑：①**点"保存/同步"按钮时若还有字段处于编辑中（没点"✓完成"）会被无声漏掉**——`save()`/`syncTranslate()` 现在都先自动确认当前编辑（`commitActiveEdit()`），不强制用户手动点完成；②**Qwen 翻译多行字段时会把内容拆成多个字段、凭空发明新字段名**（如 `ms3_desc` 拆出 `ms3_desc2`），发明的字段没有对应页面元素、翻译内容悄悄丢失——修法是提示词讲清楚"不许拆字段/发明字段名"+ `parseTranslateResponse` 硬过滤：只认请求时给的字段名，模型返回的其它一律丢弃（双保险，不能只靠提示词管住模型）。
-  - 二期计划：Blog（一语写作→Qwen 翻三语→静态文章页，复用 `/translate` 路由）；三期：图片上传。spec 见 `docs/specs/2026-07-14-admin-cms-design.md`（一期架构）+ `docs/specs/2026-07-21-inplace-editor-design.md`（就地编辑器，取代原 spec 第 6 节）。
+  - **2026-07-22：Blog 二期上线**（一语写作→Qwen 翻三语→发布静态文章页+更新列表，支持封面图，Firestore 自动存草稿）。spec 见 `docs/specs/2026-07-14-admin-cms-design.md`（一期架构）+ `docs/specs/2026-07-21-inplace-editor-design.md`（就地编辑器）+ `docs/specs/2026-07-22-blog-module-design.md`（Blog）。三期待做：图片上传通用化（正文内插图等）。
+    - 踩坑①（并发/部署链）：见"§0 全站部署"里 2026-07-22 的镜像 workflow 并发坑——本模块的多提交发布正是**触发**那个坑的场景，修在 workflow 层，不是本模块代码。
+    - 踩坑②（前端动画）：`solutions/blog/index.html` 最初给动态插入的文章卡片加了 `data-animate`（滚动淡入特效标记），但该特效的 `IntersectionObserver` 只在页面首次加载时注册一次现有元素——异步插入的卡片永远赶不上注册，停留在 `opacity:0` 永久不可见（数据和 DOM 都对，肉眼看是空的）。凡是**页面加载完之后才动态插入**的元素一律不要挂这类"仅初始化时扫描一次"的效果标记。
+    - 踩坑③（数据结构对不齐，最隐蔽的一个）：`posts.json` 每条数据形如 `{title:{ja,zh,en}, body:{ja,zh,en}}`（字段名在外、语言在内），但列表页最初写成按语言取 `p[lang].title`（语言在外、字段名在内）——两种形状看着都合理，一次手误就写反。报错 `Cannot read properties of undefined (reading 'body')` 发生在 `fetch().then()` 内部，被链尾的 `.catch(() => {})` **静默吞掉**，导致页面一直空白但控制台看不到任何错误，直到用户手动点了语言切换按钮（走了另一条不经过该 catch 的调用路径）才暴露出真实报错。**教训：给公开页面的 fetch 链加兜底 catch 没错（不能让访客看到报错堆栈），但排障时不能只看"看起来空白"就瞎猜，一定要先要一份浏览器控制台的报错**——这次连猜两次（缓存、URL 格式）才想起来直接要控制台日志，其实应该一开始就要。
 
 ## 前端共享模块（`js/shared/`，2026-07-02 Phase 2 去重）
 
