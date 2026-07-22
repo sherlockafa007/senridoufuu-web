@@ -66,9 +66,11 @@
       if (emptyEl) emptyEl.style.display = 'none';
       const html = blogPostsCache
         .map((p) => {
-          const d = p[validLang] || p.ja;
+          // posts.json 里 title/body 各自是三语对象（{ja,zh,en}），不是按语言分组的 {title,body}。
+          const title = (p.title && p.title[validLang]) || (p.title && p.title.ja) || '';
+          const body = (p.body && p.body[validLang]) || (p.body && p.body.ja) || '';
           const [y, m, day] = p.date.split('-');
-          const excerpt = (d.body || '')
+          const excerpt = body
             .replace(/[#*_`]/g, '')
             .replace(/\n+/g, ' ')
             .trim()
@@ -80,7 +82,7 @@
           <div class="blog-item__date">${y}<br>${m}.${day}</div>
           <div>
             <div class="blog-item__tag">${escapeHtmlList(p.tag)}</div>
-            <h2 class="blog-item__title">${escapeHtmlList(d.title)}</h2>
+            <h2 class="blog-item__title">${escapeHtmlList(title)}</h2>
             <p class="blog-item__excerpt">${escapeHtmlList(excerpt)}…</p>
           </div>
         </a>`;
