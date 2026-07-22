@@ -260,6 +260,188 @@ let pendingEn = {};
 let editingEl = null;
 let editingOriginal = '';
 
+/* ── Blog 状态 ── */
+let blogPosts = [];
+let composeState = null; // null = 未在撰写；对象 = 正在写/编辑
+let composeOtherLang = 'ja';
+let draftSaveTimer = null;
+
+function escapeHtmlAdmin(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* ── 顶栏视图切换（网站内容 / Blog） ── */
+function switchAdminView(view) {
+  document.getElementById('nav-content').classList.toggle('active', view === 'content');
+  document.getElementById('nav-blog').classList.toggle('active', view === 'blog');
+  document.getElementById('view-content').hidden = view !== 'content';
+  document.getElementById('view-blog').hidden = view !== 'blog';
+  document.getElementById('save-btn').style.display = view === 'content' ? '' : 'none';
+  if (view === 'blog' && blogPosts.length === 0) {
+    loadBlogPosts();
+    checkDraft();
+  }
+}
+
+/* ── 文章列表渲染 ── */
+function renderBlogList() {
+  const listEl = document.getElementById('blog-list');
+  if (blogPosts.length === 0) {
+    listEl.innerHTML = '<div class="empty">还没有文章</div>';
+    return;
+  }
+  listEl.innerHTML = blogPosts
+    .map(
+      (p) => `
+    <div class="blog-list-row">
+      <span class="blog-list-date">${p.date}</span>
+      <span class="blog-list-title">${escapeHtmlAdmin(p.title.zh)}</span>
+      <button type="button" class="btn-link" onclick="editPost('${p.slug}')">编辑</button>
+      <button type="button" class="btn-link" onclick="unpublishPost('${p.slug}')">下架</button>
+    </div>`,
+    )
+    .join('');
+}
+
+/* ── 撰写面板 ── */
+function startNewPost() {
+  composeState = {
+    slug: null,
+    tag: '',
+    date: new Date().toISOString().slice(0, 10),
+    cover: null,
+    coverChanged: false,
+    title: { zh: '', ja: '', en: '' },
+    body: { zh: '', ja: '', en: '' },
+  };
+  composeOtherLang = 'ja';
+  renderCompose();
+  document.getElementById('blog-compose').hidden = false;
+}
+
+function editPost(slug) {
+  const p = blogPosts.find((x) => x.slug === slug);
+  if (!p) return;
+  composeState = {
+    slug: p.slug,
+    tag: p.tag,
+    date: p.date,
+    cover: p.cover || null,
+    coverChanged: false,
+    title: { ...p.title },
+    body: { ...p.body },
+  };
+  composeOtherLang = 'ja';
+  renderCompose();
+  document.getElementById('blog-compose').hidden = false;
+}
+
+function renderCompose() {
+  document.getElementById('compose-tag').value = composeState.tag;
+  document.getElementById('compose-title-zh').value = composeState.title.zh;
+  document.getElementById('compose-body-zh').value = composeState.body.zh;
+  const preview = document.getElementById('compose-cover-preview');
+  if (composeState.cover) {
+    preview.src = composeState.cover.startsWith('data:') ? composeState.cover : '/' + composeState.cover;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+  renderOtherLangFields();
+}
+
+function renderOtherLangFields() {
+  const langLabel = composeOtherLang === 'ja' ? '日本語' : 'English';
+  document.getElementById('other-lang-title-label').textContent = `标题（${langLabel}）`;
+  document.getElementById('other-lang-body-label').textContent = `正文（${langLabel}）`;
+  document.getElementById('compose-title-other').value = composeState.title[composeOtherLang];
+  document.getElementById('compose-body-other').value = composeState.body[composeOtherLang];
+  document.querySelectorAll('.lang-tabs .page-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.otherLang === composeOtherLang);
+  });
+}
+
+function switchComposeOtherLang(lang) {
+  composeOtherLang = lang;
+  renderOtherLangFields();
+}
+
+// 任意撰写字段变化时，把当前 DOM 值同步进 composeState，并安排一次草稿自动保存。
+function onComposeInput() {
+  if (!composeState) return;
+  composeState.tag = document.getElementById('compose-tag').value;
+  composeState.title.zh = document.getElementById('compose-title-zh').value;
+  composeState.body.zh = document.getElementById('compose-body-zh').value;
+  composeState.title[composeOtherLang] = document.getElementById('compose-title-other').value;
+  composeState.body[composeOtherLang] = document.getElementById('compose-body-other').value;
+  scheduleDraftSave();
+}
+
+function cancelCompose() {
+  composeState = null;
+  document.getElementById('blog-compose').hidden = true;
+  clearTimeout(draftSaveTimer);
+}
+
+function scheduleDraftSave() {
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(() => saveDraft(), 2000);
+}
+
+/* ── Markdown 工具栏 ── */
+function wrapSelection(before, after) {
+  const ta = document.getElementById('compose-body-zh');
+  const { selectionStart: s, selectionEnd: e, value } = ta;
+  ta.value = value.slice(0, s) + before + value.slice(s, e) + after + value.slice(e);
+  ta.focus();
+  onComposeInput();
+}
+
+function insertLinePrefix(prefix) {
+  const ta = document.getElementById('compose-body-zh');
+  const { selectionStart: s, value } = ta;
+  const lineStart = value.lastIndexOf('\n', s - 1) + 1;
+  ta.value = value.slice(0, lineStart) + prefix + value.slice(lineStart);
+  ta.focus();
+  onComposeInput();
+}
+
+/* ── 封面图：canvas 压缩转 WebP，超限自动降质重试 ── */
+function handleCoverFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_SIDE = 1600;
+      let { width, height } = img;
+      if (width > MAX_SIDE || height > MAX_SIDE) {
+        const ratio = Math.min(MAX_SIDE / width, MAX_SIDE / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      let quality = 0.85;
+      let dataUrl = canvas.toDataURL('image/webp', quality);
+      while (Math.floor((dataUrl.length * 3) / 4) > 500000 && quality > 0.4) {
+        quality -= 0.15;
+        dataUrl = canvas.toDataURL('image/webp', quality);
+      }
+      composeState.cover = dataUrl;
+      composeState.coverChanged = true;
+      const preview = document.getElementById('compose-cover-preview');
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+      scheduleDraftSave();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 const FRAME_STYLE = `
   [data-i18n]:hover { outline: 1px dashed #2563eb; outline-offset: 2px; cursor: text; }
   [data-i18n][contenteditable="true"] { outline: 2px solid #2563eb; outline-offset: 2px; cursor: text; background: #eef2ff; }
