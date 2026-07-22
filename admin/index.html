@@ -162,8 +162,8 @@
     <div class="top-bar__left">
       <a href="/" class="top-bar__logo" title="返回网站主页">千里同風</a>
       <nav class="top-bar__nav">
-        <span class="top-bar__nav-current">网站内容</span>
-        <span class="top-bar__nav-soon" title="二期开通">Blog（即将上线）</span>
+        <button type="button" class="top-bar__nav-btn active" id="nav-content" onclick="switchAdminView('content')">网站内容</button>
+        <button type="button" class="top-bar__nav-btn" id="nav-blog" onclick="switchAdminView('blog')">Blog</button>
         <a href="/solutions/demo/admin.html" class="top-bar__nav-link">运行监控</a>
       </nav>
     </div>
@@ -174,19 +174,74 @@
     </div>
   </div>
 
-  <div class="page-bar">
-    <button type="button" class="page-btn active" data-page="home" onclick="switchPage('home')">首页</button>
-    <button type="button" class="page-btn" data-page="about" onclick="switchPage('about')">关于我们</button>
-    <button type="button" class="page-btn" data-page="milestones" onclick="switchPage('milestones')">大事记</button>
-    <button type="button" class="page-btn" data-page="solutions" onclick="switchPage('solutions')">解决方案</button>
+  <div id="view-content">
+    <div class="page-bar">
+      <button type="button" class="page-btn active" data-page="home" onclick="switchPage('home')">首页</button>
+      <button type="button" class="page-btn" data-page="about" onclick="switchPage('about')">关于我们</button>
+      <button type="button" class="page-btn" data-page="milestones" onclick="switchPage('milestones')">大事记</button>
+      <button type="button" class="page-btn" data-page="solutions" onclick="switchPage('solutions')">解决方案</button>
+    </div>
+
+    <div class="changes-bar" id="changes-bar" hidden>
+      <span id="changes-count">已改 0 处</span>
+      <button type="button" class="btn-sync" id="sync-btn" onclick="syncTranslate()">✨ 一键同步日英</button>
+    </div>
+
+    <iframe id="preview-frame" title="页面内容预览编辑"></iframe>
   </div>
 
-  <div class="changes-bar" id="changes-bar" hidden>
-    <span id="changes-count">已改 0 处</span>
-    <button type="button" class="btn-sync" id="sync-btn" onclick="syncTranslate()">✨ 一键同步日英</button>
-  </div>
+  <div id="view-blog" hidden>
+    <div class="blog-toolbar">
+      <button type="button" class="btn-save" onclick="startNewPost()">+ 写新文章</button>
+    </div>
+    <div id="blog-list"></div>
 
-  <iframe id="preview-frame" title="页面内容预览编辑"></iframe>
+    <div id="blog-compose" hidden>
+      <div class="compose-row">
+        <label class="compose-label">标签</label>
+        <input type="text" id="compose-tag" class="compose-input" placeholder="如：AI・ハードウェア" oninput="onComposeInput()">
+      </div>
+      <div class="compose-row">
+        <label class="compose-label">封面图（可选）</label>
+        <input type="file" id="compose-cover-file" accept="image/*" onchange="handleCoverFile(this.files[0])">
+        <img id="compose-cover-preview" class="compose-cover-preview" alt="">
+      </div>
+      <div class="compose-row">
+        <label class="compose-label">标题（中文）</label>
+        <input type="text" id="compose-title-zh" class="compose-input" oninput="onComposeInput()">
+      </div>
+      <div class="compose-row">
+        <label class="compose-label">正文（中文，Markdown）</label>
+        <div class="compose-toolbar">
+          <button type="button" onclick="wrapSelection('**','**')">B 加粗</button>
+          <button type="button" onclick="insertLinePrefix('## ')">H 小标题</button>
+          <button type="button" onclick="insertLinePrefix('- ')">• 列表</button>
+        </div>
+        <textarea id="compose-body-zh" class="compose-textarea" rows="14" oninput="onComposeInput()"></textarea>
+      </div>
+      <div class="compose-row">
+        <button type="button" class="btn-sync" id="compose-sync-btn" onclick="syncBlogTranslate()">✨ 一键同步日英</button>
+        <span id="compose-sync-status" class="status"></span>
+      </div>
+      <div class="lang-tabs">
+        <button type="button" class="page-btn active" data-other-lang="ja" onclick="switchComposeOtherLang('ja')">日本語</button>
+        <button type="button" class="page-btn" data-other-lang="en" onclick="switchComposeOtherLang('en')">English</button>
+      </div>
+      <div class="compose-row">
+        <label class="compose-label" id="other-lang-title-label">标题（日本語）</label>
+        <input type="text" id="compose-title-other" class="compose-input" oninput="onComposeInput()">
+      </div>
+      <div class="compose-row">
+        <label class="compose-label" id="other-lang-body-label">正文（日本語）</label>
+        <textarea id="compose-body-other" class="compose-textarea" rows="14" oninput="onComposeInput()"></textarea>
+      </div>
+      <div class="compose-row">
+        <button type="button" class="btn-save" onclick="publishPost()">发布</button>
+        <button type="button" class="btn-link" onclick="cancelCompose()">取消</button>
+        <span id="compose-publish-status" class="status"></span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
