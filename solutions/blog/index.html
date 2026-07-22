@@ -73,7 +73,10 @@
             .replace(/\n+/g, ' ')
             .trim()
             .slice(0, 80);
-          return `<a href="/solutions/blog/${p.slug}.html" class="blog-item" data-animate>
+          // 不用 data-animate：滚动淡入的 IntersectionObserver 只在页面首次加载时
+          // 登记一次现有元素，这批卡片是加载完之后才异步插入的，永远赶不上那次登记，
+          // 会停留在"淡入前"的 opacity:0 状态、肉眼不可见。直接常显更简单可靠。
+          return `<a href="/solutions/blog/${p.slug}.html" class="blog-item">
           <div class="blog-item__date">${y}<br>${m}.${day}</div>
           <div>
             <div class="blog-item__tag">${escapeHtmlList(p.tag)}</div>
