@@ -575,10 +575,12 @@ function finishEdit(commit) {
 </script>
 
 <script type="module">
-import { auth } from '/js/shared/firebase-init.js';
+import { auth, db } from '/js/shared/firebase-init.js';
 import { isAdmin } from '/js/shared/admins.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { doc, setDoc, getDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 // 保存通道：站长自己 CF 账号下的 sdf-admin Worker（服务端持有 GitHub 令牌）
 const WORKER_URL = 'https://sdf-admin.sherlockafa.workers.dev';
@@ -673,6 +675,116 @@ window.syncTranslate = async function () {
     btn.textContent = '同步失败，点击重试';
   }
   btn.disabled = false;
+};
+
+window.loadBlogPosts = async function () {
+  const { posts } = await api('GET', '/blog/posts');
+  blogPosts = posts || [];
+  renderBlogList();
+};
+
+window.saveDraft = async function () {
+  if (!composeState) return;
+  try {
+    const { cover, coverChanged, ...rest } = composeState;
+    await setDoc(doc(db, 'blog_drafts', 'current'), {
+      ...rest,
+      published: false,
+      updatedAt: serverTimestamp(),
+    });
+  } catch {
+    /* 草稿保存失败不打断撰写，只是少一层保险 */
+  }
+};
+
+window.checkDraft = async function () {
+  try {
+    const snap = await getDoc(doc(db, 'blog_drafts', 'current'));
+    if (!snap.exists() || snap.data().published !== false) return;
+    const d = snap.data();
+    if (!confirm('检测到未发布的草稿，是否恢复？')) return;
+    composeState = {
+      slug: d.slug || null,
+      tag: d.tag || '',
+      date: d.date || new Date().toISOString().slice(0, 10),
+      cover: null,
+      coverChanged: false,
+      title: d.title || { zh: '', ja: '', en: '' },
+      body: d.body || { zh: '', ja: '', en: '' },
+    };
+    composeOtherLang = 'ja';
+    renderCompose();
+    document.getElementById('blog-compose').hidden = false;
+  } catch {
+    /* 读取失败忽略，不阻塞正常使用 */
+  }
+};
+
+window.syncBlogTranslate = async function () {
+  onComposeInput();
+  const btn = document.getElementById('compose-sync-btn');
+  const statusEl = document.getElementById('compose-sync-status');
+  btn.disabled = true;
+  btn.textContent = '同步中…';
+  try {
+    const result = await api('POST', '/translate', {
+      fields: [
+        { key: 'title', zh: composeState.title.zh },
+        { key: 'body', zh: composeState.body.zh },
+      ],
+    });
+    if (result.ja?.title) composeState.title.ja = result.ja.title;
+    if (result.ja?.body) composeState.body.ja = result.ja.body;
+    if (result.en?.title) composeState.title.en = result.en.title;
+    if (result.en?.body) composeState.body.en = result.en.body;
+    renderOtherLangFields();
+    statusEl.textContent = '✓ 已同步';
+    scheduleDraftSave();
+  } catch (e) {
+    statusEl.textContent = '同步失败：' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = '✨ 一键同步日英';
+};
+
+window.publishPost = async function () {
+  onComposeInput();
+  const statusEl = document.getElementById('compose-publish-status');
+  statusEl.className = 'status';
+  statusEl.textContent = '发布中…';
+  const payload = {
+    tag: composeState.tag,
+    date: composeState.date,
+    title: composeState.title,
+    body: composeState.body,
+  };
+  if (composeState.slug) payload.slug = composeState.slug;
+  if (composeState.coverChanged && composeState.cover) payload.cover = composeState.cover;
+  try {
+    const { commitSha } = await api('POST', '/blog/publish', payload);
+    await setDoc(
+      doc(db, 'blog_drafts', 'current'),
+      { published: true, updatedAt: serverTimestamp() },
+      { merge: true },
+    );
+    composeState = null;
+    document.getElementById('blog-compose').hidden = true;
+    await loadBlogPosts();
+    waitForDeploy(commitSha, statusEl);
+  } catch (e) {
+    statusEl.className = 'status err';
+    statusEl.textContent = '✗ 发布失败：' + e.message;
+  }
+};
+
+window.unpublishPost = async function (slug) {
+  if (!confirm('确定下架这篇文章吗？')) return;
+  try {
+    await api('POST', '/blog/unpublish', { slug });
+    await loadBlogPosts();
+  } catch (e) {
+    alert('下架失败：' + e.message);
+  }
 };
 
 window.fbLogout = () => signOut(auth).then(() => location.reload());
