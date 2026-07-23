@@ -17,6 +17,13 @@ import {
   renderArticleHtml,
   escapeHtml,
 } from '../workers/sdf-admin/src/blog.js';
+import {
+  MAX_IMAGE_BYTES,
+  validateImageKey,
+  validateImageDataUrl,
+  siteImagePath,
+  blogInlineImagePath,
+} from '../workers/sdf-admin/src/images.js';
 
 test('allowedOrigin 只放行正式域与 localhost', () => {
   assert.equal(allowedOrigin('https://www.senridf.com'), true);
@@ -279,4 +286,51 @@ test('renderArticleHtml 有封面图时插入 img 标签，无封面图时不插
     cover: null,
   });
   assert.ok(!noCover.includes('blog-post__cover'));
+});
+
+test('validateImageKey 只接受字母数字下划线，长度1-64', () => {
+  assert.equal(validateImageKey('team1_photo'), true);
+  assert.equal(validateImageKey(''), false);
+  assert.equal(validateImageKey('a'.repeat(65)), false);
+  assert.equal(validateImageKey('../etc/passwd'), false);
+  assert.equal(validateImageKey('has space'), false);
+  assert.equal(validateImageKey(123), false);
+});
+
+test('validateImageDataUrl 接受合法 data URL 且在大小限制内', () => {
+  const small = 'data:image/webp;base64,' + 'A'.repeat(1000);
+  const r = validateImageDataUrl(small);
+  assert.equal(r.ok, true);
+  assert.equal(r.base64, 'A'.repeat(1000));
+});
+
+test('validateImageDataUrl 拒绝非 data URL / 非字符串', () => {
+  assert.equal(validateImageDataUrl('not-a-data-url').ok, false);
+  assert.equal(validateImageDataUrl(null).ok, false);
+  assert.equal(validateImageDataUrl(123).ok, false);
+});
+
+test('validateImageDataUrl 拒绝超过 1MB 的图片', () => {
+  const huge = 'data:image/webp;base64,' + 'A'.repeat(1_400_000);
+  assert.equal(validateImageDataUrl(huge).ok, false);
+});
+
+test('MAX_IMAGE_BYTES 是 1MB（1_000_000）', () => {
+  assert.equal(MAX_IMAGE_BYTES, 1_000_000);
+});
+
+test('siteImagePath 格式为 assets/images/site/<key>-<时间戳>.webp', () => {
+  const p = siteImagePath('team1_photo', 1721700000000);
+  assert.equal(p, 'assets/images/site/team1_photo-1721700000000.webp');
+});
+
+test('blogInlineImagePath 格式为 assets/images/blog/inline-<时间戳>-<6位hex>.webp', () => {
+  const p = blogInlineImagePath(1721700000000, () => 0.5);
+  assert.match(p, /^assets\/images\/blog\/inline-1721700000000-[0-9a-f]{6}\.webp$/);
+});
+
+test('blogInlineImagePath 不同随机数产出不同文件名', () => {
+  const a = blogInlineImagePath(1721700000000, () => 0.1);
+  const b = blogInlineImagePath(1721700000000, () => 0.9);
+  assert.notEqual(a, b);
 });
