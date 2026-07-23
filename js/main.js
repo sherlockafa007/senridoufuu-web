@@ -780,6 +780,26 @@ function initScrollAnimations() {
   document.querySelectorAll('[data-animate]').forEach((el) => observer.observe(el));
 }
 
+/* === CONTENT IMAGES ===
+   content.json 的 images 字段：{key: 仓库内路径}。key 对应页面里 data-image-key 元素，
+   找不到对应 key 时保持页面原有内容（monogram 等占位符）不变，两种状态自然共存。 */
+function applyImages(images) {
+  Object.entries(images).forEach(([key, path]) => {
+    if (!path) return;
+    const el = document.querySelector(`[data-image-key="${key}"]`);
+    if (!el) return;
+    let img = el.querySelector('.content-image');
+    if (!img) {
+      img = document.createElement('img');
+      img.className = 'content-image';
+      img.alt = '';
+      el.style.position = 'relative';
+      el.appendChild(img);
+    }
+    img.src = path.startsWith('/') ? path : '/' + path;
+  });
+}
+
 /* === Cloudflare Web Analytics ===
    隐私优先、无 cookie 的访问统计（替代手搓 Firestore 统计的更好仪表盘）。
    token 是公开的客户端标识，非密钥。动态注入以覆盖所有加载 main.js 的页面。 */
@@ -801,6 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ['ja', 'zh', 'en'].forEach((l) => {
         if (ov[l]) Object.assign(T[l], ov[l]);
       });
+      if (ov.images) applyImages(ov.images);
     })
     .catch(() => {})
     .finally(() => {
