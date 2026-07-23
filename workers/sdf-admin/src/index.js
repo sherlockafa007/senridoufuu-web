@@ -113,7 +113,9 @@ export default {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'qwen-plus',
+              // 内容编辑/Blog 翻译调用频率低（非实时口译场景），换成质量更好的 qwen-max，
+              // 成本增量可忽略；实时/高频场景（如语音口译）不受影响，仍用各自的模型。
+              model: 'qwen-max',
               messages: [{ role: 'user', content: buildTranslatePrompt(body.fields) }],
               max_tokens: 4000,
             }),
