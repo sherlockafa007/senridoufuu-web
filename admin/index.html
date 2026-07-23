@@ -50,13 +50,11 @@
       padding: 0 24px; height: 56px;
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
-    .top-bar__title { font-weight: 500; font-size: 15px; }
     .top-bar__right { display: flex; align-items: center; gap: 10px; }
     .top-bar__left { display: flex; align-items: center; gap: 18px; }
     .top-bar__logo { font-weight: 700; letter-spacing: .08em; color: var(--text); text-decoration: none; }
     .top-bar__nav { display: flex; gap: 14px; font-size: 13px; }
     .top-bar__nav-current { color: var(--accent); border-bottom: 2px solid var(--accent); padding: 4px 0; }
-    .top-bar__nav-soon { color: var(--text3); cursor: default; }
     .top-bar__nav-link { color: var(--text2); text-decoration: none; }
     .top-bar__nav-link:hover { color: var(--text); }
     .status { font-size: 12px; color: var(--text3); }
@@ -103,43 +101,6 @@
     #preview-frame {
       width: 100%; height: calc(100vh - 101px); border: none; display: block; background: #fff;
     }
-
-    /* ── Top-bar view tabs（网站内容 / Blog）── */
-    .top-bar__nav-btn {
-      background: none; border: none; font: inherit; cursor: pointer; padding: 0 0 2px;
-      color: var(--text3); border-bottom: 2px solid transparent;
-    }
-    .top-bar__nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .top-bar__nav-btn:hover:not(.active) { color: var(--text2); }
-
-    /* ── Blog view ── */
-    .blog-toolbar { padding: 16px 24px; }
-    .blog-list-row {
-      display: flex; align-items: center; gap: 14px; padding: 12px 24px;
-      border-bottom: 1px solid var(--border); font-size: 13px;
-    }
-    .blog-list-date { color: var(--text3); width: 90px; flex-shrink: 0; }
-    .blog-list-title { flex: 1; }
-
-    #blog-compose { max-width: 720px; margin: 0 auto; padding: 24px; }
-    .compose-row { margin-bottom: 16px; }
-    .compose-label { display: block; font-size: 12px; color: var(--text3); margin-bottom: 5px; }
-    .compose-input, .compose-textarea {
-      width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px;
-      font-size: 13px; font-family: inherit; background: var(--paper); color: var(--text);
-      outline: none; resize: vertical;
-    }
-    .compose-input:focus, .compose-textarea:focus { border-color: var(--accent); }
-    .compose-textarea { line-height: 1.7; }
-    .compose-toolbar { margin-bottom: 6px; display: flex; gap: 6px; }
-    .compose-toolbar button {
-      padding: 4px 10px; border: 1px solid var(--border); border-radius: 5px;
-      background: var(--paper); font-size: 12px; cursor: pointer;
-    }
-    .compose-cover-preview {
-      max-width: 200px; border-radius: 6px; margin-top: 8px; display: none;
-    }
-    .lang-tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
   </style>
 </head>
 <body>
@@ -162,8 +123,8 @@
     <div class="top-bar__left">
       <a href="/" class="top-bar__logo" title="返回网站主页">千里同風</a>
       <nav class="top-bar__nav">
-        <button type="button" class="top-bar__nav-btn active" id="nav-content" onclick="switchAdminView('content')">网站内容</button>
-        <button type="button" class="top-bar__nav-btn" id="nav-blog" onclick="switchAdminView('blog')">Blog</button>
+        <span class="top-bar__nav-current">网站内容</span>
+        <a href="/admin/blog/" class="top-bar__nav-link">Blog</a>
         <a href="/solutions/demo/admin.html" class="top-bar__nav-link">运行监控</a>
       </nav>
     </div>
@@ -174,74 +135,19 @@
     </div>
   </div>
 
-  <div id="view-content">
-    <div class="page-bar">
-      <button type="button" class="page-btn active" data-page="home" onclick="switchPage('home')">首页</button>
-      <button type="button" class="page-btn" data-page="about" onclick="switchPage('about')">关于我们</button>
-      <button type="button" class="page-btn" data-page="milestones" onclick="switchPage('milestones')">大事记</button>
-      <button type="button" class="page-btn" data-page="solutions" onclick="switchPage('solutions')">解决方案</button>
-    </div>
-
-    <div class="changes-bar" id="changes-bar" hidden>
-      <span id="changes-count">已改 0 处</span>
-      <button type="button" class="btn-sync" id="sync-btn" onclick="syncTranslate()">✨ 一键同步日英</button>
-    </div>
-
-    <iframe id="preview-frame" title="页面内容预览编辑"></iframe>
+  <div class="page-bar">
+    <button type="button" class="page-btn active" data-page="home" onclick="switchPage('home')">首页</button>
+    <button type="button" class="page-btn" data-page="about" onclick="switchPage('about')">关于我们</button>
+    <button type="button" class="page-btn" data-page="milestones" onclick="switchPage('milestones')">大事记</button>
+    <button type="button" class="page-btn" data-page="solutions" onclick="switchPage('solutions')">解决方案</button>
   </div>
 
-  <div id="view-blog" hidden>
-    <div class="blog-toolbar">
-      <button type="button" class="btn-save" onclick="startNewPost()">+ 写新文章</button>
-    </div>
-    <div id="blog-list"></div>
-
-    <div id="blog-compose" hidden>
-      <div class="compose-row">
-        <label class="compose-label">标签</label>
-        <input type="text" id="compose-tag" class="compose-input" placeholder="如：AI・ハードウェア" oninput="onComposeInput()">
-      </div>
-      <div class="compose-row">
-        <label class="compose-label">封面图（可选）</label>
-        <input type="file" id="compose-cover-file" accept="image/*" onchange="handleCoverFile(this.files[0])">
-        <img id="compose-cover-preview" class="compose-cover-preview" alt="">
-      </div>
-      <div class="compose-row">
-        <label class="compose-label">标题（中文）</label>
-        <input type="text" id="compose-title-zh" class="compose-input" oninput="onComposeInput()">
-      </div>
-      <div class="compose-row">
-        <label class="compose-label">正文（中文，Markdown）</label>
-        <div class="compose-toolbar">
-          <button type="button" onclick="wrapSelection('**','**')">B 加粗</button>
-          <button type="button" onclick="insertLinePrefix('## ')">H 小标题</button>
-          <button type="button" onclick="insertLinePrefix('- ')">• 列表</button>
-        </div>
-        <textarea id="compose-body-zh" class="compose-textarea" rows="14" oninput="onComposeInput()"></textarea>
-      </div>
-      <div class="compose-row">
-        <button type="button" class="btn-sync" id="compose-sync-btn" onclick="syncBlogTranslate()">✨ 一键同步日英</button>
-        <span id="compose-sync-status" class="status"></span>
-      </div>
-      <div class="lang-tabs">
-        <button type="button" class="page-btn active" data-other-lang="ja" onclick="switchComposeOtherLang('ja')">日本語</button>
-        <button type="button" class="page-btn" data-other-lang="en" onclick="switchComposeOtherLang('en')">English</button>
-      </div>
-      <div class="compose-row">
-        <label class="compose-label" id="other-lang-title-label">标题（日本語）</label>
-        <input type="text" id="compose-title-other" class="compose-input" oninput="onComposeInput()">
-      </div>
-      <div class="compose-row">
-        <label class="compose-label" id="other-lang-body-label">正文（日本語）</label>
-        <textarea id="compose-body-other" class="compose-textarea" rows="14" oninput="onComposeInput()"></textarea>
-      </div>
-      <div class="compose-row">
-        <button type="button" class="btn-save" onclick="publishPost()">发布</button>
-        <button type="button" class="btn-link" onclick="cancelCompose()">取消</button>
-        <span id="compose-publish-status" class="status"></span>
-      </div>
-    </div>
+  <div class="changes-bar" id="changes-bar" hidden>
+    <span id="changes-count">已改 0 处</span>
+    <button type="button" class="btn-sync" id="sync-btn" onclick="syncTranslate()">✨ 一键同步日英</button>
   </div>
+
+  <iframe id="preview-frame" title="页面内容预览编辑"></iframe>
 </div>
 
 <script>
@@ -259,188 +165,6 @@ let pendingJa = {};
 let pendingEn = {};
 let editingEl = null;
 let editingOriginal = '';
-
-/* ── Blog 状态 ── */
-let blogPosts = [];
-let composeState = null; // null = 未在撰写；对象 = 正在写/编辑
-let composeOtherLang = 'ja';
-let draftSaveTimer = null;
-
-function escapeHtmlAdmin(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-/* ── 顶栏视图切换（网站内容 / Blog） ── */
-function switchAdminView(view) {
-  document.getElementById('nav-content').classList.toggle('active', view === 'content');
-  document.getElementById('nav-blog').classList.toggle('active', view === 'blog');
-  document.getElementById('view-content').hidden = view !== 'content';
-  document.getElementById('view-blog').hidden = view !== 'blog';
-  document.getElementById('save-btn').style.display = view === 'content' ? '' : 'none';
-  if (view === 'blog' && blogPosts.length === 0) {
-    loadBlogPosts();
-    checkDraft();
-  }
-}
-
-/* ── 文章列表渲染 ── */
-function renderBlogList() {
-  const listEl = document.getElementById('blog-list');
-  if (blogPosts.length === 0) {
-    listEl.innerHTML = '<div class="empty">还没有文章</div>';
-    return;
-  }
-  listEl.innerHTML = blogPosts
-    .map(
-      (p) => `
-    <div class="blog-list-row">
-      <span class="blog-list-date">${p.date}</span>
-      <span class="blog-list-title">${escapeHtmlAdmin(p.title.zh)}</span>
-      <button type="button" class="btn-link" onclick="editPost('${p.slug}')">编辑</button>
-      <button type="button" class="btn-link" onclick="unpublishPost('${p.slug}')">下架</button>
-    </div>`,
-    )
-    .join('');
-}
-
-/* ── 撰写面板 ── */
-function startNewPost() {
-  composeState = {
-    slug: null,
-    tag: '',
-    date: new Date().toISOString().slice(0, 10),
-    cover: null,
-    coverChanged: false,
-    title: { zh: '', ja: '', en: '' },
-    body: { zh: '', ja: '', en: '' },
-  };
-  composeOtherLang = 'ja';
-  renderCompose();
-  document.getElementById('blog-compose').hidden = false;
-}
-
-function editPost(slug) {
-  const p = blogPosts.find((x) => x.slug === slug);
-  if (!p) return;
-  composeState = {
-    slug: p.slug,
-    tag: p.tag,
-    date: p.date,
-    cover: p.cover || null,
-    coverChanged: false,
-    title: { ...p.title },
-    body: { ...p.body },
-  };
-  composeOtherLang = 'ja';
-  renderCompose();
-  document.getElementById('blog-compose').hidden = false;
-}
-
-function renderCompose() {
-  document.getElementById('compose-tag').value = composeState.tag;
-  document.getElementById('compose-title-zh').value = composeState.title.zh;
-  document.getElementById('compose-body-zh').value = composeState.body.zh;
-  const preview = document.getElementById('compose-cover-preview');
-  if (composeState.cover) {
-    preview.src = composeState.cover.startsWith('data:') ? composeState.cover : '/' + composeState.cover;
-    preview.style.display = 'block';
-  } else {
-    preview.style.display = 'none';
-  }
-  renderOtherLangFields();
-}
-
-function renderOtherLangFields() {
-  const langLabel = composeOtherLang === 'ja' ? '日本語' : 'English';
-  document.getElementById('other-lang-title-label').textContent = `标题（${langLabel}）`;
-  document.getElementById('other-lang-body-label').textContent = `正文（${langLabel}）`;
-  document.getElementById('compose-title-other').value = composeState.title[composeOtherLang];
-  document.getElementById('compose-body-other').value = composeState.body[composeOtherLang];
-  document.querySelectorAll('.lang-tabs .page-btn').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.otherLang === composeOtherLang);
-  });
-}
-
-function switchComposeOtherLang(lang) {
-  composeOtherLang = lang;
-  renderOtherLangFields();
-}
-
-// 任意撰写字段变化时，把当前 DOM 值同步进 composeState，并安排一次草稿自动保存。
-function onComposeInput() {
-  if (!composeState) return;
-  composeState.tag = document.getElementById('compose-tag').value;
-  composeState.title.zh = document.getElementById('compose-title-zh').value;
-  composeState.body.zh = document.getElementById('compose-body-zh').value;
-  composeState.title[composeOtherLang] = document.getElementById('compose-title-other').value;
-  composeState.body[composeOtherLang] = document.getElementById('compose-body-other').value;
-  scheduleDraftSave();
-}
-
-function cancelCompose() {
-  composeState = null;
-  document.getElementById('blog-compose').hidden = true;
-  clearTimeout(draftSaveTimer);
-}
-
-function scheduleDraftSave() {
-  clearTimeout(draftSaveTimer);
-  draftSaveTimer = setTimeout(() => saveDraft(), 2000);
-}
-
-/* ── Markdown 工具栏 ── */
-function wrapSelection(before, after) {
-  const ta = document.getElementById('compose-body-zh');
-  const { selectionStart: s, selectionEnd: e, value } = ta;
-  ta.value = value.slice(0, s) + before + value.slice(s, e) + after + value.slice(e);
-  ta.focus();
-  onComposeInput();
-}
-
-function insertLinePrefix(prefix) {
-  const ta = document.getElementById('compose-body-zh');
-  const { selectionStart: s, value } = ta;
-  const lineStart = value.lastIndexOf('\n', s - 1) + 1;
-  ta.value = value.slice(0, lineStart) + prefix + value.slice(lineStart);
-  ta.focus();
-  onComposeInput();
-}
-
-/* ── 封面图：canvas 压缩转 WebP，超限自动降质重试 ── */
-function handleCoverFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX_SIDE = 1600;
-      let { width, height } = img;
-      if (width > MAX_SIDE || height > MAX_SIDE) {
-        const ratio = Math.min(MAX_SIDE / width, MAX_SIDE / height);
-        width = Math.round(width * ratio);
-        height = Math.round(height * ratio);
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      let quality = 0.85;
-      let dataUrl = canvas.toDataURL('image/webp', quality);
-      while (Math.floor((dataUrl.length * 3) / 4) > 500000 && quality > 0.4) {
-        quality -= 0.15;
-        dataUrl = canvas.toDataURL('image/webp', quality);
-      }
-      composeState.cover = dataUrl;
-      composeState.coverChanged = true;
-      const preview = document.getElementById('compose-cover-preview');
-      preview.src = dataUrl;
-      preview.style.display = 'block';
-      scheduleDraftSave();
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
 
 const FRAME_STYLE = `
   [data-i18n]:hover { outline: 1px dashed #2563eb; outline-offset: 2px; cursor: text; }
@@ -575,12 +299,10 @@ function finishEdit(commit) {
 </script>
 
 <script type="module">
-import { auth, db } from '/js/shared/firebase-init.js';
+import { auth } from '/js/shared/firebase-init.js';
 import { isAdmin } from '/js/shared/admins.js';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import { doc, setDoc, getDoc, serverTimestamp }
-  from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 // 保存通道：站长自己 CF 账号下的 sdf-admin Worker（服务端持有 GitHub 令牌）
 const WORKER_URL = 'https://sdf-admin.sherlockafa.workers.dev';
@@ -675,116 +397,6 @@ window.syncTranslate = async function () {
     btn.textContent = '同步失败，点击重试';
   }
   btn.disabled = false;
-};
-
-window.loadBlogPosts = async function () {
-  const { posts } = await api('GET', '/blog/posts');
-  blogPosts = posts || [];
-  renderBlogList();
-};
-
-window.saveDraft = async function () {
-  if (!composeState) return;
-  try {
-    const { cover, coverChanged, ...rest } = composeState;
-    await setDoc(doc(db, 'blog_drafts', 'current'), {
-      ...rest,
-      published: false,
-      updatedAt: serverTimestamp(),
-    });
-  } catch {
-    /* 草稿保存失败不打断撰写，只是少一层保险 */
-  }
-};
-
-window.checkDraft = async function () {
-  try {
-    const snap = await getDoc(doc(db, 'blog_drafts', 'current'));
-    if (!snap.exists() || snap.data().published !== false) return;
-    const d = snap.data();
-    if (!confirm('检测到未发布的草稿，是否恢复？')) return;
-    composeState = {
-      slug: d.slug || null,
-      tag: d.tag || '',
-      date: d.date || new Date().toISOString().slice(0, 10),
-      cover: null,
-      coverChanged: false,
-      title: d.title || { zh: '', ja: '', en: '' },
-      body: d.body || { zh: '', ja: '', en: '' },
-    };
-    composeOtherLang = 'ja';
-    renderCompose();
-    document.getElementById('blog-compose').hidden = false;
-  } catch {
-    /* 读取失败忽略，不阻塞正常使用 */
-  }
-};
-
-window.syncBlogTranslate = async function () {
-  onComposeInput();
-  const btn = document.getElementById('compose-sync-btn');
-  const statusEl = document.getElementById('compose-sync-status');
-  btn.disabled = true;
-  btn.textContent = '同步中…';
-  try {
-    const result = await api('POST', '/translate', {
-      fields: [
-        { key: 'title', zh: composeState.title.zh },
-        { key: 'body', zh: composeState.body.zh },
-      ],
-    });
-    if (result.ja?.title) composeState.title.ja = result.ja.title;
-    if (result.ja?.body) composeState.body.ja = result.ja.body;
-    if (result.en?.title) composeState.title.en = result.en.title;
-    if (result.en?.body) composeState.body.en = result.en.body;
-    renderOtherLangFields();
-    statusEl.textContent = '✓ 已同步';
-    scheduleDraftSave();
-  } catch (e) {
-    statusEl.textContent = '同步失败：' + e.message;
-  }
-  btn.disabled = false;
-  btn.textContent = '✨ 一键同步日英';
-};
-
-window.publishPost = async function () {
-  onComposeInput();
-  const statusEl = document.getElementById('compose-publish-status');
-  statusEl.className = 'status';
-  statusEl.textContent = '发布中…';
-  const payload = {
-    tag: composeState.tag,
-    date: composeState.date,
-    title: composeState.title,
-    body: composeState.body,
-  };
-  if (composeState.slug) payload.slug = composeState.slug;
-  if (composeState.coverChanged && composeState.cover) payload.cover = composeState.cover;
-  try {
-    const { commitSha } = await api('POST', '/blog/publish', payload);
-    await setDoc(
-      doc(db, 'blog_drafts', 'current'),
-      { published: true, updatedAt: serverTimestamp() },
-      { merge: true },
-    );
-    composeState = null;
-    document.getElementById('blog-compose').hidden = true;
-    await loadBlogPosts();
-    waitForDeploy(commitSha, statusEl);
-  } catch (e) {
-    statusEl.className = 'status err';
-    statusEl.textContent = '✗ 发布失败：' + e.message;
-  }
-};
-
-window.unpublishPost = async function (slug) {
-  if (!confirm('确定下架这篇文章吗？')) return;
-  try {
-    await api('POST', '/blog/unpublish', { slug });
-    await loadBlogPosts();
-  } catch (e) {
-    alert('下架失败：' + e.message);
-  }
 };
 
 window.fbLogout = () => signOut(auth).then(() => location.reload());
