@@ -163,12 +163,15 @@ let currentOverrides = {}; // 已发布的基线（GET /content 结果），modu
 let pendingZh = {};
 let pendingJa = {};
 let pendingEn = {};
+let pendingImages = {}; // {key: dataURL}，待上传的新图片
 let editingEl = null;
 let editingOriginal = '';
 
 const FRAME_STYLE = `
   [data-i18n]:hover { outline: 1px dashed #2563eb; outline-offset: 2px; cursor: text; }
   [data-i18n][contenteditable="true"] { outline: 2px solid #2563eb; outline-offset: 2px; cursor: text; background: #eef2ff; }
+  [data-image-key] { cursor: pointer; }
+  [data-image-key]:hover { outline: 2px dashed #2563eb; outline-offset: 2px; }
   .cms-pill {
     position: absolute; z-index: 999999; display: flex; gap: 6px;
     background: #1f1c17; border-radius: 8px; padding: 5px 7px; box-shadow: 0 4px 14px rgba(0,0,0,.25);
@@ -182,7 +185,7 @@ const FRAME_STYLE = `
 `;
 
 function updateChangesBar() {
-  const count = Object.keys(pendingZh).length;
+  const count = Object.keys(pendingZh).length + Object.keys(pendingImages).length;
   const bar = document.getElementById('changes-bar');
   bar.hidden = count === 0;
   document.getElementById('changes-count').textContent = `已改 ${count} 处`;
@@ -215,10 +218,14 @@ function initEditableFrame(frame) {
   doc.head.appendChild(style);
 
   // 把本次会话里已改但未发布的值，重新套到刚加载的页面上——
-  // 否则切走标签再切回来，看到的是发布前的旧文字，像是改动丢了。
+  // 否则切走标签再切回来，看到的是发布前的旧文字/旧图片，像是改动丢了。
   doc.querySelectorAll('[data-i18n]').forEach((el) => {
     const key = el.dataset.i18n;
     if (pendingZh[key] !== undefined) el.textContent = pendingZh[key];
+  });
+  doc.querySelectorAll('[data-image-key]').forEach((el) => {
+    const key = el.dataset.imageKey;
+    if (pendingImages[key]) applyImagePreview(el, pendingImages[key]);
   });
 
   editingEl = null;
@@ -226,13 +233,81 @@ function initEditableFrame(frame) {
   doc.addEventListener(
     'click',
     (e) => {
-      const el = e.target.closest('[data-i18n]');
-      if (el && el.isContentEditable) return; // 已在编辑中，交给浏览器处理光标定位
+      const textEl = e.target.closest('[data-i18n]');
+      if (textEl && textEl.isContentEditable) return; // 已在编辑中，交给浏览器处理光标定位
+      const imageEl = e.target.closest('[data-image-key]');
       e.preventDefault(); // 预览态下不允许真的跳转
-      if (el) startEdit(doc, el);
+      if (imageEl) {
+        startImageEdit(imageEl);
+      } else if (textEl) {
+        startEdit(doc, textEl);
+      }
     },
     true,
   );
+}
+
+/* ── 图片位预览：在容器内插入/更新一张覆盖全区域的 <img>，object-fit:cover 不拉伸 ── */
+function applyImagePreview(el, dataUrl) {
+  let img = el.querySelector('.content-image');
+  if (!img) {
+    img = el.ownerDocument.createElement('img');
+    img.className = 'content-image';
+    el.style.position = 'relative';
+    el.appendChild(img);
+  }
+  img.src = dataUrl;
+}
+
+/* ── 压缩图片：canvas 转 WebP，超限自动降质重试，保持原始宽高比不拉伸 ── */
+function compressImageToWebp(file, maxBytes, callback) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX_SIDE = 1600;
+      let { width, height } = img;
+      if (width > MAX_SIDE || height > MAX_SIDE) {
+        const ratio = Math.min(MAX_SIDE / width, MAX_SIDE / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      let quality = 0.85;
+      let dataUrl = canvas.toDataURL('image/webp', quality);
+      while (Math.floor((dataUrl.length * 3) / 4) > maxBytes && quality > 0.4) {
+        quality -= 0.15;
+        dataUrl = canvas.toDataURL('image/webp', quality);
+      }
+      callback(dataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+const MAX_IMAGE_BYTES = 1_000_000;
+
+/* ── 点击图片位：弹文件选择框，选完压缩、预览、暂存 ── */
+function startImageEdit(el) {
+  const key = el.dataset.imageKey;
+  const doc = el.ownerDocument;
+  const input = doc.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = () => {
+    const file = input.files[0];
+    if (!file) return;
+    compressImageToWebp(file, MAX_IMAGE_BYTES, (dataUrl) => {
+      pendingImages[key] = dataUrl;
+      applyImagePreview(el, dataUrl);
+      updateChangesBar();
+    });
+  };
+  input.click();
 }
 
 /* ── 开始编辑一个字段 ── */
@@ -364,11 +439,14 @@ window.save = async function () {
       en: { ...currentOverrides.en, ...pendingEn },
       images: { ...currentOverrides.images },
     };
-    const { commitSha } = await api('PUT', '/content', { content: ov });
-    currentOverrides = ov;
+    const payload = { content: ov };
+    if (Object.keys(pendingImages).length > 0) payload.images = { ...pendingImages };
+    const { commitSha, images } = await api('PUT', '/content', payload);
+    currentOverrides = { ...ov, images: images || ov.images };
     pendingZh = {};
     pendingJa = {};
     pendingEn = {};
+    pendingImages = {};
     updateChangesBar();
     waitForDeploy(commitSha, statusEl);
   } catch (e) {
