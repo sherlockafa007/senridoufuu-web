@@ -20,7 +20,12 @@ import {
   removePost,
   renderArticleHtml,
 } from './blog.js';
-import { validateImageKey, validateImageDataUrl, siteImagePath } from './images.js';
+import {
+  validateImageKey,
+  validateImageDataUrl,
+  siteImagePath,
+  blogInlineImagePath,
+} from './images.js';
 
 const REPO = 'sherlockafa007/senridoufuu-web';
 const CONTENT_PATH = 'content.json';
@@ -270,6 +275,22 @@ export default {
         );
 
         return json(200, { ok: true, commitSha }, cors);
+      }
+
+      if (url.pathname === '/blog/image' && request.method === 'POST') {
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return json(400, { error: '请求格式错误' }, cors);
+        }
+        const imgCheck = validateImageDataUrl(body.image);
+        if (!imgCheck.ok) return json(400, { error: imgCheck.error }, cors);
+        const path = blogInlineImagePath();
+        await putFile(REPO, path, imgCheck.base64, 'blog: upload inline image', env.GITHUB_TOKEN, {
+          alreadyBase64: true,
+        });
+        return json(200, { ok: true, path }, cors);
       }
     } catch (e) {
       return json(502, { error: e.message || '保存服务出错，请稍后重试' }, cors);
