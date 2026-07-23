@@ -86,12 +86,18 @@ export default {
 
         // images 是本次新上传的图片（{key: dataURL}），与 content.images 里已有的路径分开传，
         // 避免把整段 base64 存进 content.json——这里先落库拿到路径，再写回 content.images。
-        const images = body.images && typeof body.images === 'object' ? body.images : {};
+        const images =
+          body.images && typeof body.images === 'object' && !Array.isArray(body.images)
+            ? body.images
+            : {};
         const content = {
           ...body.content,
           images: { ...(body.content && body.content.images) },
         };
 
+        // 先把每张图片的格式校验完、把最终要写入的图片路径也算好，全部通过之后才开始真正落库——
+        // 避免"某张图片已经上传成功、但后面发现别的字段不合法"这种半成功的孤儿文件。
+        const uploads = [];
         for (const [key, dataUrl] of Object.entries(images)) {
           if (!validateImageKey(key)) {
             return json(400, { error: `图片字段名非法：${key}` }, cors);
@@ -99,14 +105,22 @@ export default {
           const imgCheck = validateImageDataUrl(dataUrl);
           if (!imgCheck.ok) return json(400, { error: imgCheck.error }, cors);
           const path = siteImagePath(key);
-          await putFile(REPO, path, imgCheck.base64, `content: upload image ${key}`, env.GITHUB_TOKEN, {
-            alreadyBase64: true,
-          });
+          uploads.push({ key, path, base64: imgCheck.base64 });
           content.images[key] = path;
         }
 
         const check = validateContentPayload(content);
         if (!check.ok) return json(400, { error: check.error }, cors);
+
+        // 校验全部通过，这里才开始有副作用的写入。注意：GitHub Contents API 不支持多文件原子提交，
+        // 如果图片都传成功但下面 content.json 那次 putFile 失败（如网络抖动），图片会成为孤儿文件——
+        // 这是已知取舍，和 Blog 模块"发布产生多次独立 commit"是同一类限制，不在这里解决。
+        for (const { key, path, base64 } of uploads) {
+          await putFile(REPO, path, base64, `content: upload image ${key}`, env.GITHUB_TOKEN, {
+            alreadyBase64: true,
+          });
+        }
+
         const { commitSha } = await putFile(
           REPO,
           CONTENT_PATH,
