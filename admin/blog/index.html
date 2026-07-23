@@ -535,14 +535,18 @@ window.uploadInlineImage = async function (dataUrl) {
   const statusEl = document.getElementById('compose-sync-status');
   statusEl.className = 'status';
   statusEl.textContent = '图片上传中…';
+  let path;
   try {
-    const { path } = await api('POST', '/blog/image', { image: dataUrl });
-    window.insertAtCursor(`![图片](/${path})`);
-    statusEl.textContent = '✓ 图片已插入';
+    ({ path } = await api('POST', '/blog/image', { image: dataUrl }));
   } catch (e) {
     statusEl.className = 'status err';
     statusEl.textContent = '图片上传失败：' + e.message;
+    return;
   }
+  // 上传已经成功，插入光标这步理论上不会失败；即使真的抛错，也不该报成"上传失败"
+  // 误导用户重传——上传和插入是两个独立的失败域，分开处理。
+  window.insertAtCursor(`![图片](/${path})`);
+  statusEl.textContent = '✓ 图片已插入';
 };
 
 window.publishPost = async function () {
