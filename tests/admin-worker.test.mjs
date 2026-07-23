@@ -193,7 +193,7 @@ test('validatePublishPayload 拒绝缺字段/格式错误', () => {
   ); // zh 标题为空
 });
 
-test('validatePublishPayload 接受不带封面图，拒绝超大封面图', () => {
+test('validatePublishPayload 接受不带封面图，拒绝超大封面图（1MB 上限）', () => {
   const base = {
     tag: 'AI',
     date: '2026-07-22',
@@ -201,8 +201,10 @@ test('validatePublishPayload 接受不带封面图，拒绝超大封面图', () 
     body: { ja: 'a', zh: 'a', en: 'a' },
   };
   assert.equal(validatePublishPayload(base).ok, true);
-  const huge = { ...base, cover: 'data:image/webp;base64,' + 'A'.repeat(700_000) };
+  const huge = { ...base, cover: 'data:image/webp;base64,' + 'A'.repeat(1_400_000) };
   assert.equal(validatePublishPayload(huge).ok, false);
+  const okSize = { ...base, cover: 'data:image/webp;base64,' + 'A'.repeat(500_000) };
+  assert.equal(validatePublishPayload(okSize).ok, true); // 500KB 在旧上限之外、新上限之内
 });
 
 test('upsertPost 插入新文章并按日期倒序', () => {

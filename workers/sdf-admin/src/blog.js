@@ -1,7 +1,7 @@
 // Blog 模块纯逻辑（无 IO）：slug 生成、发布载荷校验、posts.json 增删改、文章 HTML 模板渲染。
 // 供 sdf-admin Worker 的 /blog/* 路由使用。
 
-const MAX_COVER_BYTES = 500_000; // 客户端已压缩，这里再校验一次防绕过
+import { MAX_IMAGE_BYTES } from './images.js'; // 封面图大小上限与网站图片/Blog插图统一，避免三处限制不一致
 
 export function generateSlug(date, randomFn = Math.random) {
   const hex = Math.floor(randomFn() * 0xffff)
@@ -29,7 +29,7 @@ export function validatePublishPayload(body) {
     if (typeof cover !== 'string') return { ok: false, error: '封面图格式错误' };
     const stripped = cover.replace(/^data:image\/\w+;base64,/, '');
     const approxBytes = Math.floor((stripped.length * 3) / 4);
-    if (approxBytes > MAX_COVER_BYTES) return { ok: false, error: '封面图过大' };
+    if (approxBytes > MAX_IMAGE_BYTES) return { ok: false, error: '封面图过大' };
   }
   return { ok: true };
 }
