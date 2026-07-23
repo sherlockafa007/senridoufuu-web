@@ -172,7 +172,9 @@
         <button type="button" onclick="wrapSelection('**','**')">B 加粗</button>
         <button type="button" onclick="insertLinePrefix('## ')">H 小标题</button>
         <button type="button" onclick="insertLinePrefix('- ')">• 列表</button>
+        <button type="button" onclick="insertImage()">🖼 插图</button>
       </div>
+      <input type="file" id="compose-inline-image-file" accept="image/*" style="display:none" onchange="handleInlineImageFile(this.files[0])">
       <textarea id="compose-body-zh" class="compose-textarea" rows="14" oninput="onComposeInput()"></textarea>
     </div>
     <div class="compose-row">
@@ -332,12 +334,16 @@ function insertLinePrefix(prefix) {
   onComposeInput();
 }
 
-/* ── 封面图：canvas 压缩转 WebP，超限自动降质重试 ── */
-function handleCoverFile(file) {
-  if (!file) return;
+const MAX_IMAGE_BYTES = 1_000_000;
+
+/* ── 压缩图片：canvas 转 WebP，超限自动降质重试，保持原始宽高比不拉伸。
+   onSuccess(dataUrl) / onError(message) 两个回调，失败时不吞错误。 ── */
+function compressImageToWebp(file, maxBytes, onSuccess, onError) {
   const reader = new FileReader();
+  reader.onerror = () => onError('图片读取失败，请重试');
   reader.onload = (e) => {
     const img = new Image();
+    img.onerror = () => onError('图片格式无法识别，请更换文件');
     img.onload = () => {
       const MAX_SIDE = 1600;
       let { width, height } = img;
@@ -352,20 +358,60 @@ function handleCoverFile(file) {
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
       let quality = 0.85;
       let dataUrl = canvas.toDataURL('image/webp', quality);
-      while (Math.floor((dataUrl.length * 3) / 4) > 500000 && quality > 0.4) {
+      while (Math.floor((dataUrl.length * 3) / 4) > maxBytes && quality > 0.4) {
         quality -= 0.15;
         dataUrl = canvas.toDataURL('image/webp', quality);
       }
+      if (Math.floor((dataUrl.length * 3) / 4) > maxBytes) {
+        onError('图片过大，请更换');
+        return;
+      }
+      onSuccess(dataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ── 封面图：选完立即压缩预览，随发布一起提交（沿用既有行为） ── */
+function handleCoverFile(file) {
+  if (!file) return;
+  compressImageToWebp(
+    file,
+    MAX_IMAGE_BYTES,
+    (dataUrl) => {
       composeState.cover = dataUrl;
       composeState.coverChanged = true;
       const preview = document.getElementById('compose-cover-preview');
       preview.src = dataUrl;
       preview.style.display = 'block';
       scheduleDraftSave();
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+    },
+    (message) => alert(message),
+  );
+}
+
+/* ── 正文插图：选完立即压缩并上传（方案A），成功后把 markdown 图片语法插入光标位置 ── */
+function insertImage() {
+  document.getElementById('compose-inline-image-file').click();
+}
+
+function insertAtCursor(text) {
+  const ta = document.getElementById('compose-body-zh');
+  const { selectionStart: s, selectionEnd: e, value } = ta;
+  ta.value = value.slice(0, s) + text + value.slice(e);
+  ta.focus();
+  onComposeInput();
+}
+
+function handleInlineImageFile(file) {
+  if (!file) return;
+  compressImageToWebp(
+    file,
+    MAX_IMAGE_BYTES,
+    (dataUrl) => window.uploadInlineImage(dataUrl),
+    (message) => alert(message),
+  );
 }
 </script>
 
@@ -483,6 +529,20 @@ window.syncBlogTranslate = async function () {
   }
   btn.disabled = false;
   btn.textContent = '✨ 一键同步日英';
+};
+
+window.uploadInlineImage = async function (dataUrl) {
+  const statusEl = document.getElementById('compose-sync-status');
+  statusEl.className = 'status';
+  statusEl.textContent = '图片上传中…';
+  try {
+    const { path } = await api('POST', '/blog/image', { image: dataUrl });
+    window.insertAtCursor(`![图片](/${path})`);
+    statusEl.textContent = '✓ 图片已插入';
+  } catch (e) {
+    statusEl.className = 'status err';
+    statusEl.textContent = '图片上传失败：' + e.message;
+  }
 };
 
 window.publishPost = async function () {
