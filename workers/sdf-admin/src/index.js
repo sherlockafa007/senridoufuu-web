@@ -20,6 +20,7 @@ import {
   removePost,
   renderArticleHtml,
 } from './blog.js';
+import { validateImageKey, validateImageDataUrl, siteImagePath } from './images.js';
 
 const REPO = 'sherlockafa007/senridoufuu-web';
 const CONTENT_PATH = 'content.json';
@@ -82,16 +83,40 @@ export default {
         } catch {
           return json(400, { error: '请求格式错误' }, cors);
         }
-        const check = validateContentPayload(body.content);
+
+        // images 是本次新上传的图片（{key: dataURL}），与 content.images 里已有的路径分开传，
+        // 避免把整段 base64 存进 content.json——这里先落库拿到路径，再写回 content.images。
+        const images = body.images && typeof body.images === 'object' ? body.images : {};
+        const content = {
+          ...body.content,
+          images: { ...(body.content && body.content.images) },
+        };
+
+        for (const [key, dataUrl] of Object.entries(images)) {
+          if (!validateImageKey(key)) {
+            return json(400, { error: `图片字段名非法：${key}` }, cors);
+          }
+          const imgCheck = validateImageDataUrl(dataUrl);
+          if (!imgCheck.ok) return json(400, { error: imgCheck.error }, cors);
+          const path = siteImagePath(key);
+          await putFile(REPO, path, imgCheck.base64, `content: upload image ${key}`, env.GITHUB_TOKEN, {
+            alreadyBase64: true,
+          });
+          content.images[key] = path;
+        }
+
+        const check = validateContentPayload(content);
         if (!check.ok) return json(400, { error: check.error }, cors);
         const { commitSha } = await putFile(
           REPO,
           CONTENT_PATH,
-          JSON.stringify(body.content, null, 2) + '\n',
+          JSON.stringify(content, null, 2) + '\n',
           'content: update via admin panel',
           env.GITHUB_TOKEN,
         );
-        return json(200, { ok: true, commitSha }, cors);
+        // 把最终解析出的图片路径带回前端，前端拿它更新本地的 currentOverrides.images，
+        // 不然下次保存时（同一会话内没刷新页面）还是旧值，会把刚上传的图片路径覆盖掉。
+        return json(200, { ok: true, commitSha, images: content.images }, cors);
       }
 
       if (url.pathname === '/translate' && request.method === 'POST') {
