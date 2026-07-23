@@ -203,8 +203,8 @@ test('validatePublishPayload 接受不带封面图，拒绝超大封面图（1MB
   assert.equal(validatePublishPayload(base).ok, true);
   const huge = { ...base, cover: 'data:image/webp;base64,' + 'A'.repeat(1_400_000) };
   assert.equal(validatePublishPayload(huge).ok, false);
-  const okSize = { ...base, cover: 'data:image/webp;base64,' + 'A'.repeat(500_000) };
-  assert.equal(validatePublishPayload(okSize).ok, true); // 500KB 在旧上限之外、新上限之内
+  const okSize = { ...base, cover: 'data:image/webp;base64,' + 'A'.repeat(800_000) };
+  assert.equal(validatePublishPayload(okSize).ok, true); // 约600KB：超过旧的500KB上限、在新的1MB上限之内，真正验证了本次改动的效果
 });
 
 test('upsertPost 插入新文章并按日期倒序', () => {
