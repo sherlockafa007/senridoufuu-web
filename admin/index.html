@@ -253,17 +253,21 @@ function applyImagePreview(el, dataUrl) {
   if (!img) {
     img = el.ownerDocument.createElement('img');
     img.className = 'content-image';
+    img.alt = '';
     el.style.position = 'relative';
     el.appendChild(img);
   }
   img.src = dataUrl;
 }
 
-/* ── 压缩图片：canvas 转 WebP，超限自动降质重试，保持原始宽高比不拉伸 ── */
-function compressImageToWebp(file, maxBytes, callback) {
+/* ── 压缩图片：canvas 转 WebP，超限自动降质重试，保持原始宽高比不拉伸。
+   onSuccess(dataUrl) / onError(message) 两个回调，失败时不吞错误。 ── */
+function compressImageToWebp(file, maxBytes, onSuccess, onError) {
   const reader = new FileReader();
+  reader.onerror = () => onError('图片读取失败，请重试');
   reader.onload = (e) => {
     const img = new Image();
+    img.onerror = () => onError('图片格式无法识别，请更换文件');
     img.onload = () => {
       const MAX_SIDE = 1600;
       let { width, height } = img;
@@ -282,7 +286,11 @@ function compressImageToWebp(file, maxBytes, callback) {
         quality -= 0.15;
         dataUrl = canvas.toDataURL('image/webp', quality);
       }
-      callback(dataUrl);
+      if (Math.floor((dataUrl.length * 3) / 4) > maxBytes) {
+        onError('图片过大，请更换');
+        return;
+      }
+      onSuccess(dataUrl);
     };
     img.src = e.target.result;
   };
@@ -301,11 +309,16 @@ function startImageEdit(el) {
   input.onchange = () => {
     const file = input.files[0];
     if (!file) return;
-    compressImageToWebp(file, MAX_IMAGE_BYTES, (dataUrl) => {
-      pendingImages[key] = dataUrl;
-      applyImagePreview(el, dataUrl);
-      updateChangesBar();
-    });
+    compressImageToWebp(
+      file,
+      MAX_IMAGE_BYTES,
+      (dataUrl) => {
+        pendingImages[key] = dataUrl;
+        applyImagePreview(el, dataUrl);
+        updateChangesBar();
+      },
+      (message) => doc.defaultView.alert(message),
+    );
   };
   input.click();
 }
