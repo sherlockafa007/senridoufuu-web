@@ -218,7 +218,7 @@ window.loadData = async function() {
   document.getElementById('refreshBtn').textContent = '加载中…';
 
   try {
-    const q = query(collection(db, 'visits'), orderBy('timestamp', 'desc'), limit(500));
+    const q = query(collection(db, 'visits'), orderBy('timestamp', 'desc'), limit(2000));
     const snap = await getDocs(q);
     const docs = snap.docs.map(d => ({id: d.id, ...d.data()}));
 
