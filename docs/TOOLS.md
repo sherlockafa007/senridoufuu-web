@@ -194,6 +194,14 @@
 - `admins.js` — 唯一 `ADMINS` 名单 + `isAdmin(user)`。
 - **改 Firebase 配置 / 加管理员：只动这两个文件。**
 - 例外：`js/tracking.js` 用命名 app `'tracking'`（匿名访问统计），与真实登录隔离，故意不并入。
+- `auth-gate-state.js`（2026-07-24 新增）— 纯判定逻辑 `resolveGateState({user, isAdminUser, status})`，根据是否登录/是否管理员/Firestore `status` 判定 `guest`/`admin`/`approved`/`pending`/`disabled` 五种状态，零依赖、可直接 `node --test`。
+- `auth-gate.js`（2026-07-24 新增）— 装配层 `mountAuthGate({auth, db, onApproved, onAdmin})`：监听登录态、调用 `resolveGateState` 判定、渲染对应遮罩提示（审核中/已停用），异常统一 try/catch 兜底渲染"出错了请刷新"，不再因单点报错卡在空白/转圈。替代过去每个页面各自复制一份的内联登录门控逻辑。试点迁移了 `solutions/demo/translation.html`，其余 9 个含登录门控的页面待后续批量迁移。
+- `functions/api/_lib/fetchWithTimeout.js`（2026-07-24 新增）— 给对外部服务（Qwen/Deepgram）的请求包一层 30 秒超时，只对"发出请求到收到首个响应"计时，一旦拿到 Response 对象（含流式响应刚建立连接的那一刻）就清除计时器，不影响后续读取正文/流的耗时（长文档翻译/文书分析不受影响）。已接入 `translate.js`/`deepgram-token.js`/`analyze-stream.js`/`proofread.js`/`summary.js`/`translate-stream.js` 六个端点，超时或异常统一返回 JSON 错误兜底。
+- **修改记录**：
+  - **2026-07-24：3D 稳定性——前端错误边界 + API 超时兜底**：
+    - 新建 `js/shared/auth-gate.js`（+ `auth-gate-state.js` 纯逻辑）：统一登录门控，异常兜底渲染"出错了请刷新"，不再因单点报错卡在空白/转圈；试点迁移 `solutions/demo/translation.html`，其余 9 页待批量迁移
+    - `js/main.js` 共享初始化（`injectShared`/`content.json` 合并/`applyTranslations`/`initScrollAnimations`）分区 try/catch 隔离
+    - `functions/api/` 6 个端点（`translate`/`deepgram-token`/`analyze-stream`/`proofread`/`summary`/`translate-stream`）接入 `fetchWithTimeout`（30 秒首响应超时）+ 统一错误 JSON 兜底
 
 ## 开发期工具链（Phase 1，不进部署产物）
 
