@@ -3,13 +3,8 @@ import {
   getAuth,
   signInAnonymously,
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  updateDoc,
-  serverTimestamp,
-} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { trackVisit, updateVisitDuration } from '/js/shared/track-visit.js';
 
 const app = initializeApp(
   {
@@ -49,30 +44,27 @@ function getAnonId() {
 }
 
 const startTime = Date.now();
-let visitRef = null;
+let visitDocIdRef = null;
 
 async function track() {
   try {
     await signInAnonymously(auth);
     const email = localStorage.getItem('sdf_user_email') || null;
-    const ref = await addDoc(collection(db, 'visits'), {
+    visitDocIdRef = trackVisit({
+      db,
       email,
       anonId: getAnonId(),
       page: getPageName(),
-      timestamp: serverTimestamp(),
       device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
     });
-    visitRef = ref;
   } catch {}
 }
 
-async function finish() {
-  if (!visitRef) return;
+function finish() {
+  if (!visitDocIdRef) return;
   const duration = Math.round((Date.now() - startTime) / 1000);
-  try {
-    await updateDoc(visitRef, { duration });
-  } catch {}
-  visitRef = null;
+  updateVisitDuration({ db, docId: visitDocIdRef, duration });
+  visitDocIdRef = null;
 }
 
 document.addEventListener('visibilitychange', () => {
