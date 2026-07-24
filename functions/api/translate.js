@@ -1,4 +1,6 @@
 // Cloudflare Pages Function — non-streaming translation proxy
+import { fetchWithTimeout } from './_lib/fetchWithTimeout.js';
+
 export async function onRequest(context) {
   const { request, env } = context;
 
@@ -59,32 +61,40 @@ Sole exception: if the user's message is explicitly a meeting-summary request (i
 
 Use formal, precise language. Never skip the 【回訳】 step for Chinese or Japanese input. Output nothing outside the specified format.`;
 
-  const upstream = await fetch(
-    'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+  try {
+    const upstream = await fetchWithTimeout(
+      'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'qwen-plus',
+          messages: [{ role: 'system', content: systemPrompt }, ...messages],
+          max_tokens: 2000,
+          temperature: 0.2,
+        }),
       },
-      body: JSON.stringify({
-        model: 'qwen-plus',
-        messages: [{ role: 'system', content: systemPrompt }, ...messages],
-        max_tokens: 2000,
-        temperature: 0.2,
-      }),
-    },
-  );
+    );
 
-  const data = await upstream.json();
-  if (!upstream.ok) {
-    return new Response(JSON.stringify({ error: data.error?.message || 'Qwen API error' }), {
-      status: upstream.status,
+    const data = await upstream.json();
+    if (!upstream.ok) {
+      return new Response(JSON.stringify({ error: data.error?.message || 'Qwen API error' }), {
+        status: upstream.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify({ content: data.choices[0].message.content }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (err) {
+    const msg = err.name === 'AbortError' ? '请求超时，请稍后重试' : '翻译服务暂时不可用，请稍后重试';
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 502,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-
-  return new Response(JSON.stringify({ content: data.choices[0].message.content }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
 }

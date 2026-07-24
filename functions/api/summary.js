@@ -1,4 +1,6 @@
 // Cloudflare Pages Function — meeting summary (JSON only; DOCX generated client-side)
+import { fetchWithTimeout } from './_lib/fetchWithTimeout.js';
+
 const SYS_SUMMARY =
   '你是会议纪要专家，擅长从多语对话（中文、日文或英文）中提取关键信息。\n\n' +
   '任务：分析以下双语/多语对话，生成结构化的会议纪要。\n\n' +
@@ -64,48 +66,56 @@ export async function onRequest(context) {
     })
     .join('\n\n');
 
-  const upstream = await fetch(
-    'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+  try {
+    const upstream = await fetchWithTimeout(
+      'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'qwen-plus',
+          messages: [
+            { role: 'system', content: SYS_SUMMARY },
+            { role: 'user', content: `以下是会议对话：\n\n${dialogueText}` },
+          ],
+          max_tokens: 1500,
+          temperature: 0.5,
+        }),
       },
-      body: JSON.stringify({
-        model: 'qwen-plus',
-        messages: [
-          { role: 'system', content: SYS_SUMMARY },
-          { role: 'user', content: `以下是会议对话：\n\n${dialogueText}` },
-        ],
-        max_tokens: 1500,
-        temperature: 0.5,
-      }),
-    },
-  );
+    );
 
-  const data = await upstream.json();
-  if (!upstream.ok) {
-    return new Response(JSON.stringify({ error: data.error?.message || 'Qwen API error' }), {
-      status: upstream.status,
+    const data = await upstream.json();
+    if (!upstream.ok) {
+      return new Response(JSON.stringify({ error: data.error?.message || 'Qwen API error' }), {
+        status: upstream.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const raw = data.choices[0].message.content.trim();
+    let summary;
+    try {
+      summary = JSON.parse(
+        raw
+          .replace(/```(?:json)?\n?/g, '')
+          .replace(/```/g, '')
+          .trim(),
+      );
+    } catch {
+      summary = { topics: [], feedback: [], actions: [] };
+    }
+
+    return new Response(JSON.stringify({ summary }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (err) {
+    const msg = err.name === 'AbortError' ? '请求超时，请稍后重试' : '纪要生成服务暂时不可用，请稍后重试';
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 502,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-
-  const raw = data.choices[0].message.content.trim();
-  let summary;
-  try {
-    summary = JSON.parse(
-      raw
-        .replace(/```(?:json)?\n?/g, '')
-        .replace(/```/g, '')
-        .trim(),
-    );
-  } catch {
-    summary = { topics: [], feedback: [], actions: [] };
-  }
-
-  return new Response(JSON.stringify({ summary }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
 }

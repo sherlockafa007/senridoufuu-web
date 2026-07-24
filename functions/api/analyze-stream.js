@@ -1,4 +1,6 @@
 // Cloudflare Pages Function — streaming proxy for DashScope analysis
+import { fetchWithTimeout } from './_lib/fetchWithTimeout.js';
+
 export async function onRequest(context) {
   const { request, env } = context;
 
@@ -64,39 +66,47 @@ export async function onRequest(context) {
 
   const userMessage = `以下是需要分析的财务文件内容（包含财务报表和MD&A）：\n\n${docContext}\n\n---\n\n分析要求：${(prompt || '').trim() || '请对以上财务报告进行深度对比分析，重点关注财务指标、增长趋势、盈利能力和管理层对经营的分析。'}`;
 
-  const upstream = await fetch(
-    'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+  try {
+    const upstream = await fetchWithTimeout(
+      'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'qwen-plus',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage },
+          ],
+          max_tokens: 2000,
+          temperature: 0.2,
+          stream: true,
+        }),
       },
-      body: JSON.stringify({
-        model: 'qwen-plus',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
-        ],
-        max_tokens: 2000,
-        temperature: 0.2,
-        stream: true,
-      }),
-    },
-  );
+    );
 
-  if (!upstream.ok) {
-    const err = await upstream.json().catch(() => ({}));
-    return new Response(JSON.stringify({ error: err.error?.message || 'Qwen API error' }), {
-      status: upstream.status,
+    if (!upstream.ok) {
+      const err = await upstream.json().catch(() => ({}));
+      return new Response(JSON.stringify({ error: err.error?.message || 'Qwen API error' }), {
+        status: upstream.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(upstream.body, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+      },
+    });
+  } catch (err) {
+    const msg = err.name === 'AbortError' ? '请求超时，请稍后重试' : '分析服务暂时不可用，请稍后重试';
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 502,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-
-  return new Response(upstream.body, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-    },
-  });
 }
