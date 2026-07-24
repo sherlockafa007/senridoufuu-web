@@ -642,13 +642,14 @@ window.addEventListener('resize', updateTableHeight);
 import { auth, db } from '/js/shared/firebase-init.js';
 import { ADMINS } from '/js/shared/admins.js';
 import {onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {collection,addDoc,serverTimestamp,doc,getDoc,updateDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {doc,getDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { trackVisit, updateVisitDuration } from '/js/shared/track-visit.js';
 const gate = document.getElementById('gate');
 const gateStatus = document.getElementById('gate-status');
 let _logged = false;
-const _start = Date.now(); let _ref = null;
+const _start = Date.now(); let _docId = null;
 function _anonId(){let i=localStorage.getItem('sdf_anon_id');if(!i){i='anon_'+Math.random().toString(36).slice(2,9);localStorage.setItem('sdf_anon_id',i);}return i;}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_ref){updateDoc(_ref,{duration:Math.round((Date.now()-_start)/1000)}).catch(()=>{});_ref=null;}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_docId){updateVisitDuration({db,docId:_docId,duration:Math.round((Date.now()-_start)/1000)});_docId=null;}});
 
 function showTool(u) {
   gate.style.display = 'none';
@@ -657,14 +658,13 @@ function showTool(u) {
   document.getElementById('uemail').textContent = u.email;
   if (!_logged) {
     _logged = true;
-    addDoc(collection(db, 'visits'), {
+    _docId = trackVisit({
+      db,
       email: u.email,
       anonId: _anonId(),
       page: 'japanese_learner',
-      title: '日本語動詞活用',
-      timestamp: serverTimestamp(),
-      device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
-    }).then(r => { _ref = r; }).catch(() => {});
+      device: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+    });
   }
 }
 

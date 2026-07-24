@@ -996,12 +996,13 @@
 import { auth, db } from '/js/shared/firebase-init.js';
 import { ADMINS } from '/js/shared/admins.js';
 import {onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {collection,doc,getDoc,addDoc,updateDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {doc,getDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { trackVisit, updateVisitDuration } from '/js/shared/track-visit.js';
 window.sdfGetToken=()=>auth.currentUser?.getIdToken();
-const _start=Date.now();let _ref=null,_logged=false;
+const _start=Date.now();let _docId=null,_logged=false;
 function _anonId(){let i=localStorage.getItem('sdf_anon_id');if(!i){i='anon_'+Math.random().toString(36).slice(2,9);localStorage.setItem('sdf_anon_id',i);}return i;}
-function _track(e){if(_logged)return;_logged=true;addDoc(collection(db,'visits'),{email:e,anonId:_anonId(),page:'analysis',timestamp:serverTimestamp(),device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'desktop'}).then(r=>{_ref=r;}).catch(()=>{});}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_ref){updateDoc(_ref,{duration:Math.round((Date.now()-_start)/1000)}).catch(()=>{});_ref=null;}});
+function _track(e){if(_logged)return;_logged=true;_docId=trackVisit({db,email:e,anonId:_anonId(),page:'analysis',device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'desktop'});}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_docId){updateVisitDuration({db,docId:_docId,duration:Math.round((Date.now()-_start)/1000)});_docId=null;}});
 onAuthStateChanged(auth,async user=>{
   const gate=document.getElementById('auth-gate');
   if(!user){window.location.replace('/account.html');return;}
