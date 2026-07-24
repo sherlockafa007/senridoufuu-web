@@ -171,7 +171,9 @@ async function extractBidsLLM(html, target) {
     {
       model: 'qwen-plus',
       messages: [{ role: 'user', content: buildExtractionPrompt(pageText, target) }],
-      max_tokens: 1500,
+      // 大阪市/吹田市"業務委託"页面条目多（30+条），1500 输出上限连续4天让 JSON 被截断、
+      // 解析失败（llm_found=-1）；调大到 4000 留足余量，避免误判为"抽取失败"。
+      max_tokens: 4000,
     },
     {
       headers: {
