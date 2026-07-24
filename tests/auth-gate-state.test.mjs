@@ -22,5 +22,8 @@ test('resolveGateState：非管理员 + disabled 返回 disabled', () => {
 test('resolveGateState：非管理员 + pending 或未知状态 一律返回 pending', () => {
   assert.equal(resolveGateState({ user: {}, isAdminUser: false, status: 'pending' }), 'pending');
   assert.equal(resolveGateState({ user: {}, isAdminUser: false, status: undefined }), 'pending');
-  assert.equal(resolveGateState({ user: {}, isAdminUser: false, status: 'some_unknown_value' }), 'pending');
+  assert.equal(
+    resolveGateState({ user: {}, isAdminUser: false, status: 'some_unknown_value' }),
+    'pending',
+  );
 });

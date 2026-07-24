@@ -91,7 +91,8 @@ Use formal, precise language. Never skip the 【回訳】 step for Chinese or Ja
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    const msg = err.name === 'AbortError' ? '请求超时，请稍后重试' : '翻译服务暂时不可用，请稍后重试';
+    const msg =
+      err.name === 'AbortError' ? '请求超时，请稍后重试' : '翻译服务暂时不可用，请稍后重试';
     return new Response(JSON.stringify({ error: msg }), {
       status: 502,
       headers: { 'Content-Type': 'application/json' },
