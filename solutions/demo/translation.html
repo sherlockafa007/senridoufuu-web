@@ -1852,27 +1852,18 @@
   </script>
 <script type="module">
 import { auth, db } from '/js/shared/firebase-init.js';
-import { ADMINS } from '/js/shared/admins.js';
-import {onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {collection,doc,getDoc,addDoc,updateDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import { mountAuthGate } from '/js/shared/auth-gate.js';
+import {collection,addDoc,updateDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 const _start=Date.now();let _ref=null,_logged=false;
 function _anonId(){let i=localStorage.getItem('sdf_anon_id');if(!i){i='anon_'+Math.random().toString(36).slice(2,9);localStorage.setItem('sdf_anon_id',i);}return i;}
 function _track(e){if(_logged)return;_logged=true;addDoc(collection(db,'visits'),{email:e,anonId:_anonId(),page:'translation',timestamp:serverTimestamp(),device:/Mobi|Android/i.test(navigator.userAgent)?'mobile':'desktop'}).then(r=>{_ref=r;}).catch(()=>{});}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&_ref){updateDoc(_ref,{duration:Math.round((Date.now()-_start)/1000)}).catch(()=>{});_ref=null;}});
 window.sdfGetToken=()=>auth.currentUser?.getIdToken();
-onAuthStateChanged(auth,async user=>{
-  const gate=document.getElementById('auth-gate');
-  if(!user){window.location.replace('/account.html');return;}
-  localStorage.setItem('sdf_user_email',user.email);
-  if(ADMINS.includes(user.email)){_track(user.email);gate.remove();return;}
-  try{
-    const snap=await getDoc(doc(db,'users',user.uid));
-    const status=snap.data()?.status||'pending';
-    if(status==='approved'){_track(user.email);gate.remove();return;}
-    gate.innerHTML=`<div style="text-align:center;max-width:340px;padding:32px 24px;font-family:sans-serif"><div style="font-size:2.5rem;margin-bottom:16px">${status==='disabled'?'🚫':'⏳'}</div><h2 style="font-size:18px;font-weight:600;margin-bottom:12px;color:#1f2937">${status==='disabled'?'账号已停用':'审核中'}</h2><p style="color:#6b7280;font-size:13px;line-height:1.8">${status==='disabled'?'您的账号已被停用，请联系管理员。':'账号正在审核中，审核通过后即可使用。'}</p><a href="/account.html" style="display:inline-block;margin-top:20px;color:#9ca3af;font-size:12px;text-decoration:none">← 返回</a></div>`;
-  }catch{
-    gate.innerHTML='<div style="text-align:center;max-width:340px;padding:32px 24px;font-family:sans-serif"><div style="font-size:2.5rem;margin-bottom:16px">⏳</div><h2 style="font-size:18px;font-weight:600;margin-bottom:12px;color:#1f2937">审核中</h2><p style="color:#6b7280;font-size:13px;line-height:1.8">账号正在审核中，审核通过后即可使用。</p><a href="/account.html" style="display:inline-block;margin-top:20px;color:#9ca3af;font-size:12px;text-decoration:none">← 返回</a></div>';
-  }
+mountAuthGate({
+  auth,
+  db,
+  onApproved: (user) => _track(user.email),
+  onAdmin: (user) => _track(user.email),
 });
 </script>
 </body>
