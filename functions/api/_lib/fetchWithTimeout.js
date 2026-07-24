@@ -6,6 +6,8 @@ export async function fetchWithTimeout(url, options = {}, timeoutMs = 30000, fet
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    // 注意：这里会覆盖 options.signal（如果调用方自己传了的话）——当前调用方都没传，
+    // 如果以后要支持调用方自己的取消逻辑，需要改成合并两个 signal，不是简单覆盖。
     return await fetchFn(url, { ...options, signal: controller.signal });
   } finally {
     clearTimeout(timer);
