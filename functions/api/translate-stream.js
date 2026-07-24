@@ -75,6 +75,9 @@ export async function onRequest(context) {
       });
     }
 
+    // 注意：这层 try/catch 只覆盖"建立连接、拿到 headers"这个阶段——一旦下面这行
+    // return 执行，函数调用栈就结束了，upstream.body 流式读取是之后由前端消费时才
+    // 发生的，如果那时候 DashScope 中途断流，这层 catch 捕获不到。
     return new Response(upstream.body, {
       headers: {
         'Content-Type': 'text/event-stream',
