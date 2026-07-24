@@ -811,21 +811,47 @@ function injectAnalytics() {
   document.head.appendChild(s);
 }
 
-/* === INIT === */
+/* === INIT ===
+   每一块共享初始化单独包 try/catch——某一块报错只在控制台留痕，不阻断其余几块继续跑
+   （比如导航注入失败，不应该连累语言切换或滚动动画）。 */
 document.addEventListener('DOMContentLoaded', () => {
-  injectShared();
-  injectAnalytics();
+  try {
+    injectShared();
+  } catch (err) {
+    console.error('[main] injectShared failed:', err);
+  }
+  try {
+    injectAnalytics();
+  } catch (err) {
+    console.error('[main] injectAnalytics failed:', err);
+  }
   fetch('/content.json')
     .then((r) => (r.ok ? r.json() : {}))
     .then((ov) => {
-      ['ja', 'zh', 'en'].forEach((l) => {
-        if (ov[l]) Object.assign(T[l], ov[l]);
-      });
-      if (ov.images) applyImages(ov.images);
+      try {
+        ['ja', 'zh', 'en'].forEach((l) => {
+          if (ov[l]) Object.assign(T[l], ov[l]);
+        });
+      } catch (err) {
+        console.error('[main] merging content.json translations failed:', err);
+      }
+      try {
+        if (ov.images) applyImages(ov.images);
+      } catch (err) {
+        console.error('[main] applyImages failed:', err);
+      }
     })
     .catch(() => {})
     .finally(() => {
-      applyTranslations(currentLang);
-      initScrollAnimations();
+      try {
+        applyTranslations(currentLang);
+      } catch (err) {
+        console.error('[main] applyTranslations failed:', err);
+      }
+      try {
+        initScrollAnimations();
+      } catch (err) {
+        console.error('[main] initScrollAnimations failed:', err);
+      }
     });
 });
