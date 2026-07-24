@@ -31,7 +31,7 @@
   - `QWEN_API_KEY` — 阿里云通义千问（qwen-plus），文本类工具都用它。
   - `DEEPGRAM_API_KEY` — Deepgram 语音转文字，仅翻译工具语音模式用。**必须是 Member 或以上角色的 key**（`/v1/auth/grant` 签发临时 token 需要此权限）。
   - ⚠️ 改环境变量后**必须重新部署**才生效。
-- **访问统计（2026-07 起）**：Cloudflare Web Analytics，beacon 由 `js/main.js` 的 `injectAnalytics()` 动态注入（token `8bcffe16...`，公开客户端标识非密钥）。仪表盘在**站长自己 CF 账号** → Web Analytics（hostname `www.senridf.com`）。手搓的 Firestore `visits` 统计暂并存，未来可退役以省成本。
+- **访问统计（2026-07 起）**：Cloudflare Web Analytics，beacon 由 `js/main.js` 的 `injectAnalytics()` 动态注入（token `8bcffe16...`，公开客户端标识非密钥）。仪表盘在**站长自己 CF 账号** → Web Analytics（hostname `www.senridf.com`）。手搓的 Firestore `visits` 统计与 Cloudflare Web Analytics 并存——2026-07-24 已决定长期保留（用户需要"按用户看具体使用情况"的能力，这是 CF Web Analytics 的匿名聚合替代不了的），治理方向是去重+TTL（见 `js/shared/track-visit.js`），不再计划退役。
 
 ---
 
