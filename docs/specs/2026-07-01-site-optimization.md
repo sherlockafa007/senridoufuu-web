@@ -127,10 +127,10 @@ import { initI18n } from '/js/shared/i18n.js';
 - 安全：Firestore 规则复审（visits/users/bids/meta 权限最小化）；`/api` 各函数入参校验（类型/长度/必填）；Cloudflare `_headers` 安全响应头（CSP、X-Content-Type-Options、Referrer-Policy 等）；确认无密钥进仓库；接入 Firebase App Check 防 API 盗刷（同时护成本）。
 - 稳定：前端错误边界——每页脚本包 try/catch 或分区隔离，单个 JS 错误不致整页白屏（如"注册空白"类）；`/api` 统一超时与异常兜底，返回友好错误；Firestore 读失败降级提示。
 - 流畅：4 页的 Tailwind CDN 运行时编译器换成预生成静态 CSS（一次性用 Tailwind CLI 生成并提交成品，部署仍零构建；或手写所需样式）；Firebase SDK 按需加载、只引用用到的模块；Google Fonts 字体精简/子集；较大图片压缩。
-- 成本：`visits` 集合治理——写入端节流/去重、设保留上限或定期归档；管理后台读取从一次 500 降为分页或服务端聚合；Qwen/Deepgram 在既有限流上加简单用量观测。严守"功能优先"原则：翻译/数据分析的 context 与响应不缩水。
+- 成本：`visits` 集合治理——**2026-07-24 已实施**：写入端用确定性文档ID去重（同一身份同一天同一工具页最多一条）+ `expireAt` 字段配合 Firestore TTL（6个月）自动清理，详见 `docs/specs/2026-07-24-visits-governance-design.md`；决定不做分页/服务端聚合（去重+TTL后数据量本身可控，管理后台读取上限顺手从 500 调大到 2000，不是降低）；Qwen/Deepgram 在既有限流上加简单用量观测（待做）。严守"功能优先"原则：翻译/数据分析的 context 与响应不缩水。
 - 友好：错误提示文案统一（复用 i18n）；无障碍（JS 生成的按钮/输入补 title/alt）；各页移动端自适应过一遍。
 
-验收：安全响应头生效（curl 可见）；`/api` 对畸形入参有防御；单页 JS 报错不再整页白屏；4 页不再依赖 Tailwind 运行时编译器、首屏更快；`visits` 增长可控、admin 读取量下降；各页移动端无溢出；翻译/数据分析功能与响应不受成本改动影响。
+验收：安全响应头生效（curl 可见）；`/api` 对畸形入参有防御；单页 JS 报错不再整页白屏；4 页不再依赖 Tailwind 运行时编译器、首屏更快；`visits` 去重+TTL生效、增长可控（不要求 admin 读取量下降，读取上限反而顺手调大了，见上）；各页移动端无溢出；翻译/数据分析功能与响应不受成本改动影响。
 
 ---
 
