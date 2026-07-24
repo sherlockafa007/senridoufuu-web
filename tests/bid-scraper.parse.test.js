@@ -35,10 +35,22 @@ test('parseSuitaBids：解析年月日截标，过滤>7天过期', () => {
     categoryLabel: '業務委託',
   };
   const bids = parseSuitaBids(fixture('suita-sample.html'), target);
-  // 未来案件保留，过期(2020)被 7 天宽限过滤掉
+  // 未来案件保留，过期(2020)被 7 天宽限过滤掉，「入札結果」表（已决标历史结果）不算招标
   assert.equal(bids.length, 1);
   assert.match(bids[0].title, /未来案件/);
   assert.equal(bids[0].deadline, '2099年2月20日');
+});
+
+test('parseSuitaBids：跳过「入札結果」表——已决标的历史结果不是招标公告', () => {
+  const target = {
+    url: 'https://www.city.suita.osaka.jp/sangyo/1017983/1017993/1042103/index.html',
+    city: '吹田市',
+    category: 'buppin',
+    categoryLabel: '物品購入',
+  };
+  const bids = parseSuitaBids(fixture('suita-sample.html'), target);
+  const titles = bids.map((b) => b.title).join(' | ');
+  assert.doesNotMatch(titles, /決定済み案件/); // 「入札結果」表的行不应被当作招标抓取
 });
 
 test('parseToyonakaLinks：只取正文招标，隔离页脚 junk 与索引页', () => {

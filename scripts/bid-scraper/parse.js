@@ -73,46 +73,55 @@ function parseSuitaBids(html, target) {
   const bids = [];
   const graceCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  $('table tr').each((_, row) => {
-    const cells = $(row).find('td');
-    if (cells.length < 3) return;
+  $('table').each((_, table) => {
+    // 「入札結果」表列的是已经决标的历史结果（開札日，不是募集期间），不是招标公告，跳过——
+    // 否则该表因缺少「～」分隔符导致 deadline 解析成空值，反而绕过下面的过期宽限过滤混进结果里。
+    const heading = $(table).prev('h2').text().trim();
+    if (heading.includes('入札結果')) return;
 
-    const titleEl = $(cells[0]).find('a');
-    if (!titleEl.length) return;
+    $(table)
+      .find('tr')
+      .each((_, row) => {
+        const cells = $(row).find('td');
+        if (cells.length < 3) return;
 
-    const title = titleEl.text().trim();
-    const href = titleEl.attr('href') || '';
-    if (!title || !href) return;
+        const titleEl = $(cells[0]).find('a');
+        if (!titleEl.length) return;
 
-    const sourceUrl = href.startsWith('/')
-      ? `https://www.city.suita.osaka.jp${href}`
-      : new URL(href, target.url).toString();
+        const title = titleEl.text().trim();
+        const href = titleEl.attr('href') || '';
+        if (!title || !href) return;
 
-    // Period cell, e.g. "2026年6月17日～2026年6月24日"
-    const period = $(cells[1]).text().trim();
-    const bureau = $(cells[2]).text().trim();
+        const sourceUrl = href.startsWith('/')
+          ? `https://www.city.suita.osaka.jp${href}`
+          : new URL(href, target.url).toString();
 
-    // Deadline = the date after "～"; announced = the date before it.
-    const parts = period.split('～');
-    const deadlineDate = parseJpDate(parts[1] || '');
-    const announcedDate = parseJpDate(parts[0] || '');
+        // Period cell, e.g. "2026年6月17日～2026年6月24日"
+        const period = $(cells[1]).text().trim();
+        const bureau = $(cells[2]).text().trim();
 
-    // Skip bids whose deadline is more than 7 days past.
-    if (deadlineDate && deadlineDate < graceCutoff) return;
+        // Deadline = the date after "～"; announced = the date before it.
+        const parts = period.split('～');
+        const deadlineDate = parseJpDate(parts[1] || '');
+        const announcedDate = parseJpDate(parts[0] || '');
 
-    const fmt = (d) => (d ? `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日` : '');
+        // Skip bids whose deadline is more than 7 days past.
+        if (deadlineDate && deadlineDate < graceCutoff) return;
 
-    bids.push({
-      title,
-      source_url: sourceUrl,
-      city: target.city,
-      category: target.category,
-      category_label: target.categoryLabel,
-      announcement_date: fmt(announcedDate),
-      deadline: fmt(deadlineDate),
-      ordering_bureau: bureau,
-      budget: '',
-    });
+        const fmt = (d) => (d ? `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日` : '');
+
+        bids.push({
+          title,
+          source_url: sourceUrl,
+          city: target.city,
+          category: target.category,
+          category_label: target.categoryLabel,
+          announcement_date: fmt(announcedDate),
+          deadline: fmt(deadlineDate),
+          ordering_bureau: bureau,
+          budget: '',
+        });
+      });
   });
 
   return bids;
